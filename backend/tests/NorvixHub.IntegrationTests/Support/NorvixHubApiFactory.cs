@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using NorvixHub.Application.Organizations;
 using NorvixHub.Application.Tenancy;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Intake;
@@ -179,6 +181,12 @@ public sealed class NorvixHubApiFactory : WebApplicationFactory<Program>, IAsync
                 ["ConnectionStrings:Postgres"] = GetConnectionString(),
                 ["Database:ApplyMigrationsOnStartup"] = "true"
             });
+        });
+
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IBrregClient>();
+            services.AddScoped<IBrregClient, FakeBrregClient>();
         });
     }
 

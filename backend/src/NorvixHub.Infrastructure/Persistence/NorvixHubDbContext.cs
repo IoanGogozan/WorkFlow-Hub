@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NorvixHub.Domain.AI;
 using NorvixHub.Domain.Audit;
 using NorvixHub.Domain.Cases;
+using NorvixHub.Domain.Customers;
 using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.Reviews;
 using NorvixHub.Domain.Tenants;
@@ -22,6 +23,7 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<CaseWorkspace> Cases => Set<CaseWorkspace>();
     public DbSet<CaseTask> CaseTasks => Set<CaseTask>();
     public DbSet<CaseNote> CaseNotes => Set<CaseNote>();
+    public DbSet<Customer> Customers => Set<Customer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
