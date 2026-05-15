@@ -3,9 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NorvixHub.Application.AI;
 using NorvixHub.Application.Audit;
+using NorvixHub.Application.Documents;
 using NorvixHub.Application.Organizations;
 using NorvixHub.Infrastructure.AI;
 using NorvixHub.Infrastructure.Audit;
+using NorvixHub.Infrastructure.Documents;
 using NorvixHub.Infrastructure.Organizations;
 using NorvixHub.Infrastructure.Persistence;
 
@@ -23,6 +25,10 @@ public static class DependencyInjection
         services.AddScoped<DemoDataSeeder>();
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();
         services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
+        services.AddScoped<IFileStorage, LocalFileStorage>();
+        services.AddScoped<IDocumentClassificationProvider, MockDocumentClassificationProvider>();
+        services.Configure<LocalFileStorageOptions>(options =>
+            configuration.GetSection("Storage:Local").Bind(options));
         services.Configure<BrregOptions>(options =>
             configuration.GetSection("Brreg").Bind(options));
         services.AddHttpClient<IBrregClient, BrregClient>();

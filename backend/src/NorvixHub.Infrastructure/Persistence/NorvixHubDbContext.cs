@@ -3,6 +3,7 @@ using NorvixHub.Domain.AI;
 using NorvixHub.Domain.Audit;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Customers;
+using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.Reviews;
 using NorvixHub.Domain.Tenants;
@@ -24,6 +25,9 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<CaseTask> CaseTasks => Set<CaseTask>();
     public DbSet<CaseNote> CaseNotes => Set<CaseNote>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<DocumentRecord> Documents => Set<DocumentRecord>();
+    public DbSet<DocumentVersion> DocumentVersions => Set<DocumentVersion>();
+    public DbSet<DocumentLink> DocumentLinks => Set<DocumentLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

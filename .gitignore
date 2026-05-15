@@ -37,3 +37,8 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# language servers
+*.lscache
+
+# local document storage
+storage/

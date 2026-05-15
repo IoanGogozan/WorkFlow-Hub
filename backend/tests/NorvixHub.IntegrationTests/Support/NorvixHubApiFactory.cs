@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using NorvixHub.Application.Organizations;
 using NorvixHub.Application.Tenancy;
 using NorvixHub.Domain.Cases;
+using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
@@ -27,7 +28,10 @@ public sealed class NorvixHubApiFactory : WebApplicationFactory<Program>, IAsync
 
     public NorvixHubApiFactory()
     {
-        _externalConnectionString = Environment.GetEnvironmentVariable("NORVIXHUB_TEST_POSTGRES");
+        var configuredConnectionString = Environment.GetEnvironmentVariable("NORVIXHUB_TEST_POSTGRES");
+        _externalConnectionString = string.IsNullOrWhiteSpace(configuredConnectionString)
+            ? null
+            : WithUniqueDatabase(configuredConnectionString);
 
         if (string.IsNullOrWhiteSpace(_externalConnectionString))
         {
@@ -179,7 +183,8 @@ public sealed class NorvixHubApiFactory : WebApplicationFactory<Program>, IAsync
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Postgres"] = GetConnectionString(),
-                ["Database:ApplyMigrationsOnStartup"] = "true"
+                ["Database:ApplyMigrationsOnStartup"] = "true",
+                ["Storage:Local:RootPath"] = Path.Combine(Path.GetTempPath(), "norvixhub-tests")
             });
         });
 
@@ -193,5 +198,42 @@ public sealed class NorvixHubApiFactory : WebApplicationFactory<Program>, IAsync
     private string GetConnectionString()
     {
         return _externalConnectionString ?? _postgres!.GetConnectionString();
+    }
+
+    private static string WithUniqueDatabase(string connectionString)
+    {
+        var databaseName = $"norvixhub_tests_{Guid.NewGuid():N}";
+        var parts = connectionString
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+        var databaseIndex = parts.FindIndex(part =>
+            part.StartsWith("Database=", StringComparison.OrdinalIgnoreCase));
+
+        if (databaseIndex >= 0)
+        {
+            parts[databaseIndex] = $"Database={databaseName}";
+        }
+        else
+        {
+            parts.Add($"Database={databaseName}");
+        }
+
+        return string.Join(';', parts);
+    }
+
+    public async Task<Guid> CreateSecondTenantDocumentAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+
+        var document = new DocumentRecord
+        {
+            TenantId = SecondTenantId,
+            Title = "Second tenant document"
+        };
+
+        dbContext.Documents.Add(document);
+        await dbContext.SaveChangesAsync();
+        return document.Id;
     }
 }

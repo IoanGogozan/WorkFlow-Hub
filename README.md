@@ -79,7 +79,7 @@ docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotne
 On Windows, when running integration tests through the .NET SDK container, use the compose network and the already running Postgres container:
 
 ```powershell
-$env:NORVIXHUB_TEST_POSTGRES="Host=norvixhub-postgres;Port=5432;Database=norvixhub;Username=norvixhub;Password=norvixhub_dev_password"
+$env:NORVIXHUB_TEST_POSTGRES="Host=norvixhub-postgres;Port=5432;Database=norvixhub_tests;Username=norvixhub;Password=norvixhub_dev_password"
 docker run --rm --network workflow-hub_default -e NORVIXHUB_TEST_POSTGRES=$env:NORVIXHUB_TEST_POSTGRES -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test backend/NorvixHub.sln --configuration Release
 ```
 

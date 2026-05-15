@@ -36,6 +36,7 @@ app.MapAiReviewEndpoints();
 app.MapReviewTaskEndpoints();
 app.MapCaseEndpoints();
 app.MapOrganizationEndpoints();
+app.MapDocumentEndpoints();
 
 app.Run();
 
