@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NorvixHub.Domain.Audit;
+using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
 
@@ -11,10 +12,11 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<UserProfile> Users => Set<UserProfile>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<IntakeItem> IntakeItems => Set<IntakeItem>();
+    public DbSet<IntakeAttachment> IntakeAttachments => Set<IntakeAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(NorvixHubDbContext).Assembly);
     }
 }
-

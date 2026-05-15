@@ -31,6 +31,7 @@ if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false))
 app.MapHealthEndpoints();
 app.UseMiddleware<LocalDevAuthMiddleware>();
 app.MapSessionEndpoints();
+app.MapIntakeEndpoints();
 
 app.Run();
 
