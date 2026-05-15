@@ -148,7 +148,7 @@ public static class IntakeEndpoints
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
-    private static IntakeItemResponse ToResponse(IntakeItem intake)
+    public static IntakeItemResponse ToResponse(IntakeItem intake)
     {
         return new IntakeItemResponse(
             intake.Id,
@@ -188,4 +188,3 @@ public static class IntakeEndpoints
         return auditEventWriter.WriteAsync(request, cancellationToken);
     }
 }
-

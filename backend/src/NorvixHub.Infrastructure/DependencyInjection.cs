@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NorvixHub.Application.AI;
 using NorvixHub.Application.Audit;
+using NorvixHub.Infrastructure.AI;
 using NorvixHub.Infrastructure.Audit;
 using NorvixHub.Infrastructure.Persistence;
 
@@ -18,7 +20,7 @@ public static class DependencyInjection
 
         services.AddScoped<DemoDataSeeder>();
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();
+        services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
         return services;
     }
 }
-
