@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NorvixHub.Application\NorvixHub.Application.csproj" />
+    <ProjectReference Include="..\NorvixHub.Contracts\NorvixHub.Contracts.csproj" />
+    <ProjectReference Include="..\NorvixHub.Infrastructure\NorvixHub.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+name: Deploy Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Explain
+        run: echo "Demo deployment will be added after Azure infrastructure is defined."

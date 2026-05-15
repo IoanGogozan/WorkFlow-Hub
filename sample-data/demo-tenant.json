@@ -1,0 +1,18 @@
+{
+  "tenant": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "name": "Agder Drift & Service AS",
+    "slug": "agder-drift-service",
+    "organizationNumber": "999999999",
+    "countryCode": "NO"
+  },
+  "users": [
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "displayName": "Demo Admin",
+      "email": "demo.admin@agder-drift.example",
+      "role": "TenantOwner"
+    }
+  ]
+}
+

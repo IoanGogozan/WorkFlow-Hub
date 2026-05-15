@@ -38,6 +38,49 @@ The MVP must support one complete flow:
 - Cloud: Azure App Service or Azure Container Apps, Azure Database for PostgreSQL Flexible Server, Blob Storage, Key Vault, Application Insights, Service Bus or Storage Queue.
 - Infrastructure: Terraform and GitHub Actions.
 
+## Local Setup
+
+Prerequisites:
+
+- Node.js 24 or newer;
+- npm 11 or newer;
+- Docker Desktop with Docker Compose;
+- .NET 10 SDK, or Docker for backend validation.
+
+Start local dependencies:
+
+```bash
+docker compose up -d
+```
+
+Run frontend checks:
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm run build
+```
+
+Run backend tests with local .NET SDK:
+
+```bash
+dotnet test backend/NorvixHub.sln --configuration Release
+```
+
+Run backend tests through Docker when .NET is not installed locally:
+
+```bash
+docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test backend/NorvixHub.sln --configuration Release
+```
+
+API health endpoint:
+
+```http
+GET /health
+GET /health/ready
+```
+
 ## Documentation Index
 
 - [Product Brief](docs/product-brief.md)
