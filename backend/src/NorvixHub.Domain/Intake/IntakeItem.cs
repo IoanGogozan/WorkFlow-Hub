@@ -38,6 +38,13 @@ public sealed class IntakeItem : TenantScopedEntity
         MarkUpdated(userId, now);
     }
 
+    public void MarkConvertedToCase(Guid caseId, Guid userId, DateTimeOffset now)
+    {
+        ConvertedCaseId = caseId;
+        Status = IntakeStatus.ConvertedToCase;
+        MarkUpdated(userId, now);
+    }
+
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();

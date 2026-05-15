@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NorvixHub.Application.Tenancy;
+using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
@@ -136,6 +137,24 @@ public sealed class NorvixHubApiFactory : WebApplicationFactory<Program>, IAsync
         dbContext.IntakeItems.Add(intake);
         await dbContext.SaveChangesAsync();
         return (intake.Id, subject);
+    }
+
+    public async Task<Guid> CreateSecondTenantCaseAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+
+        var caseWorkspace = new CaseWorkspace
+        {
+            TenantId = SecondTenantId,
+            CaseNumber = $"CASE-OTHER-{Guid.NewGuid():N}"[..30],
+            Title = "Second tenant case",
+            Description = "This case belongs to another tenant."
+        };
+
+        dbContext.Cases.Add(caseWorkspace);
+        await dbContext.SaveChangesAsync();
+        return caseWorkspace.Id;
     }
 
     public async Task<int> CountAuditEventsAsync(Guid tenantId, string entityType, string action)

@@ -34,6 +34,7 @@ app.MapSessionEndpoints();
 app.MapIntakeEndpoints();
 app.MapAiReviewEndpoints();
 app.MapReviewTaskEndpoints();
+app.MapCaseEndpoints();
 
 app.Run();
 
