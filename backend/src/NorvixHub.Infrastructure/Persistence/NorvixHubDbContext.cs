@@ -3,6 +3,7 @@ using NorvixHub.Domain.AI;
 using NorvixHub.Domain.Audit;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Customers;
+using NorvixHub.Domain.Delivery;
 using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Integrations;
 using NorvixHub.Domain.Intake;
@@ -31,6 +32,10 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<DocumentLink> DocumentLinks => Set<DocumentLink>();
     public DbSet<IntegrationConnection> IntegrationConnections => Set<IntegrationConnection>();
     public DbSet<IntegrationSyncRun> IntegrationSyncRuns => Set<IntegrationSyncRun>();
+    public DbSet<DeliveryPackage> DeliveryPackages => Set<DeliveryPackage>();
+    public DbSet<DeliveryPackageItem> DeliveryPackageItems => Set<DeliveryPackageItem>();
+    public DbSet<DeliveryLink> DeliveryLinks => Set<DeliveryLink>();
+    public DbSet<DeliveryAccessLog> DeliveryAccessLogs => Set<DeliveryAccessLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

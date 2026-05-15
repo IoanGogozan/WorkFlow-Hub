@@ -38,6 +38,7 @@ app.MapCaseEndpoints();
 app.MapOrganizationEndpoints();
 app.MapDocumentEndpoints();
 app.MapIntegrationEndpoints();
+app.MapDeliveryEndpoints();
 
 app.Run();
 

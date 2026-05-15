@@ -1,7 +1,7 @@
 const metrics = [
   { label: "New intakes", value: "12", tone: "border-l-[#2563eb]" },
   { label: "Waiting review", value: "7", tone: "border-l-[#b45309]" },
-  { label: "Ready delivery", value: "4", tone: "border-l-[#047857]" },
+  { label: "Delivery links", value: "4", tone: "border-l-[#047857]" },
   { label: "Integration failures", value: "2", tone: "border-l-[#be123c]" },
 ];
 
