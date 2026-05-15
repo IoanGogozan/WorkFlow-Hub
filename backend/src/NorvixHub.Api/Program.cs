@@ -1,12 +1,17 @@
+using Microsoft.EntityFrameworkCore;
+using NorvixHub.Api.Auth;
 using NorvixHub.Api.Endpoints;
 using NorvixHub.Application.Tenancy;
 using NorvixHub.Infrastructure;
+using NorvixHub.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<ITenantContext, LocalDevTenantContext>();
+builder.Services.AddScoped<LocalDevTenantContext>();
+builder.Services.AddScoped<ITenantContext>(provider => provider.GetRequiredService<LocalDevTenantContext>());
+builder.Services.AddScoped<TenantAuthorizationService>();
 
 var app = builder.Build();
 
@@ -15,9 +20,18 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<DemoDataSeeder>().SeedAsync(CancellationToken.None);
+}
+
 app.MapHealthEndpoints();
+app.UseMiddleware<LocalDevAuthMiddleware>();
+app.MapSessionEndpoints();
 
 app.Run();
 
 public partial class Program;
-

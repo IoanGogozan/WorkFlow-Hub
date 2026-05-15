@@ -1,15 +1,15 @@
 using System.Net;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
+using NorvixHub.IntegrationTests.Support;
 using Xunit;
 
 namespace NorvixHub.IntegrationTests.Health;
 
-public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests : IClassFixture<NorvixHubApiFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly NorvixHubApiFactory _factory;
 
-    public HealthEndpointTests(WebApplicationFactory<Program> factory)
+    public HealthEndpointTests(NorvixHubApiFactory factory)
     {
         _factory = factory;
     }

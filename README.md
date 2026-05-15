@@ -53,6 +53,8 @@ Start local dependencies:
 docker compose up -d
 ```
 
+PostgreSQL is exposed on host port `55432` to avoid collisions with other local projects.
+
 Run frontend checks:
 
 ```bash
@@ -74,11 +76,25 @@ Run backend tests through Docker when .NET is not installed locally:
 docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test backend/NorvixHub.sln --configuration Release
 ```
 
+On Windows, when running integration tests through the .NET SDK container, use the compose network and the already running Postgres container:
+
+```powershell
+$env:NORVIXHUB_TEST_POSTGRES="Host=norvixhub-postgres;Port=5432;Database=norvixhub;Username=norvixhub;Password=norvixhub_dev_password"
+docker run --rm --network workflow-hub_default -e NORVIXHUB_TEST_POSTGRES=$env:NORVIXHUB_TEST_POSTGRES -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test backend/NorvixHub.sln --configuration Release
+```
+
 API health endpoint:
 
 ```http
 GET /health
 GET /health/ready
+```
+
+Local dev auth for `/api/*` endpoints uses headers:
+
+```http
+X-Norvix-Tenant-Id: 11111111-1111-4111-8111-111111111111
+X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 ```
 
 ## Documentation Index

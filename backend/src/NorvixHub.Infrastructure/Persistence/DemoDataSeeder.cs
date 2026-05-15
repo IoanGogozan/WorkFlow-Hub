@@ -9,14 +9,29 @@ public sealed class DemoDataSeeder(NorvixHubDbContext dbContext)
 {
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
-        if (await dbContext.Tenants.AnyAsync(cancellationToken))
+        if (!await dbContext.Tenants.AnyAsync(
+            tenant => tenant.Id == LocalDevTenantContext.DemoTenantId,
+            cancellationToken))
         {
-            return;
+            dbContext.Tenants.Add(CreateTenant());
         }
 
-        dbContext.Tenants.Add(CreateTenant());
-        dbContext.Users.Add(CreateUser());
-        dbContext.TenantMemberships.Add(CreateMembership());
+        if (!await dbContext.Users.AnyAsync(
+            user => user.Id == LocalDevTenantContext.DemoUserId,
+            cancellationToken))
+        {
+            dbContext.Users.Add(CreateUser());
+        }
+
+        if (!await dbContext.TenantMemberships.AnyAsync(
+            membership =>
+                membership.TenantId == LocalDevTenantContext.DemoTenantId &&
+                membership.UserId == LocalDevTenantContext.DemoUserId,
+            cancellationToken))
+        {
+            dbContext.TenantMemberships.Add(CreateMembership());
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -42,4 +57,3 @@ public sealed class DemoDataSeeder(NorvixHubDbContext dbContext)
         Role = TenantRole.TenantOwner
     };
 }
-

@@ -4,8 +4,8 @@ namespace NorvixHub.Application.Tenancy;
 
 public interface ITenantContext
 {
-    Guid TenantId { get; }
-    Guid UserId { get; }
-    TenantRole Role { get; }
+    bool IsAuthenticated { get; }
+    Guid? TenantId { get; }
+    Guid? UserId { get; }
+    TenantRole? Role { get; }
 }
-

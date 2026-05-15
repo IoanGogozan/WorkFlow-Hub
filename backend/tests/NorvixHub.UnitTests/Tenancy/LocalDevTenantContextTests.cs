@@ -12,6 +12,12 @@ public sealed class LocalDevTenantContextTests
     {
         var context = new LocalDevTenantContext();
 
+        context.SetAuthenticated(
+            LocalDevTenantContext.DemoTenantId,
+            LocalDevTenantContext.DemoUserId,
+            TenantRole.TenantOwner);
+
+        context.IsAuthenticated.Should().BeTrue();
         context.TenantId.Should().Be(LocalDevTenantContext.DemoTenantId);
         context.UserId.Should().Be(LocalDevTenantContext.DemoUserId);
         context.Role.Should().Be(TenantRole.TenantOwner);
