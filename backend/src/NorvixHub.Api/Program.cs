@@ -37,6 +37,7 @@ app.MapReviewTaskEndpoints();
 app.MapCaseEndpoints();
 app.MapOrganizationEndpoints();
 app.MapDocumentEndpoints();
+app.MapIntegrationEndpoints();
 
 app.Run();
 

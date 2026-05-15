@@ -4,6 +4,7 @@ using NorvixHub.Domain.Audit;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Customers;
 using NorvixHub.Domain.Documents;
+using NorvixHub.Domain.Integrations;
 using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.Reviews;
 using NorvixHub.Domain.Tenants;
@@ -28,6 +29,8 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<DocumentRecord> Documents => Set<DocumentRecord>();
     public DbSet<DocumentVersion> DocumentVersions => Set<DocumentVersion>();
     public DbSet<DocumentLink> DocumentLinks => Set<DocumentLink>();
+    public DbSet<IntegrationConnection> IntegrationConnections => Set<IntegrationConnection>();
+    public DbSet<IntegrationSyncRun> IntegrationSyncRuns => Set<IntegrationSyncRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

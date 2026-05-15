@@ -27,10 +27,34 @@ const intakeItems = [
 ];
 
 const integrationStatuses = [
-  ["Brreg", "Connected", "Last lookup 12 min ago"],
-  ["SharePoint", "Mocked", "Document import adapter ready"],
-  ["Accounting", "Mocked", "Fakturagrunnlag preview only"],
-  ["Power BI", "Mocked", "CSV/JSON export first"],
+  {
+    name: "Brønnøysundregistrene",
+    status: "Connected",
+    detail: "Organization lookup adapter",
+    lastSync: "12 min ago",
+    failedSyncs: "0",
+  },
+  {
+    name: "Microsoft Graph / SharePoint",
+    status: "Mocked",
+    detail: "Document library sync path",
+    lastSync: "Ready",
+    failedSyncs: "0",
+  },
+  {
+    name: "Tripletex Accounting",
+    status: "Error",
+    detail: "Mock failure available for retry testing",
+    lastSync: "Failed 18 min ago",
+    failedSyncs: "1",
+  },
+  {
+    name: "Power BI / Fabric",
+    status: "Mocked",
+    detail: "CSV/JSON export first",
+    lastSync: "Pending",
+    failedSyncs: "0",
+  },
 ];
 
 export default function Home() {
@@ -65,9 +89,7 @@ export default function Home() {
       <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[1fr_340px]">
         <section aria-labelledby="dashboard-heading" className="space-y-6">
           <div>
-            <p className="text-sm font-medium text-[#64748b]">
-              Fra e-post og skjema til sak, dokumentasjon og rapportering
-            </p>
+            <p className="text-sm font-medium text-[#64748b]">Fra e-post og skjema til sak, dokumentasjon og rapportering</p>
             <h2
               id="dashboard-heading"
               className="mt-2 text-3xl font-semibold text-[#162033]"
@@ -82,12 +104,8 @@ export default function Home() {
                 key={metric.label}
                 className={`border-l-4 ${metric.tone} rounded-md border-y border-r border-[#d8deea] bg-white p-4`}
               >
-                <p className="text-sm font-medium text-[#64748b]">
-                  {metric.label}
-                </p>
-                <p className="mt-3 text-3xl font-semibold text-[#162033]">
-                  {metric.value}
-                </p>
+                <p className="text-sm font-medium text-[#64748b]">{metric.label}</p>
+                <p className="mt-3 text-3xl font-semibold text-[#162033]">{metric.value}</p>
               </article>
             ))}
           </div>
@@ -146,15 +164,26 @@ export default function Home() {
               <h3 className="text-lg font-semibold">Integrations</h3>
             </div>
             <div className="divide-y divide-[#e2e8f0]">
-              {integrationStatuses.map(([name, status, detail]) => (
-                <div key={name} className="p-5">
+              {integrationStatuses.map((integration) => (
+                <div key={integration.name} className="p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">{name}</p>
+                    <p className="font-medium">{integration.name}</p>
                     <span className="rounded-md bg-[#ecfdf5] px-2 py-1 text-xs font-semibold text-[#047857]">
-                      {status}
+                      {integration.status}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-[#64748b]">{detail}</p>
+                  <p className="mt-2 text-sm text-[#64748b]">
+                    {integration.detail}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-[#475569]">
+                    <span>Last sync: {integration.lastSync}</span>
+                    <span>Failed: {integration.failedSyncs}</span>
+                  </div>
+                  {integration.status === "Error" ? (
+                    <button className="mt-3 rounded-md border border-[#cbd5e1] px-3 py-1.5 text-xs font-semibold text-[#334155] hover:bg-[#f8fafc]">
+                      Retry sync
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>

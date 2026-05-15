@@ -9,6 +9,7 @@ using NorvixHub.Application.Tenancy;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Intake;
+using NorvixHub.Domain.Integrations;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
 using NorvixHub.Infrastructure.Persistence;
@@ -235,5 +236,31 @@ public sealed class NorvixHubApiFactory : WebApplicationFactory<Program>, IAsync
         dbContext.Documents.Add(document);
         await dbContext.SaveChangesAsync();
         return document.Id;
+    }
+
+    public async Task<Guid> CreateSecondTenantFailedSyncRunAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var connection = new IntegrationConnection
+        {
+            TenantId = SecondTenantId,
+            Provider = "tripletex",
+            DisplayName = "Tripletex Accounting"
+        };
+        connection.Connect("{\"forceFailure\":true}", null, DateTimeOffset.UtcNow);
+
+        var run = new IntegrationSyncRun
+        {
+            TenantId = SecondTenantId,
+            ConnectionId = connection.Id,
+            Provider = "tripletex",
+            TriggeredBy = "Manual"
+        };
+        run.Complete(IntegrationSyncStatus.Failed, 0, "Second tenant failure.", DateTimeOffset.UtcNow);
+        dbContext.IntegrationConnections.Add(connection);
+        dbContext.IntegrationSyncRuns.Add(run);
+        await dbContext.SaveChangesAsync();
+        return run.Id;
     }
 }

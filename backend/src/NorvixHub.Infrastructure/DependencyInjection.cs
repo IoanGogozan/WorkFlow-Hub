@@ -4,10 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using NorvixHub.Application.AI;
 using NorvixHub.Application.Audit;
 using NorvixHub.Application.Documents;
+using NorvixHub.Application.Integrations;
 using NorvixHub.Application.Organizations;
 using NorvixHub.Infrastructure.AI;
 using NorvixHub.Infrastructure.Audit;
 using NorvixHub.Infrastructure.Documents;
+using NorvixHub.Infrastructure.Integrations;
 using NorvixHub.Infrastructure.Organizations;
 using NorvixHub.Infrastructure.Persistence;
 
@@ -27,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
         services.AddScoped<IFileStorage, LocalFileStorage>();
         services.AddScoped<IDocumentClassificationProvider, MockDocumentClassificationProvider>();
+        services.AddScoped<IIntegrationSyncAdapter, MockIntegrationSyncAdapter>();
         services.Configure<LocalFileStorageOptions>(options =>
             configuration.GetSection("Storage:Local").Bind(options));
         services.Configure<BrregOptions>(options =>

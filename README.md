@@ -70,6 +70,13 @@ Run backend tests with local .NET SDK:
 dotnet test backend/NorvixHub.sln --configuration Release
 ```
 
+Restore local .NET tools before creating EF migrations:
+
+```bash
+dotnet tool restore
+dotnet tool run dotnet-ef migrations add MigrationName --project backend/src/NorvixHub.Infrastructure --startup-project backend/src/NorvixHub.Api --output-dir Persistence/Migrations
+```
+
 Run backend tests through Docker when .NET is not installed locally:
 
 ```bash
