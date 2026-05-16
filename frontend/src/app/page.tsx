@@ -51,7 +51,7 @@ const integrationStatuses = [
   {
     name: "Power BI / Fabric",
     status: "Mocked",
-    detail: "CSV/JSON export first",
+    detail: "Metrics export available as CSV and JSON",
     lastSync: "Pending",
     failedSyncs: "0",
   },
