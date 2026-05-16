@@ -30,6 +30,7 @@ const integrationStatuses = [
   {
     name: "Brønnøysundregistrene",
     status: "Connected",
+    tone: "ok",
     detail: "Organization lookup adapter",
     lastSync: "12 min ago",
     failedSyncs: "0",
@@ -37,6 +38,7 @@ const integrationStatuses = [
   {
     name: "Microsoft Graph / SharePoint",
     status: "Mocked",
+    tone: "mock",
     detail: "Document library sync path",
     lastSync: "Ready",
     failedSyncs: "0",
@@ -44,6 +46,7 @@ const integrationStatuses = [
   {
     name: "Tripletex Accounting",
     status: "Error",
+    tone: "error",
     detail: "Mock failure available for retry testing",
     lastSync: "Failed 18 min ago",
     failedSyncs: "1",
@@ -51,11 +54,18 @@ const integrationStatuses = [
   {
     name: "Power BI / Fabric",
     status: "Mocked",
+    tone: "mock",
     detail: "Metrics export available as CSV and JSON",
     lastSync: "Pending",
     failedSyncs: "0",
   },
 ];
+
+const statusStyles = {
+  ok: "bg-[#dcfce7] text-[#166534] ring-[#86efac]",
+  mock: "bg-[#eff6ff] text-[#1d4ed8] ring-[#bfdbfe]",
+  error: "bg-[#fee2e2] text-[#b91c1c] ring-[#fca5a5]",
+};
 
 export default function Home() {
   return (
@@ -168,7 +178,9 @@ export default function Home() {
                 <div key={integration.name} className="p-5">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-medium">{integration.name}</p>
-                    <span className="rounded-md bg-[#ecfdf5] px-2 py-1 text-xs font-semibold text-[#047857]">
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs font-semibold ring-1 ${statusStyles[integration.tone as keyof typeof statusStyles]}`}
+                    >
                       {integration.status}
                     </span>
                   </div>
@@ -177,10 +189,18 @@ export default function Home() {
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-[#475569]">
                     <span>Last sync: {integration.lastSync}</span>
-                    <span>Failed: {integration.failedSyncs}</span>
+                    <span
+                      className={
+                        integration.failedSyncs === "0"
+                          ? "text-[#166534]"
+                          : "font-semibold text-[#b91c1c]"
+                      }
+                    >
+                      Failed: {integration.failedSyncs}
+                    </span>
                   </div>
                   {integration.status === "Error" ? (
-                    <button className="mt-3 rounded-md border border-[#cbd5e1] px-3 py-1.5 text-xs font-semibold text-[#334155] hover:bg-[#f8fafc]">
+                    <button className="mt-3 rounded-md border border-[#fca5a5] bg-[#fef2f2] px-3 py-1.5 text-xs font-semibold text-[#b91c1c] hover:bg-[#fee2e2]">
                       Retry sync
                     </button>
                   ) : null}
