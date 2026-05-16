@@ -1,0 +1,10 @@
+{
+  "name": "norvix-workflow-hub",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -ExecutionPolicy Bypass -File scripts/dev.ps1",
+    "test:backend": "dotnet test backend/NorvixHub.sln --configuration Release",
+    "test:frontend": "npm --prefix frontend run lint && npm --prefix frontend run build"
+  }
+}

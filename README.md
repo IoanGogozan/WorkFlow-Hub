@@ -70,6 +70,14 @@ docker compose up -d
 
 PostgreSQL is exposed on host port `55432` to avoid collisions with other local projects.
 
+Start the full local app with one command from the repository root:
+
+```powershell
+npm run dev
+```
+
+This starts Docker Compose dependencies, the ASP.NET Core API on `http://localhost:5000`, and the Next.js frontend on `http://localhost:3000`.
+
 Run frontend checks:
 
 ```bash
