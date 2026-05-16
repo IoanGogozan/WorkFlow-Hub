@@ -1,63 +1,85 @@
 # Norvix WorkFlow Hub
 
-Norvix WorkFlow Hub is a professional B2B workflow platform that demonstrates how Norvix AS can connect existing systems, automate data and document workflows, support AI-assisted administration with human review, and provide operational visibility for Norwegian organizations.
+Norvix WorkFlow Hub is a B2B workflow platform for Norwegian organizations that need to connect intake, company lookup, case handling, document control, AI-assisted review, secure delivery, audit logs, and operational reporting.
 
 Norwegian subtitle:
 
 > Fra e-post og skjema til sak, dokumentasjon, fakturagrunnlag og rapportering - uten dobbeltregistrering.
 
-## Demo Scenario
+## Product Scenario
 
-The demo customer is the fictional company **Agder Drift & Service AS**, a Norwegian technical services company with 45 employees. The company already uses Microsoft 365, SharePoint, Outlook, Excel, an accounting/project system in the Tripletex/PowerOffice/Fiken category, and Power BI.
+The reference customer profile is a Norwegian technical services company that already uses Microsoft 365, SharePoint, Outlook, Excel, an accounting/project system in the Tripletex/PowerOffice/Fiken category, and Power BI.
 
 The problem is not lack of digital tools. The problem is manual work between systems: copying customer data, moving attachments, tracking case status in spreadsheets, preparing delivery packages manually, and producing reports after the fact.
 
-## MVP Goal
+## Product Goal
 
-The MVP supports one complete flow:
+The application is intended to support one complete operational flow:
 
-1. A request is received from manual entry, mock email, mock form, or API.
+1. A request is received from manual entry, email/form adapters, or API.
 2. The request appears in the Intake Inbox.
 3. AI proposes customer, organization number, category, urgency, tasks, summary, missing information, and document metadata.
 4. A user approves, edits, or rejects AI suggestions.
 5. The system creates a case/project workspace.
 6. Customer data is enriched from Bronnoysundregistrene / Enhetsregisteret.
 7. Documents are uploaded, versioned, classified, and approved.
-8. Missing information is shown.
-9. A PDF delivery summary is generated.
+8. Missing information is shown before delivery.
+9. A delivery summary is generated.
 10. A secure expiring delivery link is created.
 11. Audit events are recorded.
 12. The dashboard shows operational status, bottlenecks, and exportable metrics.
 
-## Technology Direction
+## Current Product Status
 
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui or Radix UI, React Hook Form, Zod, MSAL.js, Playwright.
-- Backend: ASP.NET Core / .NET 10, C#, Entity Framework Core, PostgreSQL, OpenAPI, xUnit, Testcontainers, Serilog, OpenTelemetry.
+Norvix WorkFlow Hub currently has a working local product flow backed by ASP.NET Core APIs, PostgreSQL persistence, tenant-scoped data access, audit events, a Next.js frontend, document workflow, delivery links, analytics, and automated backend coverage.
+
+The active target is a public interactive demo for Norvix AS. The demo should let each website visitor start an isolated temporary workspace with fictional data, complete the full workflow, and have demo data expire automatically.
+
+Implemented capabilities:
+
+- Tenant-scoped local development auth, RBAC, audit events, and tenant isolation tests.
+- Intake inbox with manual/source-based creation and validation.
+- AI review workflow with stored analysis runs, review tasks, human approval, and rejection.
+- Case workspace with conversion from intake, tasks, notes, linked documents, and activity.
+- Brreg organization lookup and customer enrichment APIs.
+- Document upload, validation, versioning, classification, human approval, and case linking.
+- Integration dashboard with connection state, sync history, failure, and retry flows.
+- Delivery packages with selected documents, generated summary record, secure expiring public link, revoke, public page, and access log.
+- Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
+- Frontend pages for dashboard, intakes, cases, documents, delivery packages, public delivery links, and integrations.
+
+Local/development-only components still to replace before public demo or real customer production deployment:
+
+- Public demo session auth is not yet implemented.
+- Header-based local dev auth must be replaced with Microsoft Entra ID / OIDC.
+- AI provider is currently a mock adapter and must be replaced with a governed real provider before processing real customer data.
+- Microsoft Graph/SharePoint, Tripletex/accounting, and Power BI/Fabric adapters are currently mock adapters.
+- File storage is local-development oriented and must move to Azure Blob Storage or equivalent durable object storage.
+- Delivery summary currently creates a summary document record; production PDF rendering still needs implementation.
+- Seed/reference data is fictional and must not be mixed with real customer data.
+
+## Deployment Direction
+
+The target deployment architecture is:
+
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS.
+- Backend: ASP.NET Core / .NET 10, C#, Entity Framework Core, PostgreSQL, OpenAPI, xUnit.
 - Storage: Azure Blob Storage compatible storage, Azurite locally.
 - Local dependencies: Docker Compose with PostgreSQL, Azurite, Mailpit, optional Seq.
 - Cloud: Azure App Service or Azure Container Apps, Azure Database for PostgreSQL Flexible Server, Blob Storage, Key Vault, Application Insights, Service Bus or Storage Queue.
 - Infrastructure: Terraform and GitHub Actions.
 
-## Current Status
+## Verification
 
-The backend workflow foundation is implemented with tenant-scoped APIs, PostgreSQL persistence, audit events, local dev auth, mock AI, mock integrations, document workflow, delivery links, analytics, and automated tests.
+Verification targets:
 
-Frontend integration is in progress. The dashboard, intake inbox, intake creation, AI review actions, case conversion, case list/detail, and integration management pages are connected to existing backend APIs. Document workflow and delivery package UI remain the next implementation phases.
+- Backend integration, unit, and contract tests.
+- Frontend lint and production build.
+- `npm audit`.
+- Docker Compose config validation.
+- Manual review for file size and architecture boundaries.
 
-Backend/API capabilities currently implemented:
-
-- Tenant-scoped local dev auth, RBAC, audit events, and tenant isolation tests.
-- Intake inbox with manual/mock-source creation and validation.
-- AI review workflow with mock provider, stored analysis runs, review tasks, approval and rejection.
-- Case workspace with tasks, notes, linked documents, and activity.
-- Brreg organization lookup and customer enrichment.
-- Document upload, file validation, versioning, AI classification, human approval, and case linking.
-- Integration dashboard with Brreg, Microsoft Graph/SharePoint mock, Tripletex-style mock, Power BI/Fabric mock, sync history, failure and retry.
-- Delivery packages with selected documents, PDF summary placeholder, secure expiring public link, revoke, and access log.
-- Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
-- Portfolio documentation, architecture diagram, demo script, and screenshot workflow.
-
-Current verification baseline: backend integration/unit/contract tests, frontend lint/build, npm audit, Docker Compose config, and manual file-size checks.
+Record a command under "Validated locally" only after it has been run in the current environment.
 
 ## Local Setup
 
@@ -137,48 +159,46 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 
 ## Documentation Index
 
+- [Public Demo Implementation Plan - Draft](docs/public-demo-implementation-plan-draft.md)
+- [Current Implementation Status](docs/current-implementation-status.md)
 - [Product Brief](docs/product-brief.md)
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
 - [Data Model](docs/data-model.md)
 - [API Contract Draft](docs/api-contract.md)
-- [Implementation Roadmap](docs/implementation-roadmap.md)
-- [Functional Implementation Plan](docs/functional-implementation-plan.md)
 - [Security and Privacy](docs/security-and-privacy.md)
 - [Norway Legal Checklist](docs/legal-checklist-norway.md)
 - [DPIA Screening](docs/dpia-screening.md)
 - [Testing Strategy](docs/testing-strategy.md)
 - [Coding Standards](docs/coding-standards.md)
-- [Demo Script](docs/demo-script.md)
+- [Product Walkthrough](docs/product-walkthrough.md)
 - [Portfolio Summary](docs/portfolio-summary.md)
-- [Final Acceptance Status](docs/final-acceptance-status.md)
 - [Architecture Diagram](docs/architecture-diagram.md)
 - [Screenshots](docs/screenshots.md)
-- [Backlog](docs/backlog.md)
 - [References](docs/references.md)
 
-## Non-Goals for MVP
+## Non-Goals for First Production Release
 
-- Full CRM or ERP.
+- Full CRM or ERP replacement.
 - Real invoice issuing.
 - Full SharePoint migration.
 - Autonomous AI decisions.
 - Public SaaS billing.
-- Real production credentials.
-- Complex multi-region deployment.
+- Unreviewed AI writes to external systems.
+- Multi-region enterprise deployment.
 
 ## Implementation Rule
 
-Build the system as if it may later be used by real Norwegian customers:
+Build the system as a deployable product for Norwegian customers:
 
-- Use fake demo data only.
 - Keep all business records tenant-scoped.
-- Add tenant isolation tests early.
-- Mock integrations first.
+- For public demo mode, derive tenant context from the demo session token, not from client-provided tenant headers.
+- Replace local-only adapters before real customer production use.
+- Use fictional seed data only in development and staging.
 - Treat AI output as suggestions only.
 - Require human approval before final case, document, delivery, or external action changes.
 - Keep audit logs for important actions.
-- Add serious automated tests for every module, including negative tests for invalid input, forbidden actions, cross-tenant access, expired/revoked links, integration failures, AI failures, and unsafe uploads.
+- Add automated tests for every module, including negative tests for invalid input, forbidden actions, cross-tenant access, expired/revoked links, integration failures, AI failures, and unsafe uploads.
 - Keep code files small and modular. Follow the file size limits in [Coding Standards](docs/coding-standards.md).
 
 ## GitHub Repository
@@ -187,17 +207,18 @@ Target repository:
 
 https://github.com/IoanGogozan/WorkFlow-Hub
 
-## Portfolio Demo
+## Product Walkthrough
 
-Recommended 5-minute demo path:
+Recommended 5-minute product walkthrough path:
 
-1. Show the operational dashboard and integration status.
-2. Create/list an intake.
-3. Run AI analysis and approve suggestions.
-4. Convert intake to case.
-5. Enrich customer data through Brreg.
-6. Upload and classify a document.
-7. Link the document to the case.
-8. Create a delivery package and public link.
-9. Open the public delivery link and show access logging.
-10. Export metrics as CSV/JSON.
+1. Start a demo workspace from `/demo`.
+2. Show the operational dashboard and integration status.
+3. Create/list an intake.
+4. Run AI analysis and approve suggestions.
+5. Convert intake to case.
+6. Enrich customer data through Brreg.
+7. Select or attach a demo-safe document and classify it.
+8. Link the document to the case.
+9. Create a delivery package and public link.
+10. Open the public delivery link and show access logging.
+11. Export metrics as CSV/JSON.
