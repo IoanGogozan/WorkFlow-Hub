@@ -26,6 +26,7 @@ public sealed class BrregClient(HttpClient httpClient, IOptions<BrregOptions> op
         string organizationNumber,
         CancellationToken cancellationToken)
     {
+        EnsureBaseAddress();
         using var response = await httpClient.GetAsync($"enheter/{organizationNumber}", cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
@@ -40,11 +41,16 @@ public sealed class BrregClient(HttpClient httpClient, IOptions<BrregOptions> op
 
     private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)
     {
-        httpClient.BaseAddress ??= new Uri(options.Value.BaseUrl);
+        EnsureBaseAddress();
         using var response = await httpClient.GetAsync(path, cancellationToken);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonDocument.Parse(content);
+    }
+
+    private void EnsureBaseAddress()
+    {
+        httpClient.BaseAddress ??= new Uri(options.Value.BaseUrl);
     }
 
     private static BrregOrganization MapOrganization(JsonElement element)
@@ -97,4 +103,3 @@ public sealed class BrregClient(HttpClient httpClient, IOptions<BrregOptions> op
         return value.Length == 9 && value.All(char.IsDigit);
     }
 }
-

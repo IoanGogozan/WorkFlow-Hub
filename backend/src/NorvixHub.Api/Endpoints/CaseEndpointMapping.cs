@@ -14,7 +14,7 @@ public static partial class CaseEndpoints
         {
             TenantId = intake.TenantId,
             CreatedBy = tenantContext.UserId,
-            CaseNumber = $"CASE-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}",
+            CaseNumber = $"CASE-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..28],
             Title = intake.Subject,
             Description = intake.Body,
             OwnerUserId = tenantContext.UserId,
@@ -89,4 +89,3 @@ public static partial class CaseEndpoints
         return auditEventWriter.WriteAsync(request, cancellationToken);
     }
 }
-

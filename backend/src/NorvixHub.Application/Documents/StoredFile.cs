@@ -6,3 +6,4 @@ public sealed record StoredFile(
     string Sha256Hash,
     long SizeBytes);
 
+public sealed record StoredFileContent(Stream Content, long SizeBytes);

@@ -19,6 +19,7 @@ public static partial class DeliveryEndpoints
         DeliveryPackage package,
         NorvixHubDbContext dbContext,
         string? token,
+        Guid? tokenLinkId,
         CancellationToken cancellationToken)
     {
         var items = await dbContext.DeliveryPackageItems
@@ -35,7 +36,7 @@ public static partial class DeliveryEndpoints
                 link.ExpiresAt,
                 link.RevokedAt,
                 link.RecipientEmail,
-                token))
+                tokenLinkId == link.Id ? token : null))
             .ToListAsync(cancellationToken);
 
         return new DeliveryPackageResponse(

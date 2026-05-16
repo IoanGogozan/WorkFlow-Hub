@@ -82,8 +82,47 @@ public sealed partial class DeliveryEndpointTests : IClassFixture<NorvixHubApiFa
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
         var logCountAfter = await _factory.CountDeliveryAccessLogsAsync(package.Id);
         logCountAfter.Should().Be(logCountBefore + 1);
+    }
+
+    [Fact]
+    public async Task Generated_summary_pdf_can_be_downloaded()
+    {
+        using var client = _factory.CreateClient();
+        var package = await CreateReadyPackageAsync(client);
+
+        var generated = await PostJsonAsync<DeliveryPackageResponse>(
+            client,
+            $"/api/delivery-packages/{package.Id}/generate-pdf");
+
+        generated.SummaryPdfDocumentId.Should().NotBeNull();
+        using var response = await SendWithDemoAuthAsync(
+            client,
+            HttpMethod.Get,
+            $"/api/documents/{generated.SummaryPdfDocumentId}/download");
+        var bytes = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+        bytes.Should().StartWith("%PDF"u8.ToArray());
+    }
+
+    [Fact]
+    public async Task Create_link_response_exposes_token_only_for_new_link()
+    {
+        using var client = _factory.CreateClient();
+        var package = await CreateReadyPackageAsync(client);
+        await CreateLinkAsync(client, package.Id, DateTimeOffset.UtcNow.AddDays(1));
+
+        var response = await CreateLinkAsync(client, package.Id, DateTimeOffset.UtcNow.AddDays(2));
+
+        response.Links.Should().HaveCount(2);
+        response.Links.Count(link => link.Token is not null).Should().Be(1);
+        response.Links.Single(link => link.Token is not null).ExpiresAt.Should().BeCloseTo(
+            DateTimeOffset.UtcNow.AddDays(2),
+            TimeSpan.FromMinutes(1));
     }
 
     [Fact]

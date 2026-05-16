@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NorvixHub.Application.Documents;
 using NorvixHub.Contracts.Delivery;
 using NorvixHub.Domain.Delivery;
 using NorvixHub.Infrastructure.Persistence;
@@ -37,6 +38,7 @@ public static partial class DeliveryEndpoints
         string token,
         Guid documentId,
         NorvixHubDbContext dbContext,
+        IFileStorage fileStorage,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -65,7 +67,33 @@ public static partial class DeliveryEndpoints
         var document = await dbContext.Documents.SingleAsync(
             candidate => candidate.Id == documentId && candidate.TenantId == state.Package.TenantId,
             cancellationToken);
-        return Results.Ok(new PublicDeliveryDocumentResponse(document.Id, document.Title, document.DocumentType));
+        if (document.CurrentVersionId is not { } versionId)
+        {
+            return Results.NotFound();
+        }
+
+        var version = await dbContext.DocumentVersions.SingleOrDefaultAsync(
+            candidate => candidate.Id == versionId && candidate.TenantId == state.Package.TenantId,
+            cancellationToken);
+        if (version is null)
+        {
+            return Results.NotFound();
+        }
+
+        var stored = await fileStorage.OpenReadAsync(
+            version.BlobContainer,
+            version.BlobName,
+            cancellationToken);
+        if (stored is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.File(
+            stored.Content,
+            version.ContentType,
+            version.OriginalFilename,
+            enableRangeProcessing: true);
     }
 
     private static async Task<PublicDeliveryState?> FindPublicStateAsync(

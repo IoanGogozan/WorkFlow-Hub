@@ -34,7 +34,11 @@ public static class DependencyInjection
             configuration.GetSection("Storage:Local").Bind(options));
         services.Configure<BrregOptions>(options =>
             configuration.GetSection("Brreg").Bind(options));
-        services.AddHttpClient<IBrregClient, BrregClient>();
+        services.AddHttpClient<IBrregClient, BrregClient>((provider, client) =>
+        {
+            var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<BrregOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+        });
         return services;
     }
 }

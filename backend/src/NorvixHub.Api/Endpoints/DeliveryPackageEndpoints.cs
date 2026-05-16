@@ -61,7 +61,7 @@ public static partial class DeliveryEndpoints
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await WriteAuditAsync(auditEventWriter, package, tenantContext, httpContext, "DeliveryPackageCreated", cancellationToken);
-        return Results.Created($"/api/delivery-packages/{package.Id}", await ToResponseAsync(package, dbContext, null, cancellationToken));
+        return Results.Created($"/api/delivery-packages/{package.Id}", await ToResponseAsync(package, dbContext, null, null, cancellationToken));
     }
 
     private static async Task<IResult> GetPackage(
@@ -73,6 +73,6 @@ public static partial class DeliveryEndpoints
         var package = await FindPackageAsync(id, tenantContext, dbContext, cancellationToken);
         return package is null
             ? Results.NotFound()
-            : Results.Ok(await ToResponseAsync(package, dbContext, null, cancellationToken));
+            : Results.Ok(await ToResponseAsync(package, dbContext, null, null, cancellationToken));
     }
 }

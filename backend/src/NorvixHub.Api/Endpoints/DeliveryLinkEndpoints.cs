@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NorvixHub.Application.Audit;
+using NorvixHub.Application.Documents;
 using NorvixHub.Application.Tenancy;
 using NorvixHub.Contracts.Delivery;
 using NorvixHub.Domain.Delivery;
@@ -14,6 +15,7 @@ public static partial class DeliveryEndpoints
         Guid id,
         ITenantContext tenantContext,
         NorvixHubDbContext dbContext,
+        IFileStorage fileStorage,
         IAuditEventWriter auditEventWriter,
         HttpContext httpContext,
         CancellationToken cancellationToken)
@@ -29,18 +31,52 @@ public static partial class DeliveryEndpoints
             return Results.NotFound();
         }
 
+        var caseTitle = await dbContext.Cases
+            .Where(caseWorkspace => caseWorkspace.Id == package.CaseId && caseWorkspace.TenantId == package.TenantId)
+            .Select(caseWorkspace => caseWorkspace.Title)
+            .SingleAsync(cancellationToken);
+        var documentTitles = await dbContext.DeliveryPackageItems
+            .Where(item => item.TenantId == package.TenantId && item.DeliveryPackageId == package.Id)
+            .OrderBy(item => item.DisplayName)
+            .Select(item => item.DisplayName)
+            .ToListAsync(cancellationToken);
+        var pdfBytes = CreatePdfSummaryBytes(package.Title, caseTitle, documentTitles);
+        await using var pdfStream = new MemoryStream(pdfBytes);
+        var filename = $"{SanitizeFilename(package.Title)}-summary.pdf";
+        var stored = await fileStorage.SaveAsync(
+            pdfStream,
+            filename,
+            "application/pdf",
+            cancellationToken);
+
         var summaryDocument = new DocumentRecord
         {
             TenantId = package.TenantId,
             CreatedBy = tenantContext.UserId,
-            Title = $"{package.Title} summary.pdf"
+            Title = filename
+        };
+        var version = new DocumentVersion
+        {
+            TenantId = summaryDocument.TenantId,
+            CreatedBy = tenantContext.UserId,
+            DocumentId = summaryDocument.Id,
+            VersionNumber = 1,
+            BlobContainer = stored.Container,
+            BlobName = stored.BlobName,
+            OriginalFilename = filename,
+            ContentType = "application/pdf",
+            SizeBytes = stored.SizeBytes,
+            Sha256Hash = stored.Sha256Hash,
+            UploadedByUserId = tenantContext.UserId
         };
         summaryDocument.LinkToCase(package.CaseId, tenantContext.UserId, DateTimeOffset.UtcNow);
+        summaryDocument.SetCurrentVersion(version.Id, tenantContext.UserId, DateTimeOffset.UtcNow);
         package.MarkSummaryGenerated(summaryDocument.Id, tenantContext.UserId, DateTimeOffset.UtcNow);
         dbContext.Documents.Add(summaryDocument);
+        dbContext.DocumentVersions.Add(version);
         await dbContext.SaveChangesAsync(cancellationToken);
         await WriteAuditAsync(auditEventWriter, package, tenantContext, httpContext, "DeliveryPdfGenerated", cancellationToken);
-        return Results.Ok(await ToResponseAsync(package, dbContext, null, cancellationToken));
+        return Results.Ok(await ToResponseAsync(package, dbContext, null, null, cancellationToken));
     }
 
     private static async Task<IResult> CreateLink(
@@ -82,7 +118,7 @@ public static partial class DeliveryEndpoints
         dbContext.DeliveryLinks.Add(link);
         await dbContext.SaveChangesAsync(cancellationToken);
         await WriteAuditAsync(auditEventWriter, package, tenantContext, httpContext, "DeliveryLinkCreated", cancellationToken);
-        return Results.Ok(await ToResponseAsync(package, dbContext, token, cancellationToken));
+        return Results.Ok(await ToResponseAsync(package, dbContext, token, link.Id, cancellationToken));
     }
 
     private static async Task<IResult> RevokeLink(

@@ -9,6 +9,7 @@ public static partial class DocumentEndpoints
         group.MapGet("/", ListDocuments).WithName("ListDocuments");
         group.MapPost("/", UploadDocument).WithName("UploadDocument");
         group.MapGet("/{id:guid}", GetDocument).WithName("GetDocument");
+        group.MapGet("/{id:guid}/download", DownloadDocument).WithName("DownloadDocument");
         group.MapPost("/{id:guid}/versions", UploadVersion).WithName("UploadDocumentVersion");
         group.MapPost("/{id:guid}/link-to-case", LinkToCase).WithName("LinkDocumentToCase");
         group.MapPost("/{id:guid}/analyze", AnalyzeDocument).WithName("AnalyzeDocument");

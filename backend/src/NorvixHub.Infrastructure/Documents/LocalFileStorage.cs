@@ -30,5 +30,25 @@ public sealed class LocalFileStorage(IOptions<LocalFileStorageOptions> options) 
             Convert.ToHexString(sha256.Hash ?? Array.Empty<byte>()),
             new FileInfo(targetPath).Length);
     }
-}
 
+    public Task<StoredFileContent?> OpenReadAsync(
+        string container,
+        string blobName,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(container, options.Value.Container, StringComparison.Ordinal))
+        {
+            return Task.FromResult<StoredFileContent?>(null);
+        }
+
+        var rootPath = Path.GetFullPath(options.Value.RootPath);
+        var targetPath = Path.GetFullPath(Path.Combine(rootPath, blobName));
+        if (!targetPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase) || !File.Exists(targetPath))
+        {
+            return Task.FromResult<StoredFileContent?>(null);
+        }
+
+        Stream stream = File.OpenRead(targetPath);
+        return Task.FromResult<StoredFileContent?>(new StoredFileContent(stream, stream.Length));
+    }
+}

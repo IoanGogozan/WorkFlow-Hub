@@ -29,6 +29,7 @@ if (-not (Test-Path (Join-Path $root "frontend/node_modules"))) {
 
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 $env:ASPNETCORE_URLS = "http://localhost:5000"
+$env:MSBUILDDISABLENODEREUSE = "1"
 
 Write-Host ""
 Write-Host "Starting Norvix WorkFlow Hub..."
@@ -48,7 +49,8 @@ try {
         Set-Location $Root
         $env:ASPNETCORE_ENVIRONMENT = "Development"
         $env:ASPNETCORE_URLS = "http://localhost:5000"
-        dotnet run --project backend/src/NorvixHub.Api
+        $env:MSBUILDDISABLENODEREUSE = "1"
+        dotnet run --project backend/src/NorvixHub.Api -nr:false
     } -ArgumentList $root.Path
 
     $jobs += Start-Job -Name "NorvixHub.Frontend" -ScriptBlock {

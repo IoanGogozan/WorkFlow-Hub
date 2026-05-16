@@ -7,5 +7,9 @@ public interface IFileStorage
         string originalFilename,
         string contentType,
         CancellationToken cancellationToken);
-}
 
+    Task<StoredFileContent?> OpenReadAsync(
+        string container,
+        string blobName,
+        CancellationToken cancellationToken);
+}

@@ -38,7 +38,13 @@ The MVP supports one complete flow:
 - Cloud: Azure App Service or Azure Container Apps, Azure Database for PostgreSQL Flexible Server, Blob Storage, Key Vault, Application Insights, Service Bus or Storage Queue.
 - Infrastructure: Terraform and GitHub Actions.
 
-## Implemented MVP
+## Current Status
+
+The backend workflow foundation is implemented with tenant-scoped APIs, PostgreSQL persistence, audit events, local dev auth, mock AI, mock integrations, document workflow, delivery links, analytics, and automated tests.
+
+Frontend integration is in progress. The dashboard, intake inbox, intake creation, AI review actions, case conversion, case list/detail, and integration management pages are connected to existing backend APIs. Document workflow and delivery package UI remain the next implementation phases.
+
+Backend/API capabilities currently implemented:
 
 - Tenant-scoped local dev auth, RBAC, audit events, and tenant isolation tests.
 - Intake inbox with manual/mock-source creation and validation.
@@ -90,8 +96,10 @@ npm run build
 Run backend tests with local .NET SDK:
 
 ```bash
-dotnet test backend/NorvixHub.sln --configuration Release
+dotnet test backend/NorvixHub.sln --configuration Release -nr:false
 ```
+
+The `-nr:false` flag disables MSBuild node reuse. This avoids intermittent `Child node exited prematurely` failures on Windows when IDE build hosts or stale MSBuild nodes are active, while still allowing normal project-level parallelism.
 
 Restore local .NET tools before creating EF migrations:
 
@@ -135,6 +143,7 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 - [Data Model](docs/data-model.md)
 - [API Contract Draft](docs/api-contract.md)
 - [Implementation Roadmap](docs/implementation-roadmap.md)
+- [Functional Implementation Plan](docs/functional-implementation-plan.md)
 - [Security and Privacy](docs/security-and-privacy.md)
 - [Norway Legal Checklist](docs/legal-checklist-norway.md)
 - [DPIA Screening](docs/dpia-screening.md)

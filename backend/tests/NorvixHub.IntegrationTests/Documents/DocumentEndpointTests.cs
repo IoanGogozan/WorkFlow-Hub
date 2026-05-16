@@ -58,6 +58,24 @@ public sealed partial class DocumentEndpointTests : IClassFixture<NorvixHubApiFa
     }
 
     [Fact]
+    public async Task Uploaded_document_can_be_downloaded()
+    {
+        using var client = _factory.CreateClient();
+        var document = await UploadDocumentAsync(client);
+
+        using var response = await SendWithDemoAuthAsync(
+            client,
+            HttpMethod.Get,
+            $"/api/documents/{document.Id}/download");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+        response.Content.Headers.ContentDisposition!.FileNameStar.Should().Be("demo.pdf");
+        var content = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        content.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task Upload_version_creates_next_version()
     {
         using var client = _factory.CreateClient();

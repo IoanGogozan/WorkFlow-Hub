@@ -1,4 +1,9 @@
-# API Contract Draft
+# API Contract
+
+Status markers:
+
+- `Implemented` means the endpoint exists in the current backend.
+- `Planned` means the endpoint is part of the product direction but is not implemented yet.
 
 ## API Principles
 
@@ -30,18 +35,28 @@ POST /api/tenants/{tenantId}/switch
 GET /api/intakes
 POST /api/intakes
 GET /api/intakes/{id}
-PATCH /api/intakes/{id}
-POST /api/intakes/{id}/attachments
 POST /api/intakes/{id}/analyze
 POST /api/intakes/{id}/approve-ai
 POST /api/intakes/{id}/reject-ai
 POST /api/intakes/{id}/convert-to-case
 ```
 
+Planned:
+
+```http
+PATCH /api/intakes/{id}
+POST /api/intakes/{id}/attachments
+```
+
 ## Review Tasks
 
 ```http
 GET /api/review-tasks
+```
+
+Planned:
+
+```http
 GET /api/review-tasks/{id}
 POST /api/review-tasks/{id}/approve
 POST /api/review-tasks/{id}/reject
@@ -52,13 +67,18 @@ POST /api/review-tasks/{id}/request-changes
 
 ```http
 GET /api/cases
-POST /api/cases
 GET /api/cases/{id}
-PATCH /api/cases/{id}
 POST /api/cases/{id}/tasks
-PATCH /api/cases/{id}/tasks/{taskId}
 POST /api/cases/{id}/notes
 GET /api/cases/{id}/activity
+```
+
+Planned:
+
+```http
+POST /api/cases
+PATCH /api/cases/{id}
+PATCH /api/cases/{id}/tasks/{taskId}
 GET /api/cases/{id}/missing-information
 ```
 
@@ -68,12 +88,17 @@ GET /api/cases/{id}/missing-information
 GET /api/documents
 POST /api/documents
 GET /api/documents/{id}
+GET /api/documents/{id}/download
 POST /api/documents/{id}/versions
 POST /api/documents/{id}/analyze
 POST /api/documents/{id}/approve-classification
-POST /api/documents/{id}/reject-classification
 POST /api/documents/{id}/link-to-case
-GET /api/documents/{id}/download
+```
+
+Planned:
+
+```http
+POST /api/documents/{id}/reject-classification
 ```
 
 ## Organizations and Brreg
@@ -82,6 +107,11 @@ GET /api/documents/{id}/download
 GET /api/organizations/search?query=
 GET /api/organizations/brreg/{orgNumber}
 POST /api/customers/from-brreg
+```
+
+Planned:
+
+```http
 POST /api/customers/{id}/refresh-brreg
 ```
 
@@ -102,14 +132,19 @@ POST /api/integrations/{provider}/sync-runs/{syncRunId}/retry
 ```http
 POST /api/cases/{id}/delivery-packages
 GET /api/delivery-packages/{id}
-PATCH /api/delivery-packages/{id}
-POST /api/delivery-packages/{id}/items
-DELETE /api/delivery-packages/{id}/items/{itemId}
 POST /api/delivery-packages/{id}/generate-pdf
 POST /api/delivery-packages/{id}/create-link
 POST /api/delivery-links/{id}/revoke
 GET /delivery/{token}
 GET /delivery/{token}/documents/{documentId}
+```
+
+Planned:
+
+```http
+PATCH /api/delivery-packages/{id}
+POST /api/delivery-packages/{id}/items
+DELETE /api/delivery-packages/{id}/items/{itemId}
 ```
 
 ## Analytics

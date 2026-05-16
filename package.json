@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "powershell -ExecutionPolicy Bypass -File scripts/dev.ps1",
-    "test:backend": "dotnet test backend/NorvixHub.sln --configuration Release",
+    "test:backend": "dotnet test backend/NorvixHub.sln --configuration Release -nr:false",
     "test:frontend": "npm --prefix frontend run lint && npm --prefix frontend run build"
   }
 }
