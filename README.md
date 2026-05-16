@@ -14,7 +14,7 @@ The problem is not lack of digital tools. The problem is manual work between sys
 
 ## MVP Goal
 
-The MVP must support one complete flow:
+The MVP supports one complete flow:
 
 1. A request is received from manual entry, mock email, mock form, or API.
 2. The request appears in the Intake Inbox.
@@ -37,6 +37,21 @@ The MVP must support one complete flow:
 - Local dependencies: Docker Compose with PostgreSQL, Azurite, Mailpit, optional Seq.
 - Cloud: Azure App Service or Azure Container Apps, Azure Database for PostgreSQL Flexible Server, Blob Storage, Key Vault, Application Insights, Service Bus or Storage Queue.
 - Infrastructure: Terraform and GitHub Actions.
+
+## Implemented MVP
+
+- Tenant-scoped local dev auth, RBAC, audit events, and tenant isolation tests.
+- Intake inbox with manual/mock-source creation and validation.
+- AI review workflow with mock provider, stored analysis runs, review tasks, approval and rejection.
+- Case workspace with tasks, notes, linked documents, and activity.
+- Brreg organization lookup and customer enrichment.
+- Document upload, file validation, versioning, AI classification, human approval, and case linking.
+- Integration dashboard with Brreg, Microsoft Graph/SharePoint mock, Tripletex-style mock, Power BI/Fabric mock, sync history, failure and retry.
+- Delivery packages with selected documents, PDF summary placeholder, secure expiring public link, revoke, and access log.
+- Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
+- Portfolio documentation, architecture diagram, demo script, and screenshot workflow.
+
+Current verification baseline: backend integration/unit/contract tests, frontend lint/build, npm audit, Docker Compose config, and manual file-size checks.
 
 ## Local Setup
 
@@ -118,6 +133,10 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 - [Testing Strategy](docs/testing-strategy.md)
 - [Coding Standards](docs/coding-standards.md)
 - [Demo Script](docs/demo-script.md)
+- [Portfolio Summary](docs/portfolio-summary.md)
+- [Final Acceptance Status](docs/final-acceptance-status.md)
+- [Architecture Diagram](docs/architecture-diagram.md)
+- [Screenshots](docs/screenshots.md)
 - [Backlog](docs/backlog.md)
 - [References](docs/references.md)
 
@@ -150,3 +169,18 @@ Build the system as if it may later be used by real Norwegian customers:
 Target repository:
 
 https://github.com/IoanGogozan/WorkFlow-Hub
+
+## Portfolio Demo
+
+Recommended 5-minute demo path:
+
+1. Show the operational dashboard and integration status.
+2. Create/list an intake.
+3. Run AI analysis and approve suggestions.
+4. Convert intake to case.
+5. Enrich customer data through Brreg.
+6. Upload and classify a document.
+7. Link the document to the case.
+8. Create a delivery package and public link.
+9. Open the public delivery link and show access logging.
+10. Export metrics as CSV/JSON.
