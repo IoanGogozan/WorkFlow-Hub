@@ -54,7 +54,7 @@ export default function NewIntakePage() {
       <div className="mx-auto max-w-3xl px-6 py-6">
         <div className="mb-6">
           <p className="text-sm font-medium text-[#64748b]">New intake</p>
-          <h2 className="mt-2 text-3xl font-semibold">Create request</h2>
+          <h2 className="mt-2 text-3xl font-semibold">New intake</h2>
         </div>
 
         {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}

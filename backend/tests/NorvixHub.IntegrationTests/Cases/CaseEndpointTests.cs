@@ -2,7 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using NorvixHub.Application.Tenancy;
+using NorvixHub.Contracts.AI;
 using NorvixHub.Contracts.Cases;
+using NorvixHub.Contracts.Delivery;
+using NorvixHub.Contracts.Documents;
 using NorvixHub.Contracts.Intake;
 using NorvixHub.IntegrationTests.Support;
 using Xunit;
@@ -55,6 +58,80 @@ public sealed class CaseEndpointTests : IClassFixture<NorvixHubApiFactory>
             client,
             $"/api/cases/{createdCase.Id}/activity");
         activity.Should().Contain(item => item.Action == "CaseCreated");
+    }
+
+    [Fact]
+    public async Task Case_activity_includes_related_intake_document_delivery_and_public_access_events()
+    {
+        using var client = _factory.CreateClient();
+        var intake = await CreateIntakeAsync(client);
+        var analysis = await PostJsonAsync<AiAnalysisRunResponse>(
+            client,
+            $"/api/intakes/{intake.Id}/analyze");
+        await PostJsonAsync<IntakeItemResponse>(
+            client,
+            $"/api/intakes/{intake.Id}/approve-ai",
+            new ApproveAiSuggestionRequest(
+                analysis.Id,
+                analysis.Suggestion.CustomerName,
+                analysis.Suggestion.OrganizationNumber,
+                analysis.Suggestion.Category,
+                analysis.Suggestion.Urgency));
+        var createdCase = await PostJsonAsync<CaseResponse>(
+            client,
+            $"/api/intakes/{intake.Id}/convert-to-case");
+
+        var document = await PostJsonAsync<DocumentResponse>(client, "/api/documents/sample");
+        var classification = await PostJsonAsync<DocumentClassificationResponse>(
+            client,
+            $"/api/documents/{document.Id}/analyze");
+        await PostJsonAsync<DocumentResponse>(
+            client,
+            $"/api/documents/{document.Id}/approve-classification",
+            new ApproveDocumentClassificationRequest(
+                classification.AiAnalysisRunId,
+                classification.DocumentType,
+                classification.ExpiryDate));
+        await PostJsonAsync<DocumentResponse>(
+            client,
+            $"/api/documents/{document.Id}/link-to-case",
+            new LinkDocumentToCaseRequest(createdCase.Id));
+
+        var package = await PostJsonAsync<DeliveryPackageResponse>(
+            client,
+            $"/api/cases/{createdCase.Id}/delivery-packages",
+            new CreateDeliveryPackageRequest("Audit demo package", [document.Id]));
+        package = await PostJsonAsync<DeliveryPackageResponse>(
+            client,
+            $"/api/delivery-packages/{package.Id}/generate-pdf");
+        package = await PostJsonAsync<DeliveryPackageResponse>(
+            client,
+            $"/api/delivery-packages/{package.Id}/create-link",
+            new CreateDeliveryLinkRequest(null, DateTimeOffset.UtcNow.AddDays(7)));
+        var token = package.Links.Single(link => link.Token is not null).Token;
+        using (var publicResponse = await client.GetAsync(
+            $"/delivery/{token}",
+            TestContext.Current.CancellationToken))
+        {
+            publicResponse.EnsureSuccessStatusCode();
+        }
+
+        var activity = await GetJsonAsync<List<CaseActivityResponse>>(
+            client,
+            $"/api/cases/{createdCase.Id}/activity");
+
+        activity.Should().Contain(item => item.Action == "IntakeCreated");
+        activity.Should().Contain(item => item.Action == "AiAnalysisRequested");
+        activity.Should().Contain(item => item.Action == "AiSuggestionApproved");
+        activity.Should().Contain(item => item.Action == "CaseCreated");
+        activity.Should().Contain(item => item.Action == "SampleDocumentCreated");
+        activity.Should().Contain(item => item.Action == "DocumentClassificationRequested");
+        activity.Should().Contain(item => item.Action == "DocumentClassificationApproved");
+        activity.Should().Contain(item => item.Action == "DocumentLinkedToCase");
+        activity.Should().Contain(item => item.Action == "DeliveryPackageCreated");
+        activity.Should().Contain(item => item.Action == "DeliveryPdfGenerated");
+        activity.Should().Contain(item => item.Action == "DeliveryLinkCreated");
+        activity.Should().Contain(item => item.EntityType == "PublicDelivery" && item.Action == "ViewedPackage");
     }
 
     [Fact]
@@ -170,6 +247,17 @@ public sealed class CaseEndpointTests : IClassFixture<NorvixHubApiFactory>
             TestContext.Current.CancellationToken))!;
     }
 
+    private static async Task<T> PostJsonAsync<T>(
+        HttpClient client,
+        string url,
+        object? body = null)
+    {
+        using var response = await SendWithDemoAuthAsync(client, HttpMethod.Post, url, body);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<T>(
+            TestContext.Current.CancellationToken))!;
+    }
+
     private static Task<HttpResponseMessage> SendWithDemoAuthAsync(
         HttpClient client,
         HttpMethod method,
@@ -186,4 +274,3 @@ public sealed class CaseEndpointTests : IClassFixture<NorvixHubApiFactory>
         return client.SendAsync(request, TestContext.Current.CancellationToken);
     }
 }
-

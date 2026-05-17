@@ -1,0 +1,118 @@
+# Demo Azure Deployment
+
+This is the current deployment target for the public interactive demo.
+
+The workflow deploys container images to Azure Container Apps. Infrastructure provisioning is still outside the repository; the Azure resources must exist before running the workflow.
+
+The current repo includes PowerShell scripts for the first manual provisioning pass:
+
+- `scripts/provision-demo-azure.ps1` creates the Azure resources and writes `.env.demo.local`;
+- `scripts/configure-github-demo-environment.ps1` reads `.env.demo.local` and populates the GitHub `demo` environment.
+
+## Azure Resources
+
+Required resources:
+
+- Azure Container Registry;
+- Azure Container Apps environment;
+- Container App for the API with external ingress on port `8080`;
+- Container App for the frontend with external ingress on port `3000`;
+- Container App for the worker with no public ingress;
+- Azure Database for PostgreSQL Flexible Server;
+- Azure Blob Storage account and private container;
+- GitHub federated identity or service principal with permission to push to ACR and update Container Apps.
+
+The Container Apps must be able to pull from the registry. Prefer managed identity with `AcrPull`.
+
+## Provisioning
+
+Prerequisites:
+
+- Azure CLI installed and authenticated with `az login`;
+- GitHub CLI installed and authenticated with `gh auth login`;
+- permission to create Azure resources, Entra app registrations, role assignments, and GitHub environment secrets.
+
+Create Azure resources:
+
+```powershell
+.\scripts\provision-demo-azure.ps1 `
+  -SubscriptionId "<azure-subscription-id>" `
+  -TenantId "<azure-tenant-id>" `
+  -Location "norwayeast" `
+  -ResourceGroup "rg-norvix-workflow-demo" `
+  -NamePrefix "norvixhubdemo" `
+  -GitHubRepository "IoanGogozan/WorkFlow-Hub"
+```
+
+The script writes `.env.demo.local`, which is ignored by git because it contains deployment secrets.
+
+Populate the GitHub environment:
+
+```powershell
+.\scripts\configure-github-demo-environment.ps1 `
+  -Repository "IoanGogozan/WorkFlow-Hub" `
+  -Environment "demo"
+```
+
+After this, configure required reviewers for the `demo` environment in GitHub if deployment approval should be enforced.
+
+## GitHub Environment
+
+Create a GitHub environment named `demo`.
+
+Recommended protection:
+
+- required reviewers enabled;
+- deployment branches limited to `main` and `demo-*` tags;
+- secrets stored at environment scope.
+
+Required environment variables:
+
+- `AZURE_RESOURCE_GROUP`;
+- `AZURE_CONTAINER_REGISTRY_NAME`;
+- `AZURE_CONTAINER_REGISTRY_LOGIN_SERVER`;
+- `AZURE_API_CONTAINER_APP`;
+- `AZURE_WORKER_CONTAINER_APP`;
+- `AZURE_FRONTEND_CONTAINER_APP`;
+- `DEMO_API_BASE_URL`;
+- `DEMO_FRONTEND_URL` optional, enables a post-deploy frontend smoke test;
+- `DEMO_BLOB_CONTAINER` optional, defaults to `documents`.
+
+Required environment secrets:
+
+- `AZURE_CLIENT_ID`;
+- `AZURE_TENANT_ID`;
+- `AZURE_SUBSCRIPTION_ID`;
+- `DEMO_POSTGRES_CONNECTION_STRING`;
+- `DEMO_BLOB_CONNECTION_STRING`.
+
+## Workflow Behavior
+
+`.github/workflows/deploy-demo.yml`:
+
+- accepts manual deploys from `main`;
+- accepts tag deploys matching `demo-*`;
+- requires confirmation that only fictional/demo-safe data is used for manual runs;
+- validates backend tests, EF migration drift, frontend audit/lint/build, and Docker Compose config;
+- waits on the GitHub `demo` environment gate;
+- builds and pushes API, worker, and frontend images to ACR;
+- configures Container App secrets for PostgreSQL and Blob Storage;
+- updates the API, worker, and frontend Container Apps.
+- smoke-tests API readiness and, when `DEMO_FRONTEND_URL` is set, the frontend `/demo` page.
+
+The API runs with:
+
+- `ASPNETCORE_ENVIRONMENT=Demo`;
+- `Storage__Provider=AzureBlob`;
+- `Database__ApplyMigrationsOnStartup=true`;
+- HTTPS/proxy readiness enabled.
+
+The worker runs cleanup with the same PostgreSQL and Blob Storage configuration.
+
+## Current Limits
+
+This is deployment wiring, not full infrastructure-as-code. Terraform still needs to provision the Azure resources and assign least-privilege roles.
+
+The first deploy should be treated as a smoke-test deployment until DNS, Application Insights, alerts, backup policy, and operational runbooks are configured.
+
+The provisioning script intentionally does not replace Terraform. It is a bootstrap path so the demo can be deployed once; Terraform should later codify the same resources and permissions.

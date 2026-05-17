@@ -8,6 +8,7 @@ public static partial class DocumentEndpoints
 
         group.MapGet("/", ListDocuments).WithName("ListDocuments");
         group.MapPost("/", UploadDocument).WithName("UploadDocument");
+        group.MapPost("/sample", CreateSampleDocument).WithName("CreateSampleDocument");
         group.MapGet("/{id:guid}", GetDocument).WithName("GetDocument");
         group.MapGet("/{id:guid}/download", DownloadDocument).WithName("DownloadDocument");
         group.MapPost("/{id:guid}/versions", UploadVersion).WithName("UploadDocumentVersion");

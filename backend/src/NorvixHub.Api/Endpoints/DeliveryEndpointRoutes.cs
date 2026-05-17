@@ -1,3 +1,5 @@
+using NorvixHub.Api.RateLimiting;
+
 namespace NorvixHub.Api.Endpoints;
 
 public static partial class DeliveryEndpoints
@@ -13,8 +15,11 @@ public static partial class DeliveryEndpoints
             .WithName("CreateDeliveryLink");
         app.MapPost("/api/delivery-links/{id:guid}/revoke", RevokeLink).WithName("RevokeDeliveryLink");
 
-        app.MapGet("/delivery/{token}", OpenDelivery).WithName("OpenPublicDelivery");
+        app.MapGet("/delivery/{token}", OpenDelivery)
+            .RequireRateLimiting(PublicDemoRateLimiting.PublicDeliveryPolicy)
+            .WithName("OpenPublicDelivery");
         app.MapGet("/delivery/{token}/documents/{documentId:guid}", OpenDeliveryDocument)
+            .RequireRateLimiting(PublicDemoRateLimiting.PublicDeliveryPolicy)
             .WithName("OpenPublicDeliveryDocument");
 
         return app;

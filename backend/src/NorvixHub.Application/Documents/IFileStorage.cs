@@ -12,4 +12,9 @@ public interface IFileStorage
         string container,
         string blobName,
         CancellationToken cancellationToken);
+
+    Task DeleteAsync(
+        string container,
+        string blobName,
+        CancellationToken cancellationToken);
 }

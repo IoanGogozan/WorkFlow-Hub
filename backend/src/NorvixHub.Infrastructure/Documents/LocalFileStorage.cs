@@ -51,4 +51,29 @@ public sealed class LocalFileStorage(IOptions<LocalFileStorageOptions> options) 
         Stream stream = File.OpenRead(targetPath);
         return Task.FromResult<StoredFileContent?>(new StoredFileContent(stream, stream.Length));
     }
+
+    public Task DeleteAsync(
+        string container,
+        string blobName,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(container, options.Value.Container, StringComparison.Ordinal))
+        {
+            return Task.CompletedTask;
+        }
+
+        var rootPath = Path.GetFullPath(options.Value.RootPath);
+        var targetPath = Path.GetFullPath(Path.Combine(rootPath, blobName));
+        if (!targetPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+
+        return Task.CompletedTask;
+    }
 }

@@ -197,10 +197,36 @@ public static partial class CaseEndpoints
             return Results.NotFound();
         }
 
-        var entityId = caseWorkspace.Id.ToString();
+        var entityIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            caseWorkspace.Id.ToString()
+        };
+
+        if (caseWorkspace.SourceIntakeItemId is { } intakeId)
+        {
+            entityIds.Add(intakeId.ToString());
+        }
+
+        var documentIds = await dbContext.Documents
+            .Where(document => document.TenantId == caseWorkspace.TenantId && document.CaseId == caseWorkspace.Id)
+            .Select(document => document.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var documentId in documentIds)
+        {
+            entityIds.Add(documentId.ToString());
+        }
+
+        var deliveryPackageIds = await dbContext.DeliveryPackages
+            .Where(package => package.TenantId == caseWorkspace.TenantId && package.CaseId == caseWorkspace.Id)
+            .Select(package => package.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var packageId in deliveryPackageIds)
+        {
+            entityIds.Add(packageId.ToString());
+        }
+
         var activity = await dbContext.AuditEvents
-            .Where(audit => audit.TenantId == caseWorkspace.TenantId && audit.EntityId == entityId)
-            .OrderByDescending(audit => audit.CreatedAt)
+            .Where(audit => audit.TenantId == caseWorkspace.TenantId && entityIds.Contains(audit.EntityId))
             .Select(audit => new CaseActivityResponse(
                 audit.Id,
                 audit.EntityType,
@@ -209,6 +235,28 @@ public static partial class CaseEndpoints
                 audit.ActorUserId,
                 audit.CreatedAt))
             .ToListAsync(cancellationToken);
+
+        if (deliveryPackageIds.Count > 0)
+        {
+            var publicAccessActivity = await dbContext.DeliveryAccessLogs
+                .Where(access => access.TenantId == caseWorkspace.TenantId &&
+                    deliveryPackageIds.Contains(access.DeliveryPackageId))
+                .Select(access => new CaseActivityResponse(
+                    access.Id,
+                    "PublicDelivery",
+                    access.DocumentId.HasValue
+                        ? access.DocumentId.Value.ToString()
+                        : access.DeliveryLinkId.ToString(),
+                    access.Action,
+                    null,
+                    access.CreatedAt))
+                .ToListAsync(cancellationToken);
+            activity.AddRange(publicAccessActivity);
+        }
+
+        activity = activity
+            .OrderByDescending(item => item.CreatedAt)
+            .ToList();
 
         return Results.Ok(activity);
     }

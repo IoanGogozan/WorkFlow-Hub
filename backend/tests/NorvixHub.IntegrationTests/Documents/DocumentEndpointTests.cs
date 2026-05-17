@@ -95,6 +95,59 @@ public sealed partial class DocumentEndpointTests : IClassFixture<NorvixHubApiFa
     }
 
     [Fact]
+    public async Task Upload_rejects_unsupported_file_type()
+    {
+        using var client = _factory.CreateClient();
+
+        using var response = await SendMultipartAsync(
+            client,
+            HttpMethod.Post,
+            "/api/documents",
+            "demo.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.Should().Contain("Unsupported file extension");
+    }
+
+    [Fact]
+    public async Task Upload_rejects_file_larger_than_upload_limit()
+    {
+        using var client = _factory.CreateClient();
+        var bytes = new byte[(5 * 1024 * 1024) + 1];
+
+        using var response = await SendMultipartAsync(
+            client,
+            HttpMethod.Post,
+            "/api/documents",
+            "large.pdf",
+            "application/pdf",
+            bytes);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.Should().Contain("File size must be between 1 byte");
+    }
+
+    [Fact]
+    public async Task Request_larger_than_global_limit_is_rejected()
+    {
+        using var client = _factory.CreateClient();
+        var bytes = new byte[(6 * 1024 * 1024) + 1];
+
+        using var response = await SendMultipartAsync(
+            client,
+            HttpMethod.Post,
+            "/api/documents",
+            "too-large.pdf",
+            "application/pdf",
+            bytes);
+
+        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+    }
+
+    [Fact]
     public async Task Document_can_be_linked_to_case()
     {
         using var client = _factory.CreateClient();
@@ -213,9 +266,10 @@ public sealed partial class DocumentEndpointTests : IClassFixture<NorvixHubApiFa
         HttpMethod method,
         string url,
         string filename,
-        string contentType)
+        string contentType,
+        byte[]? fileBytes = null)
     {
-        var request = CreateMultipartRequest(method, url, filename, contentType);
+        var request = CreateMultipartRequest(method, url, filename, contentType, fileBytes);
         DevAuthHeaders.AddDemoAdmin(request);
         return client.SendAsync(request, TestContext.Current.CancellationToken);
     }
@@ -224,9 +278,10 @@ public sealed partial class DocumentEndpointTests : IClassFixture<NorvixHubApiFa
         HttpMethod method,
         string url,
         string filename,
-        string contentType)
+        string contentType,
+        byte[]? fileBytes = null)
     {
-        var fileContent = new ByteArrayContent("fake document content"u8.ToArray());
+        var fileContent = new ByteArrayContent(fileBytes ?? "fake document content"u8.ToArray());
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         var multipart = new MultipartFormDataContent
         {

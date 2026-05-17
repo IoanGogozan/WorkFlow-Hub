@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.next/
+**/.git/
+**/.vs/
+**/.vscode/
+**/*.lscache
+TestResults/
+test-results/
+storage/
+coverage/
+playwright-report/
+*.log
+.env
+.env.*

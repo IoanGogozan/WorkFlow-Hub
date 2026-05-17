@@ -66,8 +66,9 @@ Mandatory tests:
 
 Controls:
 
-- file size limit;
-- allowlist: PDF, DOCX, XLSX, PNG, JPG/JPEG;
+- global request body size limit;
+- centralized file size limit;
+- allowlist: PDF, PNG, JPG/JPEG;
 - validate extension and MIME type;
 - generate random blob names;
 - store original filename only for display;
@@ -75,6 +76,11 @@ Controls:
 - block executable formats;
 - store files outside web root;
 - serve files through authorized endpoints;
+- demo session cleanup must delete both database records and stored files/blobs;
+- deleting a missing demo file during cleanup must be idempotent and must not stop database cleanup;
+- public arbitrary upload remains disabled until the deployed environment has explicit upload enablement, user warnings, abuse controls, durable storage cleanup, and malware scanning;
+- current public demo mode rejects arbitrary multipart document upload outside Development;
+- current Development upload accepts only the configured demo-safe file allowlist and size limit;
 - malware scan backlog for production.
 
 ## Delivery Links
@@ -89,6 +95,26 @@ Controls:
 - rate limiting;
 - no tenant admin access through delivery link;
 - delivery recipient sees only selected package items.
+
+## Security Headers and Errors
+
+Controls:
+
+- `X-Content-Type-Options: nosniff`;
+- `X-Frame-Options: DENY`;
+- `Referrer-Policy: no-referrer`;
+- restrictive `Permissions-Policy`;
+- restrictive API `Content-Security-Policy`;
+- non-Development unhandled exceptions return clean problem responses without stack traces.
+
+## Reverse Proxy and HTTPS
+
+Controls:
+
+- forwarded headers are processed before routing and security middleware;
+- forwarded `proto`, `host`, and client IP can be used behind Azure/App Service/Container Apps proxies;
+- HTTPS redirection and HSTS can be enabled through deployment configuration;
+- unknown proxies are not trusted unless explicitly configured.
 
 ## AI Security
 

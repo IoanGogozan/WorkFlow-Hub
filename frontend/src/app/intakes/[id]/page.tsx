@@ -4,10 +4,15 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import {
+  DemoCapabilityBadge,
+  DemoCapabilityNote,
+} from "@/components/demo-capability-badge";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
 import { api } from "@/lib/api";
+import { aiCapability } from "@/lib/demo-capabilities";
 import { formatDateTime } from "@/lib/format";
 import type { AiAnalysisRun, IntakeItem, CaseDetail } from "@/lib/types";
 
@@ -185,10 +190,16 @@ export default function IntakeDetailPage() {
               {actionError ? <ErrorState message={actionError} /> : null}
 
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <h3 className="text-lg font-semibold">AI review</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold">AI review</h3>
+                  <DemoCapabilityBadge capability={aiCapability} />
+                </div>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
                   AI suggestions require approval before they change intake data.
                 </p>
+                <div className="mt-3">
+                  <DemoCapabilityNote capability={aiCapability} />
+                </div>
                 <button
                   className="mt-4 rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={action !== null}

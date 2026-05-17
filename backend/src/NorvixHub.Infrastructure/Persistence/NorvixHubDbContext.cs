@@ -3,6 +3,7 @@ using NorvixHub.Domain.AI;
 using NorvixHub.Domain.Audit;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Customers;
+using NorvixHub.Domain.Demo;
 using NorvixHub.Domain.Delivery;
 using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Integrations;
@@ -18,6 +19,7 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<UserProfile> Users => Set<UserProfile>();
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
+    public DbSet<DemoSession> DemoSessions => Set<DemoSession>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<IntakeItem> IntakeItems => Set<IntakeItem>();
     public DbSet<IntakeAttachment> IntakeAttachments => Set<IntakeAttachment>();

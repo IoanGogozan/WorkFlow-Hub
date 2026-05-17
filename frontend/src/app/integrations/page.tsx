@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import {
+  DemoCapabilityBadge,
+  DemoCapabilityNote,
+} from "@/components/demo-capability-badge";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
 import { api } from "@/lib/api";
+import { getIntegrationCapability } from "@/lib/demo-capabilities";
 import { formatDateTime } from "@/lib/format";
 import type { IntegrationConnection, IntegrationSyncRun } from "@/lib/types";
 
@@ -116,6 +121,10 @@ export default function IntegrationsPage() {
             Systemer som snakker sammen
           </p>
           <h2 className="mt-2 text-3xl font-semibold">Integrations</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
+            Public demo integrations show the intended workflow without using
+            real Microsoft, accounting, or Fabric customer tenants.
+          </p>
         </div>
 
         {error ? (
@@ -132,6 +141,9 @@ export default function IntegrationsPage() {
               />
             ) : (
               integrations.map((integration) => {
+                const capability = getIntegrationCapability(
+                  integration.provider,
+                );
                 const failedRuns = (syncRuns[integration.provider] ?? []).filter(
                   (run) => run.status.toLowerCase() === "failed",
                 );
@@ -148,6 +160,7 @@ export default function IntegrationsPage() {
                             {integration.displayName}
                           </h3>
                           <StatusBadge status={integration.status} />
+                          <DemoCapabilityBadge capability={capability} />
                         </div>
                         <p className="mt-2 text-sm text-[#64748b]">
                           Provider: {integration.provider}
@@ -188,6 +201,10 @@ export default function IntegrationsPage() {
                           Disconnect
                         </button>
                       </div>
+                    </div>
+
+                    <div className="mt-5">
+                      <DemoCapabilityNote capability={capability} />
                     </div>
 
                     <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-4">

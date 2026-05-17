@@ -40,22 +40,35 @@ Implemented capabilities:
 - Tenant-scoped local development auth, RBAC, audit events, and tenant isolation tests.
 - Intake inbox with manual/source-based creation and validation.
 - AI review workflow with stored analysis runs, review tasks, human approval, and rejection.
-- Case workspace with conversion from intake, tasks, notes, linked documents, and activity.
+- Case workspace with conversion from intake, tasks, notes, linked documents, and aggregated workflow activity.
 - Brreg organization lookup and customer enrichment APIs.
-- Document upload, validation, versioning, classification, human approval, and case linking.
+- Document upload, centralized size/type validation, versioning, classification, human approval, and case linking.
 - Integration dashboard with connection state, sync history, failure, and retry flows.
-- Delivery packages with selected documents, generated summary record, secure expiring public link, revoke, public page, and access log.
+- Delivery packages with selected documents, generated simple PDF summary, secure expiring public link, revoke, public page, and access log.
 - Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
 - Frontend pages for dashboard, intakes, cases, documents, delivery packages, public delivery links, and integrations.
+- Frontend demo labels clearly identify Mock AI, mock Microsoft/accounting/Fabric integrations, and Brreg real-capable behavior.
 
-Local/development-only components still to replace before public demo or real customer production deployment:
+Public demo components now implemented:
 
-- Public demo session auth is not yet implemented.
+- Demo session creation endpoint with bearer-token auth.
+- Isolated demo tenant/user/membership creation.
+- Expired demo session cleanup for database records and stored local files.
+- Public privacy and terms pages linked from the demo entry, app shell, and public delivery page.
+- Rate limiting for demo session creation and public delivery endpoints.
+- Global request body size limits and upload file size/type limits.
+- Security headers and clean non-Development error responses without stack traces.
+- Reverse-proxy readiness with forwarded headers, optional HTTPS enforcement, and HSTS.
+- GitHub Actions CI checks backend tests, EF migration drift, frontend dependency audit/lint/build, and Docker Compose configuration.
+- Demo deployment workflow has a main/tag gate, fictional-data confirmation, validation jobs, a `demo` environment gate, ACR image publishing, and Azure Container Apps update steps.
+
+Local/development-only components still to replace before real customer production deployment:
+
 - Header-based local dev auth must be replaced with Microsoft Entra ID / OIDC.
 - AI provider is currently a mock adapter and must be replaced with a governed real provider before processing real customer data.
 - Microsoft Graph/SharePoint, Tripletex/accounting, and Power BI/Fabric adapters are currently mock adapters.
 - File storage is local-development oriented and must move to Azure Blob Storage or equivalent durable object storage.
-- Delivery summary currently creates a summary document record; production PDF rendering still needs implementation.
+- Delivery summary currently creates a simple generated PDF document; production PDF rendering still needs implementation.
 - Seed/reference data is fictional and must not be mixed with real customer data.
 
 ## Deployment Direction
@@ -69,11 +82,21 @@ The target deployment architecture is:
 - Cloud: Azure App Service or Azure Container Apps, Azure Database for PostgreSQL Flexible Server, Blob Storage, Key Vault, Application Insights, Service Bus or Storage Queue.
 - Infrastructure: Terraform and GitHub Actions.
 
+The GitHub `demo` environment should be configured with the required reviewers and deployment secrets before a real deploy step is added.
+
+Bootstrap scripts for the first Azure demo environment are available:
+
+```powershell
+.\scripts\provision-demo-azure.ps1 -SubscriptionId "<subscription-id>" -TenantId "<tenant-id>"
+.\scripts\configure-github-demo-environment.ps1
+```
+
 ## Verification
 
 Verification targets:
 
 - Backend integration, unit, and contract tests.
+- EF migration drift check.
 - Frontend lint and production build.
 - `npm audit`.
 - Docker Compose config validation.
@@ -130,6 +153,13 @@ dotnet tool restore
 dotnet tool run dotnet-ef migrations add MigrationName --project backend/src/NorvixHub.Infrastructure --startup-project backend/src/NorvixHub.Api --output-dir Persistence/Migrations
 ```
 
+Check whether the EF model has pending migration changes:
+
+```bash
+dotnet tool restore --tool-manifest dotnet-tools.json
+dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project backend/src/NorvixHub.Infrastructure/NorvixHub.Infrastructure.csproj --startup-project backend/src/NorvixHub.Api/NorvixHub.Api.csproj --configuration Release
+```
+
 Run backend tests through Docker when .NET is not installed locally:
 
 ```bash
@@ -167,6 +197,7 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 - [Data Model](docs/data-model.md)
 - [API Contract Draft](docs/api-contract.md)
 - [Security and Privacy](docs/security-and-privacy.md)
+- [Demo Azure Deployment](docs/deployment-demo-azure.md)
 - [Norway Legal Checklist](docs/legal-checklist-norway.md)
 - [DPIA Screening](docs/dpia-screening.md)
 - [Testing Strategy](docs/testing-strategy.md)

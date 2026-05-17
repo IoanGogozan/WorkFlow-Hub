@@ -14,11 +14,11 @@ Implemented foundation:
 - Tenant/auth foundation, local dev auth, RBAC, audit writer, and tenant isolation tests.
 - Intake inbox.
 - AI review with provider abstraction and human approval.
-- Case workspace with tasks, notes, and activity.
+- Case workspace with tasks, notes, and aggregated workflow activity.
 - Brreg customer enrichment.
-- Document workflow with upload, versioning, classification, approval, and case linking.
+- Document workflow with centralized upload size/type validation, versioning, classification, approval, and case linking.
 - Integration dashboard with connector state, sync runs, failure, and retry.
-- Delivery package with expiring link, revoke, public page, and access log.
+- Delivery package with simple generated PDF summary, expiring link, revoke, public page, and access log.
 - Analytics dashboard endpoints and CSV/JSON export.
 - Product documentation, architecture diagram, and screenshot workflow.
 
@@ -38,6 +38,7 @@ The core value is a credible integration and workflow pattern:
 - make documents versioned and approved;
 - deliver selected documents through controlled links;
 - expose audit and operational metrics.
+- show the end-to-end audit trail for a case, from intake through public delivery access.
 
 ## Current Deployment Boundaries
 
@@ -47,14 +48,24 @@ Do not configure production credentials in the repository.
 
 Current local-only or mock-backed areas:
 
-- Local development auth is active instead of public demo session auth or Microsoft Entra ID.
-- Public demo session sandboxing is not yet implemented.
+- Public demo session sandboxing is implemented for temporary tenant/user creation and bearer-token auth.
+- Local development auth remains available only for Development; Microsoft Entra ID is still planned for real production.
+- Expired demo session cleanup removes database records and stored local files.
+- Frontend demo labels identify Mock AI, mock Microsoft/accounting/Fabric integrations, and Brreg real-capable behavior.
+- Public privacy and terms pages are implemented and linked from the demo.
+- Rate limiting is enabled for demo session creation and public delivery endpoints.
+- Global request body size limits and upload file size/type limits are configured and tested.
+- Security headers and clean non-Development error responses are enabled and tested.
+- Reverse-proxy readiness is configured with forwarded headers, optional HTTPS enforcement, and HSTS.
+- GitHub Actions CI includes backend tests, EF migration drift check, frontend dependency audit/lint/build, and Docker Compose validation.
+- Demo deploy workflow is gated by branch/tag rules, fictional-data confirmation, validation jobs, and the `demo` environment, then pushes ACR images and updates Azure Container Apps.
+- Azure Blob Storage adapter is available for shared public demo document storage.
 - Microsoft Graph / SharePoint integration is mocked.
 - Tripletex/accounting integration is mocked.
 - Power BI/Fabric export status is mocked while CSV/JSON export is functional.
 - AI provider is mocked and suggestion-only.
-- Delivery summary uses a generated summary record; production PDF rendering is still required.
-- File storage must be moved to durable object storage before real production use.
+- Delivery summary uses a simple generated demo PDF; production PDF rendering is still required.
+- File storage must use Azure Blob Storage or equivalent durable object storage before public demo deployment.
 
 ## Test Posture
 
@@ -77,16 +88,12 @@ The project has automated tests across the main security and workflow boundaries
 
 Before linking the demo from the Norvix website:
 
-- add demo session model and `POST /api/demo-sessions`;
-- seed or clone a fictional tenant per visitor;
-- add bearer-token demo auth;
-- reject local dev auth headers outside Development;
-- add session expiry and cleanup;
-- add `/demo` start page and global demo banner;
-- add privacy and terms pages for the demo;
-- add rate limiting and public endpoint hardening;
-- complete the end-to-end browser flow;
-- add real simple PDF generation for delivery packages.
+- keep session expiry and cleanup enabled in the deployed worker;
+- continue public endpoint hardening beyond the initial rate limits;
+- keep the end-to-end browser flow passing after each Phase B change;
+- keep arbitrary upload disabled in public demo and use generated sample documents;
+- wire the deploy workflow to Azure infrastructure once the target environment is defined.
+- add Terraform or another repeatable provisioning path for the Azure resources.
 
 ## Later Production Release Work
 

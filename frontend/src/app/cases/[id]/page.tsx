@@ -193,7 +193,7 @@ export default function CaseDetailPage() {
                   <StatusBadge status={caseDetail.status} />
                 </div>
                 <p className="mt-2 text-sm text-[#64748b]">
-                  {caseDetail.caseNumber} · Created{" "}
+                  {caseDetail.caseNumber} - Created{" "}
                   {formatDateTime(caseDetail.createdAt)}
                 </p>
               </div>
@@ -231,9 +231,12 @@ export default function CaseDetailPage() {
                   <div className="mt-4 divide-y divide-[#e2e8f0]">
                     {activity.map((item) => (
                       <div className="py-3" key={item.id}>
-                        <p className="font-medium text-[#162033]">{item.action}</p>
+                        <p className="font-medium text-[#162033]">
+                          {activityLabel(item.action)}
+                        </p>
                         <p className="mt-1 text-sm text-[#64748b]">
-                          {item.entityType} · {formatDateTime(item.createdAt)}
+                          {entityLabel(item.entityType)} -{" "}
+                          {formatDateTime(item.createdAt)}
                         </p>
                       </div>
                     ))}
@@ -265,7 +268,7 @@ export default function CaseDetailPage() {
                             {document.title}
                           </Link>
                           <p className="mt-1 text-sm text-[#64748b]">
-                            {document.documentType ?? "Unclassified"} ·{" "}
+                            {document.documentType ?? "Unclassified"} -{" "}
                             {formatDate(document.expiryDate)}
                           </p>
                         </div>
@@ -422,4 +425,42 @@ function FieldValue({ label, value }: { label: string; value: string | null }) {
       </dd>
     </div>
   );
+}
+
+function activityLabel(action: string) {
+  const labels: Record<string, string> = {
+    AiAnalysisRequested: "AI suggestion generated",
+    AiSuggestionApproved: "AI suggestion approved",
+    AiSuggestionRejected: "AI suggestion rejected",
+    CaseCreated: "Case created",
+    CaseNoteCreated: "Case note added",
+    CaseTaskCreated: "Case task added",
+    DeliveryLinkCreated: "Public delivery link created",
+    DeliveryLinkRevoked: "Public delivery link revoked",
+    DeliveryPackageCreated: "Delivery package created",
+    DeliveryPdfGenerated: "Delivery PDF generated",
+    DocumentClassificationApproved: "Document classification approved",
+    DocumentClassificationRequested: "Document classification suggested",
+    DocumentLinkedToCase: "Document linked to case",
+    DocumentUploaded: "Document uploaded",
+    DocumentVersionUploaded: "Document version uploaded",
+    IntakeCreated: "Intake created",
+    SampleDocumentCreated: "Sample document added",
+    ViewedDocument: "Public delivery document opened",
+    ViewedPackage: "Public delivery page opened",
+  };
+
+  return labels[action] ?? action;
+}
+
+function entityLabel(entityType: string) {
+  const labels: Record<string, string> = {
+    Case: "Case",
+    DeliveryPackage: "Delivery",
+    Document: "Document",
+    IntakeItem: "Intake",
+    PublicDelivery: "Public link",
+  };
+
+  return labels[entityType] ?? entityType;
 }

@@ -15,6 +15,9 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   return (
     <main className="min-h-screen">
+      <div className="border-b border-[#bfdbfe] bg-[#eff6ff] px-6 py-2 text-center text-xs font-semibold text-[#1d4ed8]">
+        Public demo - fictional data - expires automatically
+      </div>
       <header className="border-b border-[#d8deea] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -39,6 +42,19 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
       {children}
+      <footer className="border-t border-[#d8deea] bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-4 text-xs text-[#64748b] sm:flex-row sm:items-center sm:justify-between">
+          <p>Public demo uses fictional data. Do not submit confidential information.</p>
+          <nav aria-label="Legal links" className="flex gap-4 font-semibold">
+            <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/privacy">
+              Privacy
+            </Link>
+            <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/terms">
+              Terms
+            </Link>
+          </nav>
+        </div>
+      </footer>
     </main>
   );
 }

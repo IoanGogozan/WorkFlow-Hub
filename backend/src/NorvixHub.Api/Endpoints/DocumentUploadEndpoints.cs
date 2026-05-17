@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NorvixHub.Application.Audit;
 using NorvixHub.Application.Documents;
 using NorvixHub.Application.Tenancy;
+using NorvixHub.Api.Hardening;
 using NorvixHub.Infrastructure.Persistence;
 
 namespace NorvixHub.Api.Endpoints;
@@ -15,14 +17,24 @@ public static partial class DocumentEndpoints
         IFileStorage fileStorage,
         IAuditEventWriter auditEventWriter,
         HttpContext httpContext,
+        IWebHostEnvironment environment,
+        IOptions<RequestLimitOptions> requestLimitOptions,
         CancellationToken cancellationToken)
     {
+        if (!environment.IsDevelopment())
+        {
+            return Results.BadRequest(new
+            {
+                error = "Public demo upload is disabled. Use demo sample documents instead."
+            });
+        }
+
         if (!CanWriteDocuments(tenantContext))
         {
             return Results.StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var upload = await ReadUploadAsync(request, cancellationToken);
+        var upload = await ReadUploadAsync(request, requestLimitOptions.Value, cancellationToken);
         if (!upload.IsValid)
         {
             return Results.BadRequest(new { error = upload.Error });
@@ -55,8 +67,18 @@ public static partial class DocumentEndpoints
         IFileStorage fileStorage,
         IAuditEventWriter auditEventWriter,
         HttpContext httpContext,
+        IWebHostEnvironment environment,
+        IOptions<RequestLimitOptions> requestLimitOptions,
         CancellationToken cancellationToken)
     {
+        if (!environment.IsDevelopment())
+        {
+            return Results.BadRequest(new
+            {
+                error = "Public demo upload is disabled. Use demo sample documents instead."
+            });
+        }
+
         if (!CanWriteDocuments(tenantContext))
         {
             return Results.StatusCode(StatusCodes.Status403Forbidden);
@@ -68,7 +90,7 @@ public static partial class DocumentEndpoints
             return Results.NotFound();
         }
 
-        var upload = await ReadUploadAsync(request, cancellationToken);
+        var upload = await ReadUploadAsync(request, requestLimitOptions.Value, cancellationToken);
         if (!upload.IsValid)
         {
             return Results.BadRequest(new { error = upload.Error });

@@ -4,11 +4,16 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import {
+  DemoCapabilityBadge,
+  DemoCapabilityNote,
+} from "@/components/demo-capability-badge";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
 import { api } from "@/lib/api";
+import { documentAiCapability } from "@/lib/demo-capabilities";
 import { formatDate, formatDateTime } from "@/lib/format";
 import type {
   CaseListItem,
@@ -214,11 +219,17 @@ export default function DocumentDetailPage() {
               {actionError ? <ErrorState message={actionError} /> : null}
 
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <h3 className="text-lg font-semibold">Classification</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold">Classification</h3>
+                  <DemoCapabilityBadge capability={documentAiCapability} />
+                </div>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
                   Analyze the current document version and approve the reviewed
                   document type before delivery use.
                 </p>
+                <div className="mt-3">
+                  <DemoCapabilityNote capability={documentAiCapability} />
+                </div>
                 <button
                   className="mt-4 rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={action !== null}
@@ -275,7 +286,9 @@ export default function DocumentDetailPage() {
                     disabled={action !== null}
                     type="submit"
                   >
-                    {action === "approve" ? "Approving..." : "Approve"}
+                    {action === "approve"
+                      ? "Approving..."
+                      : "Approve classification"}
                   </button>
                 </form>
               ) : null}

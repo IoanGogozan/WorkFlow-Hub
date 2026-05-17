@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
 import { api, apiForm } from "@/lib/api";
+import { getDemoSessionToken } from "@/lib/demo-session";
 import { formatDate, formatDateTime } from "@/lib/format";
 import type { DocumentRecord } from "@/lib/types";
 
@@ -18,6 +19,8 @@ export default function DocumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [creatingSample, setCreatingSample] = useState(false);
+  const [isPublicDemo] = useState(() => Boolean(getDemoSessionToken()));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -47,6 +50,11 @@ export default function DocumentsPage() {
 
   async function uploadDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isPublicDemo) {
+      setUploadError("Public demo upload is disabled. Use sample documents instead.");
+      return;
+    }
+
     if (!file) {
       setUploadError("Choose a file before uploading.");
       return;
@@ -72,6 +80,25 @@ export default function DocumentsPage() {
       );
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function createSampleDocument() {
+    try {
+      setCreatingSample(true);
+      setUploadError(null);
+      const sample = await api<DocumentRecord>("/api/documents/sample", {
+        method: "POST",
+      });
+      setDocuments((current) => [sample, ...(current ?? [])]);
+    } catch (sampleFailure) {
+      setUploadError(
+        sampleFailure instanceof Error
+          ? sampleFailure.message
+          : "Sample document could not be created.",
+      );
+    } finally {
+      setCreatingSample(false);
     }
   }
 
@@ -153,16 +180,34 @@ export default function DocumentsPage() {
             <div>
               <h3 className="text-lg font-semibold">Upload document</h3>
               <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                Allowed: PDF, DOCX, XLSX, PNG, JPG. Maximum size is 10 MB.
+                {isPublicDemo
+                  ? "Public demo upload is disabled to prevent personal or confidential files from being submitted."
+                  : "Allowed: PDF, DOCX, XLSX, PNG, JPG. Maximum size is 10 MB."}
               </p>
             </div>
+            {isPublicDemo ? (
+              <div className="rounded-md border border-[#fde68a] bg-[#fffbeb] p-3 text-sm text-[#92400e]">
+                Use the generated sample document for classification and delivery.
+              </div>
+            ) : null}
             {uploadError ? <ErrorState message={uploadError} /> : null}
+            {isPublicDemo ? (
+              <button
+                className="rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-[#065f46] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={creatingSample}
+                onClick={createSampleDocument}
+                type="button"
+              >
+                {creatingSample ? "Creating sample..." : "Use sample document"}
+              </button>
+            ) : null}
             <label className="block">
               <span className="mb-1 block text-sm font-semibold text-[#334155]">
                 Title
               </span>
               <input
                 className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                disabled={isPublicDemo}
                 onChange={(event) => setTitle(event.target.value)}
                 value={title}
               />
@@ -174,17 +219,18 @@ export default function DocumentsPage() {
               <input
                 accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg"
                 className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#eef2ff] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#3730a3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                disabled={isPublicDemo}
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                required
+                required={!isPublicDemo}
                 type="file"
               />
             </label>
             <button
               className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={uploading}
+              disabled={uploading || isPublicDemo}
               type="submit"
             >
-              {uploading ? "Uploading..." : "Upload document"}
+              {isPublicDemo ? "Upload disabled" : uploading ? "Uploading..." : "Upload document"}
             </button>
           </form>
         </aside>

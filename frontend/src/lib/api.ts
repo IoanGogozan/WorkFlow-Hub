@@ -1,4 +1,9 @@
 import { localDevAuthHeaders } from "./dev-auth";
+import {
+  clearDemoSession,
+  getDemoSessionToken,
+  redirectToDemoStart,
+} from "./demo-session";
 
 type ApiOptions = {
   method?: string;
@@ -7,9 +12,9 @@ type ApiOptions = {
 };
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Accept: "application/json",
-    ...localDevAuthHeaders,
+    ...authHeaders(),
   };
 
   if (options.body !== undefined) {
@@ -24,7 +29,9 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   });
 
   if (!response.ok) {
-    throw new Error(await getErrorMessage(response));
+    const message = await getErrorMessage(response);
+    handleAuthFailure(response.status, message);
+    throw new Error(message);
   }
 
   if (response.status === 204) {
@@ -43,14 +50,16 @@ export async function apiForm<T>(
     method: options.method ?? "POST",
     headers: {
       Accept: "application/json",
-      ...localDevAuthHeaders,
+      ...authHeaders(),
     },
     body: formData,
     signal: options.signal,
   });
 
   if (!response.ok) {
-    throw new Error(await getErrorMessage(response));
+    const message = await getErrorMessage(response);
+    handleAuthFailure(response.status, message);
+    throw new Error(message);
   }
 
   if (response.status === 204) {
@@ -58,6 +67,41 @@ export async function apiForm<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getDemoSessionToken();
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    return { ...localDevAuthHeaders };
+  }
+
+  return {};
+}
+
+function handleAuthFailure(status: number, message: string) {
+  if (status !== 401) {
+    return;
+  }
+
+  if (message.includes("expired")) {
+    clearDemoSession();
+    redirectToDemoStart("expired");
+    return;
+  }
+
+  if (message.includes("Invalid demo session token")) {
+    clearDemoSession();
+    redirectToDemoStart("invalid");
+    return;
+  }
+
+  if (message.includes("Demo session bearer token is required")) {
+    redirectToDemoStart("missing");
+  }
 }
 
 async function getErrorMessage(response: Response) {

@@ -196,7 +196,7 @@ export default function DeliveryPackagePage() {
                           <p className="mt-1 text-sm text-[#64748b]">
                             Expires {formatDateTime(link.expiresAt)}
                             {link.revokedAt
-                              ? ` · Revoked ${formatDateTime(link.revokedAt)}`
+                              ? ` - Revoked ${formatDateTime(link.revokedAt)}`
                               : ""}
                           </p>
                           {link.token ? (
@@ -205,7 +205,7 @@ export default function DeliveryPackagePage() {
                               href={`/delivery/${link.token}`}
                               target="_blank"
                             >
-                              Open new public link
+                              Open public link
                             </Link>
                           ) : null}
                         </div>
@@ -230,8 +230,9 @@ export default function DeliveryPackagePage() {
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
                 <h3 className="text-lg font-semibold">Summary PDF</h3>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  Backend currently creates a summary document record for the
-                  package. Real PDF download remains a backend follow-up.
+                  Generate a real PDF summary document for this delivery
+                  package. The generated PDF is stored with the demo workspace
+                  and is removed when the demo session expires.
                 </p>
                 <dl className="mt-4 text-sm">
                   <dt className="font-semibold text-[#334155]">Generated</dt>
@@ -282,7 +283,7 @@ export default function DeliveryPackagePage() {
                   disabled={action !== null}
                   type="submit"
                 >
-                  {action === "link" ? "Creating..." : "Create link"}
+                  {action === "link" ? "Creating..." : "Create public link"}
                 </button>
                 {newPublicUrl ? (
                   <div className="rounded-md border border-[#bbf7d0] bg-[#f0fdf4] p-3 text-sm">

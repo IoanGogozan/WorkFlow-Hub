@@ -201,15 +201,19 @@ Storage controls:
 - access through backend;
 - short-lived SAS tokens only if needed;
 - automatic cleanup for expired demo files.
+- storage adapters must implement idempotent file/blob deletion before public uploads are enabled.
 
 CI/CD controls:
 
-- frontend build;
-- backend tests;
-- lint or format checks;
-- dependency audit where practical;
-- migration check;
-- deploy only from `main` or release tags;
+- frontend build is configured in GitHub Actions;
+- backend tests are configured in GitHub Actions;
+- frontend lint is configured in GitHub Actions;
+- frontend production dependency audit is configured in GitHub Actions;
+- EF migration drift check is configured in GitHub Actions;
+- demo deploy workflow is gated to `main` manual runs or `demo-*` tags;
+- demo deploy workflow requires fictional-data confirmation for manual runs;
+- demo deploy workflow uses a `demo` environment gate before publishing images and updating Azure Container Apps;
+- GitHub `demo` environment should be configured with required reviewers and deployment secrets before real deploy steps are added;
 - environment variables from secret store.
 
 ## Phase E - Public Deploy
@@ -359,6 +363,9 @@ Preferred first public version:
 - do not allow arbitrary upload;
 - provide "Use sample document";
 - optionally allow text-only mock document input.
+- keep arbitrary public upload disabled unless stored file/blob cleanup is implemented and tested for the active deployed storage adapter.
+- current implementation blocks arbitrary multipart upload outside Development and uses the sample-document flow for public demo documents.
+- current implementation provides a generated sample PDF document for the public demo flow.
 
 If public upload is enabled:
 

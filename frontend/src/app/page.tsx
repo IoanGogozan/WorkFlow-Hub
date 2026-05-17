@@ -3,11 +3,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { DemoCapabilityBadge } from "@/components/demo-capability-badge";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
 import { api } from "@/lib/api";
+import {
+  aiCapability,
+  getIntegrationCapability,
+} from "@/lib/demo-capabilities";
 import type {
   IntakeListItem,
   IntegrationConnection,
@@ -251,7 +256,10 @@ function DashboardContent({
 
       <aside className="space-y-6" aria-label="Operational side panel">
         <section className="rounded-md border border-[#d8deea] bg-white p-5">
-          <h3 className="text-lg font-semibold">AI review queue</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-semibold">AI review queue</h3>
+            <DemoCapabilityBadge capability={aiCapability} />
+          </div>
           <p className="mt-3 text-sm leading-6 text-[#475569]">
             {pendingReviews.length === 0
               ? "No review tasks are currently waiting for approval."
@@ -292,7 +300,16 @@ function DashboardContent({
               {data.integrations.map((integration) => (
                 <div key={integration.id} className="p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium">{integration.displayName}</p>
+                    <div>
+                      <p className="font-medium">{integration.displayName}</p>
+                      <div className="mt-2">
+                        <DemoCapabilityBadge
+                          capability={getIntegrationCapability(
+                            integration.provider,
+                          )}
+                        />
+                      </div>
+                    </div>
                     <StatusBadge status={integration.status} />
                   </div>
                   <p className="mt-2 text-sm text-[#64748b]">

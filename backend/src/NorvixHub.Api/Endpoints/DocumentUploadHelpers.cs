@@ -1,25 +1,15 @@
 using NorvixHub.Application.Documents;
 using NorvixHub.Application.Tenancy;
+using NorvixHub.Api.Hardening;
 using NorvixHub.Domain.Documents;
 
 namespace NorvixHub.Api.Endpoints;
 
 public static partial class DocumentEndpoints
 {
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
-
-    private static readonly Dictionary<string, string[]> AllowedContentTypes = new()
-    {
-        [".pdf"] = new[] { "application/pdf" },
-        [".docx"] = new[] { "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
-        [".xlsx"] = new[] { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
-        [".png"] = new[] { "image/png" },
-        [".jpg"] = new[] { "image/jpeg" },
-        [".jpeg"] = new[] { "image/jpeg" }
-    };
-
     private static async Task<UploadReadResult> ReadUploadAsync(
         HttpRequest request,
+        RequestLimitOptions requestLimits,
         CancellationToken cancellationToken)
     {
         if (!request.HasFormContentType)
@@ -34,7 +24,7 @@ public static partial class DocumentEndpoints
             return UploadReadResult.Invalid("File field is required.");
         }
 
-        if (!IsAllowedFile(file, out var error))
+        if (!IsAllowedFile(file, requestLimits.Uploads, out var error))
         {
             return UploadReadResult.Invalid(error);
         }
@@ -42,11 +32,21 @@ public static partial class DocumentEndpoints
         return UploadReadResult.Valid(file, form["title"].ToString());
     }
 
-    private static bool IsAllowedFile(IFormFile file, out string error)
+    private static bool IsAllowedFile(
+        IFormFile file,
+        UploadLimitOptions uploadLimits,
+        out string error)
     {
         error = string.Empty;
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!AllowedContentTypes.TryGetValue(extension, out var allowedTypes))
+        var allowedTypes = uploadLimits.AllowedFileTypes
+            .Where(candidate => string.Equals(
+                candidate.Extension,
+                extension,
+                StringComparison.OrdinalIgnoreCase))
+            .Select(candidate => candidate.ContentType)
+            .ToArray();
+        if (allowedTypes.Length == 0)
         {
             error = "Unsupported file extension.";
             return false;
@@ -58,9 +58,9 @@ public static partial class DocumentEndpoints
             return false;
         }
 
-        if (file.Length <= 0 || file.Length > MaxFileSizeBytes)
+        if (file.Length <= 0 || file.Length > uploadLimits.MaxFileBytes)
         {
-            error = "File size must be between 1 byte and 10 MB.";
+            error = $"File size must be between 1 byte and {uploadLimits.MaxFileBytes} bytes.";
             return false;
         }
 

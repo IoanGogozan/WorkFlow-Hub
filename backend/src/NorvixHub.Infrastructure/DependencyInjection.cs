@@ -25,13 +25,27 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("Postgres")));
 
         services.AddScoped<DemoDataSeeder>();
+        services.AddScoped<DemoSessionCleanupService>();
+        services.Configure<DemoSessionCleanupOptions>(options =>
+            configuration.GetSection("DemoSessionCleanup").Bind(options));
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();
         services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
-        services.AddScoped<IFileStorage, LocalFileStorage>();
+        var storageProvider = configuration["Storage:Provider"];
+        if (string.Equals(storageProvider, "AzureBlob", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IFileStorage, AzureBlobFileStorage>();
+            services.Configure<AzureBlobFileStorageOptions>(options =>
+                configuration.GetSection("Storage:AzureBlob").Bind(options));
+        }
+        else
+        {
+            services.AddScoped<IFileStorage, LocalFileStorage>();
+            services.Configure<LocalFileStorageOptions>(options =>
+                configuration.GetSection("Storage:Local").Bind(options));
+        }
+
         services.AddScoped<IDocumentClassificationProvider, MockDocumentClassificationProvider>();
         services.AddScoped<IIntegrationSyncAdapter, MockIntegrationSyncAdapter>();
-        services.Configure<LocalFileStorageOptions>(options =>
-            configuration.GetSection("Storage:Local").Bind(options));
         services.Configure<BrregOptions>(options =>
             configuration.GetSection("Brreg").Bind(options));
         services.AddHttpClient<IBrregClient, BrregClient>((provider, client) =>

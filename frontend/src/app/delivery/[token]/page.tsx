@@ -15,6 +15,9 @@ export default async function PublicDeliveryPage({
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-[#162033]">
+      <div className="border-b border-[#bfdbfe] bg-[#eff6ff] px-6 py-2 text-center text-xs font-semibold text-[#1d4ed8]">
+        Public demo - fictional data - expires automatically
+      </div>
       <div className="mx-auto max-w-4xl px-6 py-10">
         <header className="border-b border-[#d8deea] pb-6">
           <p className="text-sm font-medium text-[#4f46e5]">
@@ -22,7 +25,7 @@ export default async function PublicDeliveryPage({
           </p>
           <h1 className="mt-2 text-3xl font-semibold">{delivery.title}</h1>
           <p className="mt-3 text-sm text-[#64748b]">
-            Case: {delivery.caseTitle} · Expires{" "}
+            Case: {delivery.caseTitle} - Expires{" "}
             {formatDateTime(delivery.expiresAt)}
           </p>
         </header>
@@ -53,6 +56,14 @@ export default async function PublicDeliveryPage({
             ))}
           </div>
         </section>
+        <footer className="mt-8 flex flex-wrap gap-4 border-t border-[#d8deea] pt-5 text-sm font-semibold">
+          <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/privacy">
+            Privacy
+          </Link>
+          <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/terms">
+            Terms
+          </Link>
+        </footer>
       </div>
     </main>
   );
