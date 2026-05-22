@@ -65,6 +65,18 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
             intake => intake.TenantId == body.DemoTenantId,
             TestContext.Current.CancellationToken);
         intakeCount.Should().BeGreaterThan(0);
+        (await dbContext.Cases.CountAsync(
+            caseWorkspace => caseWorkspace.TenantId == body.DemoTenantId,
+            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
+        (await dbContext.Documents.CountAsync(
+            document => document.TenantId == body.DemoTenantId,
+            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
+        (await dbContext.DeliveryPackages.CountAsync(
+            package => package.TenantId == body.DemoTenantId,
+            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
+        (await dbContext.AuditEvents.CountAsync(
+            auditEvent => auditEvent.TenantId == body.DemoTenantId,
+            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
     }
 
     [Fact]

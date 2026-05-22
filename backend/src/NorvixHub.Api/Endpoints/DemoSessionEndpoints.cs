@@ -1,3 +1,4 @@
+using NorvixHub.Application.Documents;
 using NorvixHub.Api.Auth;
 using NorvixHub.Api.RateLimiting;
 using NorvixHub.Contracts.Auth;
@@ -10,7 +11,7 @@ using NorvixHub.Infrastructure.Persistence;
 
 namespace NorvixHub.Api.Endpoints;
 
-public static class DemoSessionEndpoints
+public static partial class DemoSessionEndpoints
 {
     private static readonly (string Provider, string DisplayName, bool Connected)[] DemoIntegrations =
     [
@@ -30,6 +31,7 @@ public static class DemoSessionEndpoints
 
     private static async Task<IResult> CreateDemoSession(
         NorvixHubDbContext dbContext,
+        IFileStorage fileStorage,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -78,6 +80,7 @@ public static class DemoSessionEndpoints
         dbContext.DemoSessions.Add(session);
         dbContext.IntakeItems.AddRange(CreateSeedIntakes(tenantId, userId, now));
         dbContext.IntegrationConnections.AddRange(CreateSeedIntegrations(tenantId, userId, now));
+        await AddSeedWorkspaceAsync(dbContext, fileStorage, tenantId, userId, now, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
@@ -140,4 +143,5 @@ public static class DemoSessionEndpoints
             yield return connection;
         }
     }
+
 }

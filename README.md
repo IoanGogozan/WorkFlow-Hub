@@ -53,10 +53,12 @@ Public demo components now implemented:
 
 - Demo session creation endpoint with bearer-token auth.
 - Isolated demo tenant/user/membership creation.
+- Rich fictional per-session seed data with intakes, a customer, case workspace, approved document, delivery package, generated summary document, integrations, and audit trail.
 - Expired demo session cleanup for database records and stored local files.
 - Public privacy and terms pages linked from the demo entry, app shell, and public delivery page.
 - Rate limiting for demo session creation and public delivery endpoints.
 - Global request body size limits and upload file size/type limits.
+- Correlation ID propagation through response headers, logs, clean error responses, and audit events.
 - Security headers and clean non-Development error responses without stack traces.
 - Reverse-proxy readiness with forwarded headers, optional HTTPS enforcement, and HSTS.
 - GitHub Actions CI checks backend tests, EF migration drift, frontend dependency audit/lint/build, and Docker Compose configuration.

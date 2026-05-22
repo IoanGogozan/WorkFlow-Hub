@@ -29,6 +29,12 @@ Status legend:
   - frontend `sessionStorage` token handling;
   - API client `Authorization: Bearer <demo-session-token>`;
   - global public demo banner.
+- Rich demo seed data:
+  - per-session fictional customer;
+  - case workspace with task and note;
+  - approved document stored through the configured storage provider;
+  - delivery package with generated summary document;
+  - visible audit trail for case/document/delivery actions.
 - Demo cleanup:
   - worker-backed expired session cleanup;
   - database cleanup for tenant-scoped demo records;
@@ -93,22 +99,19 @@ Status legend:
 
 ### Partial
 
-- Demo seed data:
-  - currently seeds tenant, user, membership, intakes, and integrations;
-  - still needs richer per-session cases, documents, and delivery examples if we want the initial workspace to show the full story before the visitor performs actions.
 - Observability:
   - app has logging in key places, clean public errors, and correlation ID propagation;
   - still needs cloud Application Insights wiring and minimum alerting.
 - Azure deploy:
   - workflow and bootstrap scripts exist;
-  - Azure resources, GitHub `demo` environment, secrets, DNS, and first real deployment have not been completed from this workstation.
+  - Azure resources, GitHub `demo` environment, secrets, DNS, and first real deployment are intentionally deferred until an Azure subscription is available and costs are approved.
 - Documentation:
   - README/status/security/deployment docs are updated;
   - this temporary draft still exists and must be deleted at the end.
 
 ### Pending Before Public Launch
 
-1. Create Azure resources and GitHub `demo` environment using the bootstrap scripts or Terraform.
+1. Create Azure resources and GitHub `demo` environment using the bootstrap scripts or Terraform after an Azure subscription is available and costs are approved.
 2. Run the GitHub Actions `Deploy Demo` workflow.
 3. Configure DNS for the chosen demo URL, preferably `demo.norvix.no`.
 4. Configure Application Insights/log visibility and minimum alerting.
@@ -132,10 +135,11 @@ Status legend:
 
 ### Next Implementation Order
 
-1. Provision Azure/GitHub environment and run first deploy.
-2. Configure DNS and Application Insights.
-3. Post-deploy smoke and hardening review.
-4. Final durable documentation pass and delete this draft.
+1. Keep local and CI readiness green while deployment is deferred.
+2. Provision Azure/GitHub environment and run first deploy when costs are approved.
+3. Configure DNS and Application Insights.
+4. Post-deploy smoke and hardening review.
+5. Final durable documentation pass and delete this draft.
 
 ## Target
 

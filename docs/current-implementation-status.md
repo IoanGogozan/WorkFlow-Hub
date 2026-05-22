@@ -15,6 +15,7 @@ This file records the current technical status. It is not a final acceptance sta
 - Delivery package with selected documents, simple generated PDF summary, expiring token link, public delivery page, access logging, revoke, and negative tests.
 - Analytics with dashboard metrics, CSV export, JSON export, and tenant-scoped tests.
 - Demo session model, migration, creation endpoint, bearer-token auth, and non-Development rejection of local dev headers.
+- Rich fictional per-session demo seeding now includes intakes, a customer, case workspace, task, note, approved document, delivery package, generated summary document, integrations, and audit trail.
 - Frontend `/demo` start page, demo token storage, API client bearer-token support, and public demo banner.
 - Worker-backed expired demo session cleanup for demo tenants, tenant-scoped records, and stored local files.
 - Explicit demo session isolation tests and public demo upload blocking.
@@ -46,9 +47,8 @@ The active implementation plan is:
 
 ## Current Gaps Before Public Demo
 
-- Full workflow demo tenant cloning or rich per-session seeding beyond intakes, integrations, and sample documents is not yet implemented.
 - Production-grade PDF rendering is not yet implemented; the current demo generates a simple PDF summary.
-- Azure resources have not been created from this workstation because Azure CLI and GitHub CLI are not installed here.
+- Azure resources have not been created because public demo deployment is intentionally deferred until an Azure subscription is available and costs are approved.
 - Terraform provisioning is not yet implemented in the repository; the current provisioning path is a bootstrap PowerShell script.
 
 ## Local-Only Or Mock-Backed Components
@@ -114,3 +114,4 @@ Record exact date and command output summaries here only after validation comman
 - `npm --prefix frontend audit --omit=dev --audit-level=high` - found 0 vulnerabilities.
 - `docker compose config --quiet` - passed.
 - `npm run test:e2e:public-demo` - Playwright public demo smoke test passed.
+- Rich per-session demo seed data for case/document/delivery/audit story was added and covered by demo session integration tests.

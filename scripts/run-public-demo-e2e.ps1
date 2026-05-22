@@ -18,7 +18,7 @@ function Wait-HttpOk {
     do {
         try {
             $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
-            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400) {
                 return
             }
         }
@@ -45,6 +45,9 @@ function Stop-ListenersOnPort {
 
 $backendUrl = "http://localhost:$BackendPort"
 $frontendUrl = "http://localhost:$FrontendPort"
+
+Stop-ListenersOnPort -Port $FrontendPort
+Stop-ListenersOnPort -Port $BackendPort
 
 Write-Host "Starting local dependencies..."
 docker compose up -d
@@ -79,6 +82,7 @@ try {
 
     Wait-HttpOk -Url "$backendUrl/health/ready" -TimeoutSeconds 120
     Wait-HttpOk -Url "$frontendUrl/demo" -TimeoutSeconds 120
+    Wait-HttpOk -Url "$frontendUrl/intakes/new" -TimeoutSeconds 120
 
     Write-Host "Running public demo E2E smoke test..."
     $env:E2E_BASE_URL = $frontendUrl
