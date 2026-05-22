@@ -24,11 +24,13 @@ This file records the current technical status. It is not a final acceptance sta
 - Public `/privacy` and `/terms` pages exist and are linked from the demo start page, app shell, and public delivery page.
 - Rate limiting is enabled for `POST /api/demo-sessions` and public delivery endpoints.
 - Global request body size limits and upload file size/type limits are configured and tested.
+- Frontend document upload copy is aligned with backend limits: PDF/PNG/JPG/JPEG and 5 MB.
+- Correlation IDs are emitted on responses, accepted from `X-Correlation-ID`, included in clean error responses, added to logging scope, and written to audit events.
 - Security headers and non-Development exception handling are enabled and tested so public errors do not expose stack traces.
 - Forwarded headers, optional HTTPS enforcement, and HSTS are configured for reverse-proxy deployment readiness and tested.
 - GitHub Actions CI validates backend tests, EF migration drift, frontend dependency audit/lint/build, and Docker Compose configuration.
 - Demo deploy workflow has a main/tag gate, fictional-data confirmation, validation jobs, a `demo` environment gate, ACR image publishing, and Azure Container Apps update steps.
-- Azure Blob Storage adapter is implemented for shared deployed document storage and idempotent cleanup.
+- Azure Blob Storage adapter is implemented for shared deployed document storage and idempotent cleanup, with Azurite integration coverage for expired demo cleanup.
 - Bootstrap scripts exist for first-pass Azure demo resource provisioning and GitHub `demo` environment configuration.
 - Product documentation, walkthrough, architecture diagram, and screenshot instructions.
 
@@ -102,3 +104,13 @@ Record exact date and command output summaries here only after validation comman
 - `docker build -f frontend/Dockerfile --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:5000 -t norvixhub-frontend:local .` - passed.
 - `az account show` - not run successfully; Azure CLI is not installed on this workstation.
 - `gh auth status` - not run successfully; GitHub CLI is not installed on this workstation.
+
+2026-05-22:
+
+- `dotnet test backend\NorvixHub.sln --configuration Release -nr:false` - passed 99 tests.
+- `dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project backend/src/NorvixHub.Infrastructure/NorvixHub.Infrastructure.csproj --startup-project backend/src/NorvixHub.Api/NorvixHub.Api.csproj --configuration Release` - build succeeded; no pending model changes.
+- `npm --prefix frontend run lint` - passed.
+- `npm --prefix frontend run build` - passed.
+- `npm --prefix frontend audit --omit=dev --audit-level=high` - found 0 vulnerabilities.
+- `docker compose config --quiet` - passed.
+- `npm run test:e2e:public-demo` - Playwright public demo smoke test passed.

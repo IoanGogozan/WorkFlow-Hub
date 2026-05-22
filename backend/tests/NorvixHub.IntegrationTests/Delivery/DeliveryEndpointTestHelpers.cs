@@ -78,7 +78,14 @@ public sealed partial class DeliveryEndpointTests
         var intake = await PostJsonAsync<IntakeItemResponse>(
             client,
             "/api/intakes",
-            new CreateIntakeRequest("Manual", $"Delivery {Guid.NewGuid():N}", "Delivery test.", null, null, null, "Normal"));
+            new CreateIntakeRequest(
+                "Manual",
+                $"Delivery {Guid.NewGuid():N}",
+                "Delivery test.",
+                "Sordal Eiendom AS",
+                "999888777",
+                null,
+                "Normal"));
         return await PostJsonAsync<CaseResponse>(client, $"/api/intakes/{intake.Id}/convert-to-case");
     }
 

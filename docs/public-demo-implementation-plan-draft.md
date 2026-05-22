@@ -2,6 +2,141 @@
 
 Temporary document. Delete this file when the public demo implementation is finished and the durable docs have been updated.
 
+## Current Execution Status
+
+Last updated: 2026-05-22.
+
+Use this section as the temporary execution tracker until every item in this draft is either implemented or intentionally moved to durable documentation.
+
+Status legend:
+
+- Complete: implemented and locally verified.
+- Partial: implemented enough to work, but not yet fully aligned with this plan.
+- Pending: not implemented or not yet verified.
+
+### Completed
+
+- Public demo session architecture:
+  - `demo_sessions` persistence and EF migration;
+  - `POST /api/demo-sessions`;
+  - random demo bearer token returned once and stored only as hash;
+  - demo tenant, demo user, tenant membership, fictional intakes, and integration seed data;
+  - bearer-token demo auth;
+  - local dev auth headers accepted only in Development;
+  - local dev auth headers rejected outside Development;
+  - expired demo sessions rejected;
+  - frontend `/demo` start page;
+  - frontend `sessionStorage` token handling;
+  - API client `Authorization: Bearer <demo-session-token>`;
+  - global public demo banner.
+- Demo cleanup:
+  - worker-backed expired session cleanup;
+  - database cleanup for tenant-scoped demo records;
+  - `IFileStorage.DeleteAsync`;
+  - idempotent local file cleanup;
+  - Azure Blob storage adapter with idempotent delete;
+  - Azurite-backed integration test verifies expired demo cleanup removes Azure Blob files;
+  - cleanup tests for DB records, local files, missing files, and active session files.
+- Public upload safety:
+  - arbitrary multipart upload blocked outside Development;
+  - centralized upload size/type allowlist;
+  - sample document endpoint;
+  - frontend "Use sample document" flow;
+  - non-demo frontend upload copy matches backend limits: PDF/PNG/JPG/JPEG and 5 MB.
+- Visible workflow pieces:
+  - create intake;
+  - run mock AI analysis;
+  - approve AI suggestion;
+  - convert intake to case;
+  - classify document;
+  - approve classification;
+  - link document to case;
+  - create delivery package;
+  - generate simple PDF summary;
+  - create public delivery link;
+  - open public delivery link;
+  - public delivery access logging;
+  - aggregated case audit/activity trail;
+  - visible mock integration status and real-capable Brreg labeling.
+- Browser smoke verification:
+  - Playwright smoke test starts at `/demo` and completes the full public demo flow through public delivery and case audit trail;
+  - E2E runner starts backend/frontend on dedicated ports and avoids stale local dev servers.
+- PDF generation:
+  - generates a real simple PDF and stores it as a document;
+  - includes package title, case number, case title, customer name, document list, generated timestamp, delivery link ID when available, and Norvix footer;
+  - covered by integration test that downloads the generated PDF and verifies the case/customer/link fields.
+- Public pages:
+  - `/privacy`;
+  - `/terms`;
+  - legal links from demo entry, app shell, and public delivery page.
+- Public hardening:
+  - rate limiting for `POST /api/demo-sessions`;
+  - rate limiting for public delivery endpoints;
+  - request body size limit middleware;
+  - correlation ID middleware with `X-Correlation-ID` response header, inbound header support, logging scope, audit propagation, and tests;
+  - secure headers;
+  - non-Development exception handling without stack traces;
+  - HTTPS/forwarded headers/reverse proxy readiness;
+  - delivery links are random, expiring, and revocable;
+  - health endpoints avoid sensitive details.
+- CI/CD readiness:
+  - backend tests in GitHub Actions;
+  - EF migration drift check in GitHub Actions;
+  - frontend production dependency audit, lint, and build in GitHub Actions;
+  - Docker Compose validation in GitHub Actions;
+  - Dockerfiles for API, worker, and frontend;
+  - Deploy Demo workflow with main/tag gate, fictional-data confirmation, validation jobs, GitHub `demo` environment gate, ACR image publishing, Azure Container Apps updates, and smoke checks.
+- Azure bootstrap readiness:
+  - `scripts/provision-demo-azure.ps1`;
+  - `scripts/configure-github-demo-environment.ps1`;
+  - `docs/deployment-demo-azure.md`.
+
+### Partial
+
+- Demo seed data:
+  - currently seeds tenant, user, membership, intakes, and integrations;
+  - still needs richer per-session cases, documents, and delivery examples if we want the initial workspace to show the full story before the visitor performs actions.
+- Observability:
+  - app has logging in key places, clean public errors, and correlation ID propagation;
+  - still needs cloud Application Insights wiring and minimum alerting.
+- Azure deploy:
+  - workflow and bootstrap scripts exist;
+  - Azure resources, GitHub `demo` environment, secrets, DNS, and first real deployment have not been completed from this workstation.
+- Documentation:
+  - README/status/security/deployment docs are updated;
+  - this temporary draft still exists and must be deleted at the end.
+
+### Pending Before Public Launch
+
+1. Create Azure resources and GitHub `demo` environment using the bootstrap scripts or Terraform.
+2. Run the GitHub Actions `Deploy Demo` workflow.
+3. Configure DNS for the chosen demo URL, preferably `demo.norvix.no`.
+4. Configure Application Insights/log visibility and minimum alerting.
+5. Run post-deploy manual hardening checks:
+    - local dev headers rejected in Demo;
+    - rate limits active;
+    - upload blocked;
+    - delivery expired/revoked links blocked;
+    - cleanup worker active;
+    - privacy and terms linked;
+    - no stack traces in public responses.
+6. Update durable docs:
+    - `README.md`;
+    - `docs/security-and-privacy.md`;
+    - `docs/architecture.md`;
+    - `docs/api-contract.md`;
+    - `docs/current-implementation-status.md`;
+    - `docs/deployment-demo-azure.md`;
+    - `infra/terraform/environments/demo/README.md`.
+7. Delete this temporary draft after all durable docs are aligned.
+
+### Next Implementation Order
+
+1. Provision Azure/GitHub environment and run first deploy.
+2. Configure DNS and Application Insights.
+3. Post-deploy smoke and hardening review.
+4. Final durable documentation pass and delete this draft.
+
 ## Target
 
 Norvix WorkFlow Hub should become a public interactive demo for Norvix AS.

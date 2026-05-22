@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "powershell -ExecutionPolicy Bypass -File scripts/dev.ps1",
     "test:backend": "dotnet test backend/NorvixHub.sln --configuration Release -nr:false",
-    "test:frontend": "npm --prefix frontend run lint && npm --prefix frontend run build"
+    "test:frontend": "npm --prefix frontend run lint && npm --prefix frontend run build",
+    "test:e2e:public-demo": "powershell -ExecutionPolicy Bypass -File scripts/run-public-demo-e2e.ps1"
   }
 }

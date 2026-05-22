@@ -34,6 +34,7 @@ if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false))
 }
 
 app.UseDeploymentProxyReadiness();
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseRouting();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<PublicExceptionHandlingMiddleware>();

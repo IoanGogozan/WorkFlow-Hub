@@ -100,6 +100,8 @@ Controls:
 
 Controls:
 
+- `X-Correlation-ID` response header on all requests;
+- accepted client `X-Correlation-ID` values are echoed, used as `HttpContext.TraceIdentifier`, added to logging scope, and written to audit events;
 - `X-Content-Type-Options: nosniff`;
 - `X-Frame-Options: DENY`;
 - `Referrer-Policy: no-referrer`;
@@ -186,7 +188,7 @@ Suggested defaults:
 Use:
 
 - structured application logs;
-- correlation IDs;
+- correlation IDs propagated through response headers, logs, clean error responses, and audit events;
 - audit events;
 - integration sync logs;
 - health endpoints;

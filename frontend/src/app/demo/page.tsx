@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { saveDemoSession, type DemoSession } from "@/lib/demo-session";
 
@@ -23,8 +23,14 @@ export default function DemoStartPage() {
 function DemoStartContent() {
   const searchParams = useSearchParams();
   const reason = searchParams.get("reason");
+  const [isReady, setIsReady] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setIsReady(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   async function startDemo() {
     try {
@@ -48,6 +54,7 @@ function DemoStartContent() {
   return (
     <DemoPageShell
       error={error}
+      isReady={isReady}
       isStarting={isStarting}
       onStartDemo={startDemo}
       reason={reason}
@@ -58,6 +65,7 @@ function DemoStartContent() {
 type DemoPageShellProps = {
   reason?: string | null;
   error?: string | null;
+  isReady?: boolean;
   isStarting?: boolean;
   onStartDemo?: () => void;
 };
@@ -65,6 +73,7 @@ type DemoPageShellProps = {
 function DemoPageShell({
   reason,
   error,
+  isReady = false,
   isStarting = false,
   onStartDemo,
 }: DemoPageShellProps) {
@@ -119,11 +128,15 @@ function DemoPageShell({
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <button
               className="inline-flex w-fit rounded-md bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isStarting || !onStartDemo}
+              disabled={!isReady || isStarting || !onStartDemo}
               onClick={onStartDemo}
               type="button"
             >
-              {isStarting ? "Starting workspace..." : "Start demo workspace"}
+              {!isReady
+                ? "Loading demo..."
+                : isStarting
+                  ? "Starting workspace..."
+                  : "Start demo workspace"}
             </button>
             <p className="text-sm text-[#64748b]">
               No login is required for the public demo.

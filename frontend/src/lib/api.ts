@@ -14,6 +14,8 @@ type ApiOptions = {
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
     Accept: "application/json",
+    "Cache-Control": "no-store",
+    Pragma: "no-cache",
     ...authHeaders(),
   };
 
@@ -25,6 +27,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     method: options.method ?? "GET",
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    cache: "no-store",
     signal: options.signal,
   });
 
@@ -50,9 +53,12 @@ export async function apiForm<T>(
     method: options.method ?? "POST",
     headers: {
       Accept: "application/json",
+      "Cache-Control": "no-store",
+      Pragma: "no-cache",
       ...authHeaders(),
     },
     body: formData,
+    cache: "no-store",
     signal: options.signal,
   });
 

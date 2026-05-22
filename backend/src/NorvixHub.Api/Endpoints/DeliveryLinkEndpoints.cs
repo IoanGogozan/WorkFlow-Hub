@@ -31,16 +31,32 @@ public static partial class DeliveryEndpoints
             return Results.NotFound();
         }
 
-        var caseTitle = await dbContext.Cases
+        var caseInfo = await dbContext.Cases
             .Where(caseWorkspace => caseWorkspace.Id == package.CaseId && caseWorkspace.TenantId == package.TenantId)
-            .Select(caseWorkspace => caseWorkspace.Title)
+            .Select(caseWorkspace => new DeliveryPdfCaseInfo(
+                caseWorkspace.Title,
+                caseWorkspace.CaseNumber,
+                caseWorkspace.CustomerId,
+                caseWorkspace.SourceIntakeItemId))
             .SingleAsync(cancellationToken);
+        var customerName = await ResolveDeliveryCustomerNameAsync(caseInfo, package.TenantId, dbContext, cancellationToken);
+        var deliveryLinkId = await dbContext.DeliveryLinks
+            .Where(link => link.TenantId == package.TenantId && link.DeliveryPackageId == package.Id)
+            .OrderByDescending(link => link.CreatedAt)
+            .Select(link => (Guid?)link.Id)
+            .FirstOrDefaultAsync(cancellationToken);
         var documentTitles = await dbContext.DeliveryPackageItems
             .Where(item => item.TenantId == package.TenantId && item.DeliveryPackageId == package.Id)
             .OrderBy(item => item.DisplayName)
             .Select(item => item.DisplayName)
             .ToListAsync(cancellationToken);
-        var pdfBytes = CreatePdfSummaryBytes(package.Title, caseTitle, documentTitles);
+        var pdfBytes = CreatePdfSummaryBytes(
+            package.Title,
+            caseInfo.Title,
+            caseInfo.CaseNumber,
+            customerName,
+            deliveryLinkId,
+            documentTitles);
         await using var pdfStream = new MemoryStream(pdfBytes);
         var filename = $"{SanitizeFilename(package.Title)}-summary.pdf";
         var stored = await fileStorage.SaveAsync(
@@ -152,4 +168,35 @@ public static partial class DeliveryEndpoints
 
         return Results.NoContent();
     }
+
+    private static async Task<string?> ResolveDeliveryCustomerNameAsync(
+        DeliveryPdfCaseInfo caseInfo,
+        Guid tenantId,
+        NorvixHubDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (caseInfo.CustomerId is { } customerId)
+        {
+            return await dbContext.Customers
+                .Where(customer => customer.TenantId == tenantId && customer.Id == customerId)
+                .Select(customer => customer.Name)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
+        if (caseInfo.SourceIntakeItemId is { } intakeId)
+        {
+            return await dbContext.IntakeItems
+                .Where(intake => intake.TenantId == tenantId && intake.Id == intakeId)
+                .Select(intake => intake.CustomerName)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
+        return null;
+    }
+
+    private sealed record DeliveryPdfCaseInfo(
+        string Title,
+        string CaseNumber,
+        Guid? CustomerId,
+        Guid? SourceIntakeItemId);
 }

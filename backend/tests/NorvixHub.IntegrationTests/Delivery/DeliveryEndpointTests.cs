@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using FluentAssertions;
 using NorvixHub.Contracts.Cases;
 using NorvixHub.Contracts.Delivery;
@@ -107,6 +108,34 @@ public sealed partial class DeliveryEndpointTests : IClassFixture<NorvixHubApiFa
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
         bytes.Should().StartWith("%PDF"u8.ToArray());
+    }
+
+    [Fact]
+    public async Task Generated_summary_pdf_includes_case_customer_and_delivery_link_id()
+    {
+        using var client = _factory.CreateClient();
+        var caseWorkspace = await CreateCaseAsync(client);
+        var document = await UploadAndLinkDocumentAsync(client, caseWorkspace.Id, "summary-fields.pdf");
+        var package = await CreatePackageAsync(client, caseWorkspace.Id, [document.Id]);
+        var linked = await CreateLinkAsync(client, package.Id, DateTimeOffset.UtcNow.AddDays(7));
+        var link = linked.Links.Single(item => item.Token is not null);
+
+        var generated = await PostJsonAsync<DeliveryPackageResponse>(
+            client,
+            $"/api/delivery-packages/{package.Id}/generate-pdf");
+
+        using var response = await SendWithDemoAuthAsync(
+            client,
+            HttpMethod.Get,
+            $"/api/documents/{generated.SummaryPdfDocumentId}/download");
+        var bytes = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        var pdfText = Encoding.ASCII.GetString(bytes);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        pdfText.Should().Contain(caseWorkspace.CaseNumber);
+        pdfText.Should().Contain(caseWorkspace.Title);
+        pdfText.Should().Contain("Sordal Eiendom AS");
+        pdfText.Should().Contain(link.Id.ToString());
     }
 
     [Fact]

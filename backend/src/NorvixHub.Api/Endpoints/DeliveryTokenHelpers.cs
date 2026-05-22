@@ -18,7 +18,13 @@ public static partial class DeliveryEndpoints
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }
 
-    private static byte[] CreatePdfSummaryBytes(string title, string caseTitle, IReadOnlyCollection<string> documentTitles)
+    private static byte[] CreatePdfSummaryBytes(
+        string title,
+        string caseTitle,
+        string caseNumber,
+        string? customerName,
+        Guid? deliveryLinkId,
+        IReadOnlyCollection<string> documentTitles)
     {
         var contentLines = new List<string>
         {
@@ -28,7 +34,11 @@ public static partial class DeliveryEndpoints
             $"({EscapePdfText(title)}) Tj",
             "/F1 11 Tf",
             "0 -28 Td",
-            $"(Case: {EscapePdfText(caseTitle)}) Tj",
+            $"(Case: {EscapePdfText(caseNumber)} - {EscapePdfText(caseTitle)}) Tj",
+            "0 -18 Td",
+            $"(Customer: {EscapePdfText(customerName ?? "Not set")}) Tj",
+            "0 -18 Td",
+            $"(Delivery link ID: {EscapePdfText(deliveryLinkId?.ToString() ?? "Not created yet")}) Tj",
             "0 -18 Td",
             $"(Generated: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC) Tj",
             "0 -28 Td",

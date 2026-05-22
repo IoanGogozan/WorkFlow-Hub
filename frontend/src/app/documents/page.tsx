@@ -182,7 +182,7 @@ export default function DocumentsPage() {
               <p className="mt-2 text-sm leading-6 text-[#64748b]">
                 {isPublicDemo
                   ? "Public demo upload is disabled to prevent personal or confidential files from being submitted."
-                  : "Allowed: PDF, DOCX, XLSX, PNG, JPG. Maximum size is 10 MB."}
+                  : "Allowed: PDF, PNG, JPG, JPEG. Maximum size is 5 MB."}
               </p>
             </div>
             {isPublicDemo ? (

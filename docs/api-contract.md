@@ -13,6 +13,7 @@ Status markers:
 - All write operations validate role and object-level authorization.
 - All important state changes write audit events.
 - Use JSON request/response bodies unless file upload uses multipart form data.
+- Responses include `X-Correlation-ID`. Clients may send `X-Correlation-ID`; valid values are echoed and written to audit/log context.
 
 ## Health
 
@@ -24,10 +25,36 @@ GET /health/ready
 ## Auth and Session
 
 ```http
+POST /api/demo-sessions
 GET /api/me
 GET /api/tenants
 POST /api/tenants/{tenantId}/switch
 ```
+
+`POST /api/demo-sessions` is public in Demo mode. It creates an isolated temporary demo tenant, demo user, tenant membership, fictional seed data, and returns the raw bearer token once.
+
+```json
+{
+  "sessionId": "guid",
+  "demoTenantId": "guid",
+  "token": "random-demo-session-token",
+  "expiresAt": "2026-05-17T12:00:00Z"
+}
+```
+
+Authenticated public demo API requests use:
+
+```http
+Authorization: Bearer <demo-session-token>
+```
+
+Rules:
+
+- the raw token is never stored server-side; only a hash is stored;
+- the token resolves tenant/user context server-side;
+- client-provided tenant headers are rejected outside Development;
+- expired demo sessions return `401 Unauthorized`;
+- public demo mode blocks arbitrary multipart document upload and uses `POST /api/documents/sample`.
 
 ## Intake
 
@@ -87,6 +114,7 @@ GET /api/cases/{id}/missing-information
 ```http
 GET /api/documents
 POST /api/documents
+POST /api/documents/sample
 GET /api/documents/{id}
 GET /api/documents/{id}/download
 POST /api/documents/{id}/versions
@@ -185,6 +213,8 @@ Use a consistent problem details response:
   "traceId": "00-..."
 }
 ```
+
+In non-Development environments, unhandled exceptions return a clean `application/problem+json` response without stack traces. The problem `instance` and the `X-Correlation-ID` response header use the same correlation ID.
 
 ## Required Authorization Tests
 
