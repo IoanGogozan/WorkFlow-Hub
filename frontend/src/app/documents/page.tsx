@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WhyThisMatters } from "@/components/why-this-matters";
 import { api, apiForm } from "@/lib/api";
 import { getDemoSessionToken } from "@/lib/demo-session";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -108,10 +110,22 @@ export default function DocumentsPage() {
         <section className="space-y-6">
           <div>
             <p className="text-sm font-medium text-[#64748b]">
-              Document workflow
+              Steg 5: Dokumentflyt
             </p>
-            <h2 className="mt-2 text-3xl font-semibold">Documents</h2>
+            <h2 className="mt-2 text-3xl font-semibold">Dokumenter</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
+              Dokumenter kan knyttes til saken, klassifiseres og brukes i en
+              kontrollert kundeleveranse.
+            </p>
           </div>
+
+          <WhyThisMatters>
+            <p>
+              Dokumentflyten viser hvordan filer ikke bare lagres som vedlegg,
+              men får status, metadata, kobling til sak og kan spores frem til
+              levering.
+            </p>
+          </WhyThisMatters>
 
           {error ? (
             <ErrorState message={error} />
@@ -119,8 +133,8 @@ export default function DocumentsPage() {
             <LoadingState label="Loading documents" />
           ) : documents.length === 0 ? (
             <EmptyState
-              message="Upload a PDF, Office document, or image to start classification."
-              title="No documents yet"
+              message="Bruk et sample-dokument for å starte klassifisering i demoen."
+              title="Ingen dokumenter ennå"
             />
           ) : (
             <section className="overflow-hidden rounded-md border border-[#d8deea] bg-white">
@@ -146,15 +160,15 @@ export default function DocumentsPage() {
                         {document.title}
                       </Link>
                       <p className="mt-2 text-sm text-[#64748b]">
-                        Case: {document.caseId ?? "Not linked"}
+                        Sak: {document.caseId ?? "Ikke koblet"}
                       </p>
                     </div>
                     <div className="text-sm text-[#475569]">
-                      <p className="font-medium text-[#162033]">Expiry</p>
+                      <p className="font-medium text-[#162033]">Utløp</p>
                       <p className="mt-1">{formatDate(document.expiryDate)}</p>
                     </div>
                     <div className="text-sm text-[#475569]">
-                      <p className="font-medium text-[#162033]">Created</p>
+                      <p className="font-medium text-[#162033]">Opprettet</p>
                       <p className="mt-1">{formatDateTime(document.createdAt)}</p>
                     </div>
                     <div className="md:text-right">
@@ -162,7 +176,7 @@ export default function DocumentsPage() {
                         className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
                         href={`/documents/${document.id}`}
                       >
-                        Open
+                        Åpne dokument
                       </Link>
                     </div>
                   </article>
@@ -172,22 +186,29 @@ export default function DocumentsPage() {
           )}
         </section>
 
-        <aside>
+        <aside className="space-y-6">
+          <DemoGuidePanel
+            activeStep={7}
+            nextDescription="Når dokumentene er klare, lag en leveringspakke fra saken eller gå videre til oppsummeringen av demoen."
+            nextHref="/summary"
+            nextLabel="Se oppsummering"
+          />
+
           <form
             className="space-y-5 rounded-md border border-[#d8deea] bg-white p-5"
             onSubmit={uploadDocument}
           >
             <div>
-              <h3 className="text-lg font-semibold">Upload document</h3>
+              <h3 className="text-lg font-semibold">Dokument i demo</h3>
               <p className="mt-2 text-sm leading-6 text-[#64748b]">
                 {isPublicDemo
-                  ? "Public demo upload is disabled to prevent personal or confidential files from being submitted."
+                  ? "Opplasting er slått av i public demo for å hindre at personlige eller konfidensielle filer sendes inn."
                   : "Allowed: PDF, PNG, JPG, JPEG. Maximum size is 5 MB."}
               </p>
             </div>
             {isPublicDemo ? (
               <div className="rounded-md border border-[#fde68a] bg-[#fffbeb] p-3 text-sm text-[#92400e]">
-                Use the generated sample document for classification and delivery.
+                Bruk sample-dokumentet for klassifisering og levering.
               </div>
             ) : null}
             {uploadError ? <ErrorState message={uploadError} /> : null}
@@ -198,7 +219,7 @@ export default function DocumentsPage() {
                 onClick={createSampleDocument}
                 type="button"
               >
-                {creatingSample ? "Creating sample..." : "Use sample document"}
+                {creatingSample ? "Lager sample..." : "Bruk sample-dokument"}
               </button>
             ) : null}
             <label className="block">
@@ -230,7 +251,11 @@ export default function DocumentsPage() {
               disabled={uploading || isPublicDemo}
               type="submit"
             >
-              {isPublicDemo ? "Upload disabled" : uploading ? "Uploading..." : "Upload document"}
+              {isPublicDemo
+                ? "Opplasting deaktivert"
+                : uploading
+                  ? "Laster opp..."
+                  : "Last opp dokument"}
             </button>
           </form>
         </aside>

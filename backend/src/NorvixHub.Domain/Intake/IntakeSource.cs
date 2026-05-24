@@ -5,6 +5,6 @@ public enum IntakeSource
     Manual,
     MockEmail,
     MockForm,
+    MockDocumentUpload,
     Api
 }
-

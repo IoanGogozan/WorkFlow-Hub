@@ -4,6 +4,7 @@ using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Customers;
 using NorvixHub.Domain.Delivery;
 using NorvixHub.Domain.Documents;
+using NorvixHub.Domain.Intake;
 using NorvixHub.Infrastructure.Persistence;
 
 namespace NorvixHub.Api.Endpoints;
@@ -15,11 +16,13 @@ public static partial class DemoSessionEndpoints
         IFileStorage fileStorage,
         Guid tenantId,
         Guid userId,
+        IntakeItem sourceIntake,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         var customer = CreateSeedCustomer(tenantId, userId, now);
-        var caseWorkspace = CreateSeedCase(tenantId, userId, customer.Id, now);
+        var caseWorkspace = CreateSeedCase(tenantId, userId, customer.Id, sourceIntake.Id, now);
+        sourceIntake.MarkConvertedToCase(caseWorkspace.Id, userId, now.AddHours(-5));
         var approvedDocument = await CreateApprovedSeedDocumentAsync(
             fileStorage,
             tenantId,
@@ -50,6 +53,7 @@ public static partial class DemoSessionEndpoints
         dbContext.AuditEvents.AddRange(CreateSeedAuditTrail(
             tenantId,
             userId,
+            sourceIntake,
             caseWorkspace,
             approvedDocument.Document,
             package,
@@ -76,6 +80,7 @@ public static partial class DemoSessionEndpoints
         Guid tenantId,
         Guid userId,
         Guid customerId,
+        Guid sourceIntakeId,
         DateTimeOffset now)
     {
         return new CaseWorkspace
@@ -90,7 +95,8 @@ public static partial class DemoSessionEndpoints
             OwnerUserId = userId,
             DueDate = DateOnly.FromDateTime(now.AddDays(7).UtcDateTime),
             MissingInformationJson = "[\"Customer confirmation of delivery recipient\"]",
-            ExternalProjectId = "TRIPLETEX-MOCK-1042"
+            ExternalProjectId = "TRIPLETEX-MOCK-1042",
+            SourceIntakeItemId = sourceIntakeId
         };
     }
 
@@ -244,6 +250,7 @@ public static partial class DemoSessionEndpoints
     private static IEnumerable<AuditEvent> CreateSeedAuditTrail(
         Guid tenantId,
         Guid userId,
+        IntakeItem sourceIntake,
         CaseWorkspace caseWorkspace,
         DocumentRecord document,
         DeliveryPackage package,
@@ -251,6 +258,9 @@ public static partial class DemoSessionEndpoints
     {
         return
         [
+            CreateAudit(tenantId, userId, "IntakeItem", sourceIntake.Id, "IntakeCreated", now.AddHours(-6)),
+            CreateAudit(tenantId, userId, "IntakeItem", sourceIntake.Id, "AiAnalysisRequested", now.AddHours(-5).AddMinutes(-40)),
+            CreateAudit(tenantId, userId, "IntakeItem", sourceIntake.Id, "AiSuggestionApproved", now.AddHours(-5).AddMinutes(-20)),
             CreateAudit(tenantId, userId, "CaseWorkspace", caseWorkspace.Id, "CaseCreated", now.AddHours(-5)),
             CreateAudit(tenantId, userId, "DocumentRecord", document.Id, "DocumentUploaded", now.AddHours(-3)),
             CreateAudit(tenantId, userId, "DocumentRecord", document.Id, "DocumentClassificationApproved", now.AddHours(-2)),

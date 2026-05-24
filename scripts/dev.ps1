@@ -17,6 +17,41 @@ function Assert-PortAvailable {
     }
 }
 
+function Receive-DevJobOutput {
+    param([System.Management.Automation.Job] $Job)
+
+    Receive-Job -Job $Job -ErrorAction Continue
+}
+
+function Wait-BackendReady {
+    param(
+        [string] $Url,
+        [System.Management.Automation.Job] $Job,
+        [int] $TimeoutSeconds = 60
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        Receive-DevJobOutput -Job $Job
+
+        if ($Job.State -ne "Running") {
+            throw "Backend process stopped before it became ready."
+        }
+
+        try {
+            $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2
+            if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+                return
+            }
+        }
+        catch {
+            Start-Sleep -Seconds 1
+        }
+    }
+
+    throw "Backend did not become ready at $Url within $TimeoutSeconds seconds."
+}
+
 Assert-PortAvailable -Ports @(3000, 5000)
 
 Write-Host "Starting local dependencies with Docker Compose..."
@@ -53,6 +88,9 @@ try {
         dotnet run --project backend/src/NorvixHub.Api -nr:false
     } -ArgumentList $root.Path
 
+    Write-Host "Waiting for backend to become ready..."
+    Wait-BackendReady -Url "http://localhost:5000/health" -Job $jobs[0]
+
     $jobs += Start-Job -Name "NorvixHub.Frontend" -ScriptBlock {
         param([string] $FrontendRoot)
 
@@ -62,13 +100,22 @@ try {
 
     while (($jobs | Where-Object { $_.State -eq "Running" }).Count -eq $jobs.Count) {
         foreach ($job in $jobs) {
-            Receive-Job -Job $job
+            Receive-DevJobOutput -Job $job
         }
         Start-Sleep -Seconds 1
     }
 
     foreach ($job in $jobs) {
-        Receive-Job -Job $job
+        Receive-DevJobOutput -Job $job
+    }
+
+    $failedJobs = $jobs | Where-Object { $_.State -eq "Failed" }
+    if ($failedJobs) {
+        $details = $failedJobs |
+            Select-Object Name, State |
+            Format-Table -AutoSize |
+            Out-String
+        throw "One or more dev processes failed:`n$details"
     }
 }
 finally {

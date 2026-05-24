@@ -4,9 +4,11 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import type { DeliveryPackage } from "@/lib/types";
@@ -144,7 +146,7 @@ export default function DeliveryPackagePage() {
                   className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
                   href={`/cases/${deliveryPackage.caseId}`}
                 >
-                  Back to case
+                  Tilbake til sak
                 </Link>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <h2 className="text-3xl font-semibold">
@@ -153,6 +155,13 @@ export default function DeliveryPackagePage() {
                   <StatusBadge status={deliveryPackage.status} />
                 </div>
               </div>
+
+              <WhyThisMatters title="Steg 6: Ryddig kundeleveranse">
+                <p>
+                  I stedet for løse vedlegg på e-post får kunden én
+                  leveringslenke. Firmaet får status, historikk og kontroll.
+                </p>
+              </WhyThisMatters>
 
               <section className="rounded-md border border-[#d8deea] bg-white p-6">
                 <h3 className="text-lg font-semibold">Package documents</h3>
@@ -205,7 +214,7 @@ export default function DeliveryPackagePage() {
                               href={`/delivery/${link.token}`}
                               target="_blank"
                             >
-                              Open public link
+                              Åpne som kunde
                             </Link>
                           ) : null}
                         </div>
@@ -226,6 +235,13 @@ export default function DeliveryPackagePage() {
 
             <aside className="space-y-6">
               {actionError ? <ErrorState message={actionError} /> : null}
+
+              <DemoGuidePanel
+                activeStep={7}
+                nextDescription="Lag eller åpne kundelenken, og avslutt demoen med en samlet oppsummering av arbeidsflyten."
+                nextHref="/summary"
+                nextLabel="Se oppsummering"
+              />
 
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
                 <h3 className="text-lg font-semibold">Summary PDF</h3>
@@ -283,7 +299,7 @@ export default function DeliveryPackagePage() {
                   disabled={action !== null}
                   type="submit"
                 >
-                  {action === "link" ? "Creating..." : "Create public link"}
+                  {action === "link" ? "Creating..." : "Lag kundelenke"}
                 </button>
                 {newPublicUrl ? (
                   <div className="rounded-md border border-[#bbf7d0] bg-[#f0fdf4] p-3 text-sm">

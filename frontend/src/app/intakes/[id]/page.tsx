@@ -8,9 +8,12 @@ import {
   DemoCapabilityBadge,
   DemoCapabilityNote,
 } from "@/components/demo-capability-badge";
+import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
+import { SourceBadge } from "@/components/source-badge";
 import { StatusBadge } from "@/components/status-badge";
+import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { aiCapability } from "@/lib/demo-capabilities";
 import { formatDateTime } from "@/lib/format";
@@ -154,16 +157,29 @@ export default function IntakeDetailPage() {
                   className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
                   href="/intakes"
                 >
-                  Back to intakes
+                  Tilbake til input
                 </Link>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <h2 className="text-3xl font-semibold">{intake.subject}</h2>
                   <StatusBadge status={intake.status} />
                 </div>
-                <p className="mt-2 text-sm text-[#64748b]">
-                  {intake.source} · Received {formatDateTime(intake.receivedAt)}
-                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-[#64748b]">
+                  <SourceBadge source={intake.source} />
+                  <span>Mottatt {formatDateTime(intake.receivedAt)}</span>
+                </div>
               </div>
+
+              <WhyThisMatters title="Steg 2: AI foreslår struktur">
+                <p>
+                  Dette viser hvordan ustrukturert tekst fra e-post, skjema
+                  eller API kan tolkes og gjøres om til felter som kundenavn,
+                  org.nr., kategori, hastegrad og oppgaver.
+                </p>
+                <p>
+                  AI kan foreslå struktur, men mennesket godkjenner før dataene
+                  brukes videre.
+                </p>
+              </WhyThisMatters>
 
               <article className="rounded-md border border-[#d8deea] bg-white p-6">
                 <h3 className="text-lg font-semibold">Request body</h3>
@@ -173,7 +189,7 @@ export default function IntakeDetailPage() {
               </article>
 
               <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Current fields</h3>
+                <h3 className="text-lg font-semibold">Gjeldende felter</h3>
                 <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                   <FieldValue label="Customer" value={intake.customerName} />
                   <FieldValue
@@ -189,13 +205,22 @@ export default function IntakeDetailPage() {
             <aside className="space-y-6">
               {actionError ? <ErrorState message={actionError} /> : null}
 
+              <DemoGuidePanel
+                activeStep={3}
+                nextDescription="Kjør AI-forslag, juster feltene ved behov og godkjenn strukturen før du oppretter saken."
+                nextHref={`/intakes/${intake.id}`}
+                nextLabel="Kjør AI-forslag"
+              />
+
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-semibold">AI review</h3>
+                  <h3 className="text-lg font-semibold">
+                    AI-forslag og godkjenning
+                  </h3>
                   <DemoCapabilityBadge capability={aiCapability} />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  AI suggestions require approval before they change intake data.
+                  AI-forslag må godkjennes av menneske før intake-data endres.
                 </p>
                 <div className="mt-3">
                   <DemoCapabilityNote capability={aiCapability} />
@@ -206,7 +231,7 @@ export default function IntakeDetailPage() {
                   onClick={analyze}
                   type="button"
                 >
-                  {action === "analyze" ? "Analyzing..." : "Analyze with AI"}
+                  {action === "analyze" ? "Analyserer..." : "Kjør AI-forslag"}
                 </button>
               </section>
 
@@ -216,9 +241,11 @@ export default function IntakeDetailPage() {
                   onSubmit={approve}
                 >
                   <div>
-                    <h3 className="text-lg font-semibold">AI suggestion</h3>
+                    <h3 className="text-lg font-semibold">
+                      AI-forslag - må godkjennes av menneske
+                    </h3>
                     <p className="mt-1 text-sm text-[#64748b]">
-                      Confidence: {Math.round(analysis.confidence * 100)}%
+                    Sikkerhet: {Math.round(analysis.confidence * 100)}%
                     </p>
                   </div>
                   <p className="text-sm leading-6 text-[#475569]">
@@ -250,7 +277,7 @@ export default function IntakeDetailPage() {
                   />
                   {analysis.suggestion.suggestedTasks.length > 0 ? (
                     <div>
-                      <p className="text-sm font-semibold">Suggested tasks</p>
+                      <p className="text-sm font-semibold">Foreslåtte oppgaver</p>
                       <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#475569]">
                         {analysis.suggestion.suggestedTasks.map((task) => (
                           <li key={task}>{task}</li>
@@ -263,15 +290,18 @@ export default function IntakeDetailPage() {
                     disabled={action !== null}
                     type="submit"
                   >
-                    {action === "approve" ? "Approving..." : "Approve suggestion"}
+                    {action === "approve"
+                      ? "Godkjenner..."
+                      : "Godkjenn og lagre struktur"}
                   </button>
                 </form>
               ) : null}
 
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <h3 className="text-lg font-semibold">Case conversion</h3>
+                <h3 className="text-lg font-semibold">Opprett sak</h3>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  Create a case workspace from this intake.
+                  Ingen data sendes videre før forslaget er godkjent. Opprett
+                  deretter en sporbar sak fra godkjent input.
                 </p>
                 <button
                   className="mt-4 rounded-md bg-[#162033] px-4 py-2 text-sm font-semibold text-white hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-60"
@@ -279,7 +309,9 @@ export default function IntakeDetailPage() {
                   onClick={convertToCase}
                   type="button"
                 >
-                  {action === "convert" ? "Converting..." : "Convert to case"}
+                  {action === "convert"
+                    ? "Oppretter..."
+                    : "Opprett sak fra godkjent input"}
                 </button>
               </section>
             </aside>

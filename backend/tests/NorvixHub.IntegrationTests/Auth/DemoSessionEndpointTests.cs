@@ -64,16 +64,48 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
         var intakeCount = await dbContext.IntakeItems.CountAsync(
             intake => intake.TenantId == body.DemoTenantId,
             TestContext.Current.CancellationToken);
-        intakeCount.Should().BeGreaterThan(0);
-        (await dbContext.Cases.CountAsync(
+        intakeCount.Should().Be(5);
+        var intakeSources = await dbContext.IntakeItems
+            .Where(intake => intake.TenantId == body.DemoTenantId)
+            .Select(intake => intake.Source)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        intakeSources.Should().BeEquivalentTo(
+            [
+                IntakeSource.MockEmail,
+                IntakeSource.MockForm,
+                IntakeSource.Api,
+                IntakeSource.MockDocumentUpload,
+                IntakeSource.Manual
+            ]);
+
+        var caseWorkspace = await dbContext.Cases.SingleAsync(
             caseWorkspace => caseWorkspace.TenantId == body.DemoTenantId,
-            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
-        (await dbContext.Documents.CountAsync(
-            document => document.TenantId == body.DemoTenantId,
-            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
-        (await dbContext.DeliveryPackages.CountAsync(
+            TestContext.Current.CancellationToken);
+        caseWorkspace.SourceIntakeItemId.Should().NotBeNull();
+
+        var sourceIntake = await dbContext.IntakeItems.SingleAsync(
+            intake => intake.Id == caseWorkspace.SourceIntakeItemId,
+            TestContext.Current.CancellationToken);
+        sourceIntake.Status.Should().Be(IntakeStatus.ConvertedToCase);
+        sourceIntake.ConvertedCaseId.Should().Be(caseWorkspace.Id);
+
+        var linkedDocument = await dbContext.Documents.SingleAsync(
+            document => document.TenantId == body.DemoTenantId &&
+                document.CaseId == caseWorkspace.Id &&
+                document.Title == "Approved pump station inspection report",
+            TestContext.Current.CancellationToken);
+        linkedDocument.Status.Should().Be(DocumentStatus.Approved);
+
+        var package = await dbContext.DeliveryPackages.SingleAsync(
             package => package.TenantId == body.DemoTenantId,
-            TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);
+            TestContext.Current.CancellationToken);
+        package.CaseId.Should().Be(caseWorkspace.Id);
+        (await dbContext.DeliveryPackageItems.AnyAsync(
+            item => item.TenantId == body.DemoTenantId &&
+                item.DeliveryPackageId == package.Id &&
+                item.DocumentId == linkedDocument.Id,
+            TestContext.Current.CancellationToken)).Should().BeTrue();
+
         (await dbContext.AuditEvents.CountAsync(
             auditEvent => auditEvent.TenantId == body.DemoTenantId,
             TestContext.Current.CancellationToken)).Should().BeGreaterThan(0);

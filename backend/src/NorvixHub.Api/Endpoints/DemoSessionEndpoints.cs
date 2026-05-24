@@ -78,9 +78,17 @@ public static partial class DemoSessionEndpoints
         dbContext.Users.Add(user);
         dbContext.TenantMemberships.Add(membership);
         dbContext.DemoSessions.Add(session);
-        dbContext.IntakeItems.AddRange(CreateSeedIntakes(tenantId, userId, now));
+        var seedIntakes = CreateSeedIntakes(tenantId, userId, now);
+        dbContext.IntakeItems.AddRange(seedIntakes);
         dbContext.IntegrationConnections.AddRange(CreateSeedIntegrations(tenantId, userId, now));
-        await AddSeedWorkspaceAsync(dbContext, fileStorage, tenantId, userId, now, cancellationToken);
+        await AddSeedWorkspaceAsync(
+            dbContext,
+            fileStorage,
+            tenantId,
+            userId,
+            seedIntakes[0],
+            now,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
@@ -88,7 +96,7 @@ public static partial class DemoSessionEndpoints
             new CreateDemoSessionResponse(sessionId, tenantId, token, expiresAt));
     }
 
-    private static IEnumerable<IntakeItem> CreateSeedIntakes(Guid tenantId, Guid userId, DateTimeOffset now)
+    private static IReadOnlyList<IntakeItem> CreateSeedIntakes(Guid tenantId, Guid userId, DateTimeOffset now)
     {
         return
         [
@@ -96,26 +104,63 @@ public static partial class DemoSessionEndpoints
             {
                 TenantId = tenantId,
                 CreatedBy = userId,
-                Source = IntakeSource.Manual,
-                Subject = "Service request - pump station inspection",
-                Body = "Customer asks for inspection documentation and delivery package for a municipal pump station.",
+                Source = IntakeSource.MockEmail,
+                Subject = "E-post: service request - pump station inspection",
+                Body = "Hei, vi trenger inspeksjonsrapport, dokumentasjon og en ryddig leveringspakke for pumpestasjon 14. Send gjerne status og mangelliste til driftsteamet.",
                 CustomerName = "Kristiansand Kommune",
                 OrganizationNumber = "963296746",
                 Category = "Inspection",
                 Urgency = "Normal",
-                ReceivedAt = now.AddHours(-4)
+                ReceivedAt = now.AddHours(-6)
             },
             new IntakeItem
             {
                 TenantId = tenantId,
                 CreatedBy = userId,
-                Source = IntakeSource.MockEmail,
-                Subject = "Missing documentation for maintenance case",
-                Body = "Operations team needs approved document classification before sending the delivery package.",
+                Source = IntakeSource.MockForm,
+                Subject = "Skjema: hasteforespørsel om FDV-dokumentasjon",
+                Body = "Webskjema fra kundeportal: FDV-dokumentasjon mangler for leveranse. Kunde ber om prioritet høy og bekreftet mottaker.",
                 CustomerName = "Agder Energi Drift AS",
                 Category = "Documentation",
                 Urgency = "High",
                 ReceivedAt = now.AddHours(-2)
+            },
+            new IntakeItem
+            {
+                TenantId = tenantId,
+                CreatedBy = userId,
+                Source = IntakeSource.Api,
+                Subject = "API: new maintenance order from field system",
+                Body = "External field system submitted maintenance order MO-7781 with customer reference, asset ID and requested completion date.",
+                CustomerName = "Setesdal Miljøservice AS",
+                OrganizationNumber = "918273645",
+                Category = "Maintenance",
+                Urgency = "Normal",
+                ReceivedAt = now.AddMinutes(-90)
+            },
+            new IntakeItem
+            {
+                TenantId = tenantId,
+                CreatedBy = userId,
+                Source = IntakeSource.MockDocumentUpload,
+                Subject = "Dokument: uploaded inspection attachment needs review",
+                Body = "Uploaded PDF contains inspection notes, expiry date and customer reference. Needs classification before delivery.",
+                CustomerName = "Arendal Eiendom KF",
+                Category = "Document review",
+                Urgency = "Low",
+                ReceivedAt = now.AddMinutes(-55)
+            },
+            new IntakeItem
+            {
+                TenantId = tenantId,
+                CreatedBy = userId,
+                Source = IntakeSource.Manual,
+                Subject = "Manuell: phone request logged by operations",
+                Body = "Operations user registered a phone request about missing delivery status and invoice reference for an existing service job.",
+                CustomerName = "Lillesand Havnedrift AS",
+                Category = "Customer follow-up",
+                Urgency = "Normal",
+                ReceivedAt = now.AddMinutes(-25)
             }
         ];
     }

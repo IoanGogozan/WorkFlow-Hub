@@ -6,10 +6,13 @@ import {
   DemoCapabilityBadge,
   DemoCapabilityNote,
 } from "@/components/demo-capability-badge";
+import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { IntegrationFlowMap } from "@/components/integration-flow-map";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { getIntegrationCapability } from "@/lib/demo-capabilities";
 import { formatDateTime } from "@/lib/format";
@@ -120,10 +123,11 @@ export default function IntegrationsPage() {
           <p className="text-sm font-medium text-[#64748b]">
             Systemer som snakker sammen
           </p>
-          <h2 className="mt-2 text-3xl font-semibold">Integrations</h2>
+          <h2 className="mt-2 text-3xl font-semibold">Integrasjoner</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
-            Public demo integrations show the intended workflow without using
-            real Microsoft, accounting, or Fabric customer tenants.
+            Demoen viser hvordan godkjente data kan flyte videre til
+            dokumentarkiv, regnskap, rapportering, kundeportal og audit log
+            uten å bruke ekte Microsoft-, regnskaps- eller Fabric-miljøer.
           </p>
         </div>
 
@@ -133,6 +137,23 @@ export default function IntegrationsPage() {
           <LoadingState label="Loading integrations" />
         ) : (
           <div className="space-y-5">
+            <IntegrationFlowMap />
+
+            <WhyThisMatters>
+              <p>
+                Norvix erstatter ikke systemene firmaet allerede bruker.
+                Demoen viser hvordan data kan flyte videre til dokumentarkiv,
+                regnskap, rapportering og kundeportal.
+              </p>
+            </WhyThisMatters>
+
+            <DemoGuidePanel
+              activeStep={6}
+              nextDescription="Kjør en demo-sync for å se hvordan godkjente data sendes videre. Gå deretter til oppsummeringen."
+              nextHref="/summary"
+              nextLabel="Se oppsummering"
+            />
+
             {actionError ? <ErrorState message={actionError} /> : null}
             {integrations.length === 0 ? (
               <EmptyState
@@ -164,6 +185,9 @@ export default function IntegrationsPage() {
                         </div>
                         <p className="mt-2 text-sm text-[#64748b]">
                           Provider: {integration.provider}
+                        </p>
+                        <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
+                          {businessExplanation(integration.provider)}
                         </p>
                         {integration.lastError ? (
                           <p className="mt-2 text-sm font-medium text-[#b91c1c]">
@@ -278,4 +302,26 @@ function IntegrationValue({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 text-[#64748b]">{value}</dd>
     </div>
   );
+}
+
+function businessExplanation(provider: string) {
+  const normalized = provider.toLowerCase();
+
+  if (normalized.includes("brreg")) {
+    return "Henter eller validerer firmadata basert på org.nr. og erstatter manuelt oppslag og copy/paste.";
+  }
+
+  if (normalized.includes("sharepoint") || normalized.includes("document")) {
+    return "Oppretter struktur for dokumenter og metadata og erstatter manuell mappehåndtering.";
+  }
+
+  if (normalized.includes("accounting") || normalized.includes("erp")) {
+    return "Forbereder fakturagrunnlag og erstatter manuell overføring av kunde, referanse og leveransedata.";
+  }
+
+  if (normalized.includes("fabric") || normalized.includes("power")) {
+    return "Oppdaterer rapportering automatisk og erstatter manuell statusrapportering.";
+  }
+
+  return "Sender godkjente data videre til et tilknyttet system og reduserer manuell kopiering mellom verktøy.";
 }

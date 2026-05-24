@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { DemoCapabilityBadge } from "@/components/demo-capability-badge";
+import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
+import { SourceBadge } from "@/components/source-badge";
 import { StatusBadge } from "@/components/status-badge";
+import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import {
   aiCapability,
@@ -30,22 +33,22 @@ type DashboardData = {
 const metricConfig = [
   {
     key: "newIntakes",
-    label: "New intakes",
+    label: "Nye input",
     tone: "border-l-[#2563eb]",
   },
   {
     key: "openCases",
-    label: "Open cases",
+    label: "Åpne saker",
     tone: "border-l-[#047857]",
   },
   {
     key: "documentsNeedingReview",
-    label: "Documents needing review",
+    label: "Dokumenter til kontroll",
     tone: "border-l-[#b45309]",
   },
   {
     key: "integrationFailures",
-    label: "Integration failures",
+    label: "Integrasjonsfeil",
     tone: "border-l-[#be123c]",
   },
 ] satisfies {
@@ -166,13 +169,13 @@ function DashboardContent({
               id="dashboard-heading"
               className="text-3xl font-semibold text-[#162033]"
             >
-              Operational dashboard
+              Demooversikt
             </h2>
             <Link
               className="inline-flex w-fit rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
               href="/intakes/new"
             >
-              New intake
+              Ny input
             </Link>
           </div>
         </div>
@@ -199,13 +202,13 @@ function DashboardContent({
         >
           <div className="flex items-center justify-between gap-3 border-b border-[#d8deea] px-5 py-4">
             <h3 id="intake-heading" className="text-lg font-semibold">
-              Intake inbox
+              Input sources
             </h3>
             <Link
               className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
               href="/intakes"
             >
-              View all
+              Se alle
             </Link>
           </div>
           {latestIntakes.length === 0 ? (
@@ -216,11 +219,11 @@ function DashboardContent({
                     className="inline-flex rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8]"
                     href="/intakes/new"
                   >
-                    Create intake
+                    Opprett input
                   </Link>
                 }
-                message="Create the first request to start the demo workflow."
-                title="No intakes yet"
+                message="Opprett første forespørsel for å starte demo-flyten."
+                title="Ingen input ennå"
               />
             </div>
           ) : (
@@ -231,9 +234,7 @@ function DashboardContent({
                   className="grid gap-3 p-5 md:grid-cols-4"
                 >
                   <div>
-                    <p className="text-sm font-medium text-[#64748b]">
-                      {item.source}
-                    </p>
+                    <SourceBadge source={item.source} />
                     <Link
                       className="mt-1 block font-semibold text-[#162033] hover:text-[#2563eb]"
                       href={`/intakes/${item.id}`}
@@ -252,35 +253,56 @@ function DashboardContent({
             </div>
           )}
         </section>
+
+        <WhyThisMatters>
+          <p>
+            Demooversikten viser hvordan forespørsler, AI-forslag,
+            menneskelig godkjenning, dokumenter og integrasjoner henger sammen
+            i samme arbeidsflyt.
+          </p>
+          <p>
+            Målet er å vise hvor manuell kopiering, statusoppfølging og
+            rapportering kan reduseres uten å bytte ut alle systemene rundt.
+          </p>
+        </WhyThisMatters>
       </section>
 
       <aside className="space-y-6" aria-label="Operational side panel">
+        <DemoGuidePanel
+          activeStep={2}
+          nextDescription="Åpne en forespørsel fra innboksen og kjør AI-forslag for å se hvordan input blir strukturert."
+          nextHref="/intakes"
+          nextLabel="Åpne input"
+        />
+
         <section className="rounded-md border border-[#d8deea] bg-white p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-semibold">AI review queue</h3>
+            <h3 className="text-lg font-semibold">
+              AI-forslag og godkjenning
+            </h3>
             <DemoCapabilityBadge capability={aiCapability} />
           </div>
           <p className="mt-3 text-sm leading-6 text-[#475569]">
             {pendingReviews.length === 0
-              ? "No review tasks are currently waiting for approval."
-              : `${pendingReviews.length} review task${pendingReviews.length === 1 ? "" : "s"} waiting for human approval.`}
+              ? "Ingen AI-forslag venter på godkjenning akkurat nå."
+              : `${pendingReviews.length} forslag venter på menneskelig godkjenning.`}
           </p>
           <Link
             className="mt-4 inline-flex rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
             href="/intakes"
           >
-            Open review queue
+            Åpne review
           </Link>
         </section>
 
         <section className="rounded-md border border-[#d8deea] bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-[#d8deea] px-5 py-4">
-            <h3 className="text-lg font-semibold">Integrations</h3>
+            <h3 className="text-lg font-semibold">Integrasjoner</h3>
             <Link
               className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
               href="/integrations"
             >
-              Manage
+              Administrer
             </Link>
           </div>
           {actionError ? (
@@ -350,7 +372,7 @@ function DashboardContent({
 function buildIntakeDetail(item: IntakeListItem) {
   const parts = [item.customerName, item.category, item.urgency].filter(Boolean);
   return parts.length > 0
-    ? parts.join(" · ")
+    ? parts.join(" - ")
     : `Received ${formatDate(item.receivedAt)}`;
 }
 

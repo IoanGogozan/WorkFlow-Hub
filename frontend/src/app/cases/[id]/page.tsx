@@ -5,10 +5,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
 import type {
@@ -186,17 +188,27 @@ export default function CaseDetailPage() {
                   className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
                   href="/cases"
                 >
-                  Back to cases
+                  Tilbake til saker
                 </Link>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <h2 className="text-3xl font-semibold">{caseDetail.title}</h2>
                   <StatusBadge status={caseDetail.status} />
                 </div>
                 <p className="mt-2 text-sm text-[#64748b]">
-                  {caseDetail.caseNumber} - Created{" "}
+                  {caseDetail.caseNumber} - opprettet{" "}
                   {formatDateTime(caseDetail.createdAt)}
                 </p>
               </div>
+
+              <WhyThisMatters title="Steg 4: Fra forespørsel til sporbar sak">
+                <p>
+                  Når input er godkjent, opprettes en sak med ansvar, status,
+                  dokumenter, oppgaver og historikk.
+                </p>
+                <p>
+                  Dette erstatter manuell oppfølging i e-post, Excel og mapper.
+                </p>
+              </WhyThisMatters>
 
               <article className="rounded-md border border-[#d8deea] bg-white p-6">
                 <h3 className="text-lg font-semibold">Description</h3>
@@ -283,11 +295,31 @@ export default function CaseDetailPage() {
             <aside className="space-y-6">
               {actionError ? <ErrorState message={actionError} /> : null}
 
+              <DemoGuidePanel
+                activeStep={5}
+                nextDescription="Kontroller dokumentene i saken og lag en leveringspakke når de er klare for kunde."
+                nextHref="/documents"
+                nextLabel="Se dokumenter"
+              />
+
+              <section className="rounded-md border border-[#d8deea] bg-white p-5">
+                <h3 className="text-lg font-semibold">
+                  Manuell jobb som erstattes
+                </h3>
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-[#475569]">
+                  <li>Kopiere data fra e-post</li>
+                  <li>Opprette mappe manuelt</li>
+                  <li>Lage oppgaver manuelt</li>
+                  <li>Oppdatere Excel-status</li>
+                  <li>Spørre kollegaer om status</li>
+                </ul>
+              </section>
+
               <form
                 className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
                 onSubmit={addTask}
               >
-                <h3 className="text-lg font-semibold">Add task</h3>
+                <h3 className="text-lg font-semibold">Legg til oppgave</h3>
                 <label className="block">
                   <span className="mb-1 block text-sm font-semibold text-[#334155]">
                     Title
@@ -315,7 +347,7 @@ export default function CaseDetailPage() {
                   disabled={submitting !== null}
                   type="submit"
                 >
-                  {submitting === "task" ? "Adding..." : "Add task"}
+                  {submitting === "task" ? "Legger til..." : "Legg til oppgave"}
                 </button>
               </form>
 
@@ -323,7 +355,7 @@ export default function CaseDetailPage() {
                 className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
                 onSubmit={addNote}
               >
-                <h3 className="text-lg font-semibold">Add note</h3>
+                <h3 className="text-lg font-semibold">Legg til notat</h3>
                 <label className="block">
                   <span className="mb-1 block text-sm font-semibold text-[#334155]">
                     Note
@@ -341,7 +373,7 @@ export default function CaseDetailPage() {
                   disabled={submitting !== null}
                   type="submit"
                 >
-                  {submitting === "note" ? "Adding..." : "Add note"}
+                  {submitting === "note" ? "Legger til..." : "Legg til notat"}
                 </button>
               </form>
 
@@ -349,7 +381,7 @@ export default function CaseDetailPage() {
                 className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
                 onSubmit={createDeliveryPackage}
               >
-                <h3 className="text-lg font-semibold">Create delivery package</h3>
+                <h3 className="text-lg font-semibold">Lag leveringspakke</h3>
                 <label className="block">
                   <span className="mb-1 block text-sm font-semibold text-[#334155]">
                     Package title
@@ -363,7 +395,7 @@ export default function CaseDetailPage() {
                 </label>
                 {documents.length === 0 ? (
                   <p className="text-sm leading-6 text-[#64748b]">
-                    No case documents are available for delivery.
+                    Ingen saksdokumenter er tilgjengelige for levering.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -405,7 +437,9 @@ export default function CaseDetailPage() {
                   disabled={submitting !== null || documents.length === 0}
                   type="submit"
                 >
-                  {submitting === "delivery" ? "Creating..." : "Create package"}
+                  {submitting === "delivery"
+                    ? "Oppretter..."
+                    : "Lag leveringspakke"}
                 </button>
               </form>
             </aside>

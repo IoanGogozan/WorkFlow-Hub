@@ -7,10 +7,29 @@ import { api } from "@/lib/api";
 import { saveDemoSession, type DemoSession } from "@/lib/demo-session";
 
 const reasonText: Record<string, string> = {
-  expired: "Your demo session expired. Start a new workspace to continue.",
-  missing: "Start a demo workspace before opening the app.",
-  invalid: "The demo session token was not accepted. Start a new workspace.",
+  expired: "Demoarbeidsområdet er utløpt. Start et nytt for å fortsette.",
+  missing: "Start et demoarbeidsområde før du åpner appen.",
+  invalid: "Demo-tokenet ble ikke godtatt. Start et nytt arbeidsområde.",
 };
+
+const demoCards = [
+  {
+    title: "Input fra flere kilder",
+    text: "E-post, skjema, API og manuell registrering samles i én innboks.",
+  },
+  {
+    title: "AI foreslår struktur",
+    text: "Ustrukturert tekst gjøres om til felter, oppgaver og mangelliste.",
+  },
+  {
+    title: "Mennesker godkjenner",
+    text: "AI endrer ikke data direkte. Forslag må godkjennes før saken går videre.",
+  },
+  {
+    title: "Integrasjoner distribuerer data",
+    text: "Data kan sendes til dokumentarkiv, økonomisystem, rapportering, kundeportal og audit log.",
+  },
+];
 
 export default function DemoStartPage() {
   return (
@@ -79,7 +98,7 @@ function DemoPageShell({
 }: DemoPageShellProps) {
   return (
     <main className="min-h-screen bg-[#f5f7fb]">
-      <section className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-6 py-12">
+      <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-12">
         <div className="mb-6">
           <Link
             className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
@@ -94,22 +113,42 @@ function DemoPageShell({
             Public interactive demo
           </p>
           <h1 className="mt-3 text-3xl font-semibold text-[#162033] sm:text-4xl">
-            Start a temporary demo workspace
+            Test en integrert arbeidsflyt
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-[#475569]">
-            This public demo uses fictional data and creates an isolated
-            workspace for your browser session. Demo data expires automatically.
+            Denne demoen viser hvordan Norvix kan koble sammen e-post,
+            skjema, API, dokumenter, AI-forslag, menneskelig godkjenning,
+            integrasjoner, rapportering og kundeleveranse i én samlet flyt.
           </p>
 
-          <ul className="mt-6 divide-y divide-[#e2e8f0] border-y border-[#e2e8f0] text-sm text-[#334155]">
-            <li className="py-3">
-              Fictional customers, cases, documents, and integrations.
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {demoCards.map((card) => (
+              <article
+                className="rounded-md border border-[#e2e8f0] bg-[#f8fafc] p-4"
+                key={card.title}
+              >
+                <h2 className="text-base font-semibold text-[#162033]">
+                  {card.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#475569]">
+                  {card.text}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <ul className="mt-6 grid gap-3 text-sm text-[#334155] sm:grid-cols-2 lg:grid-cols-4">
+            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
+              Fiktive data
             </li>
-            <li className="py-3">
-              Mock AI and mock accounting/Microsoft integration behavior.
+            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
+              Demo-safe integrasjoner
             </li>
-            <li className="py-3">
-              Do not upload personal, sensitive, or confidential information.
+            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
+              Ingen innlogging
+            </li>
+            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
+              Slettes automatisk etter 24 timer
             </li>
           </ul>
 
@@ -133,13 +172,13 @@ function DemoPageShell({
               type="button"
             >
               {!isReady
-                ? "Loading demo..."
+                ? "Laster demo..."
                 : isStarting
-                  ? "Starting workspace..."
-                  : "Start demo workspace"}
+                  ? "Starter arbeidsområde..."
+                  : "Start demoarbeidsområde"}
             </button>
             <p className="text-sm text-[#64748b]">
-              No login is required for the public demo.
+              Ingen innlogging er nødvendig for den offentlige demoen.
             </p>
           </div>
 
