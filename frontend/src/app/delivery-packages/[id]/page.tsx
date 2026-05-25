@@ -4,10 +4,10 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WorkflowProgress } from "@/components/workflow-progress";
 import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
@@ -154,9 +154,12 @@ export default function DeliveryPackagePage() {
                   </h2>
                   <StatusBadge status={deliveryPackage.status} />
                 </div>
+                <div className="mt-5">
+                  <WorkflowProgress activeStep={6} />
+                </div>
               </div>
 
-              <WhyThisMatters title="Steg 6: Ryddig kundeleveranse">
+              <WhyThisMatters title="Ryddig kundeleveranse">
                 <p>
                   I stedet for løse vedlegg på e-post får kunden én
                   leveringslenke. Firmaet får status, historikk og kontroll.
@@ -164,7 +167,7 @@ export default function DeliveryPackagePage() {
               </WhyThisMatters>
 
               <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Package documents</h3>
+                <h3 className="text-lg font-semibold">Dokumenter i leveransen</h3>
                 <div className="mt-4 divide-y divide-[#e2e8f0]">
                   {deliveryPackage.items.map((item) => (
                     <div
@@ -178,7 +181,7 @@ export default function DeliveryPackagePage() {
                         className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
                         href={`/documents/${item.documentId}`}
                       >
-                        Open document
+                        Åpne dokument
                       </Link>
                     </div>
                   ))}
@@ -186,10 +189,10 @@ export default function DeliveryPackagePage() {
               </section>
 
               <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Public links</h3>
+                <h3 className="text-lg font-semibold">Kundelenker</h3>
                 {deliveryPackage.links.length === 0 ? (
                   <p className="mt-3 text-sm text-[#64748b]">
-                    No public links have been created yet.
+                    Ingen kundelenker er opprettet ennå.
                   </p>
                 ) : (
                   <div className="mt-4 divide-y divide-[#e2e8f0]">
@@ -200,7 +203,7 @@ export default function DeliveryPackagePage() {
                       >
                         <div>
                           <p className="font-medium text-[#162033]">
-                            {link.recipientEmail ?? "No recipient email"}
+                            {link.recipientEmail ?? "Ingen mottaker e-post"}
                           </p>
                           <p className="mt-1 text-sm text-[#64748b]">
                             Expires {formatDateTime(link.expiresAt)}
@@ -214,7 +217,7 @@ export default function DeliveryPackagePage() {
                               href={`/delivery/${link.token}`}
                               target="_blank"
                             >
-                              Åpne som kunde
+                              Åpne kundeside
                             </Link>
                           ) : null}
                         </div>
@@ -224,7 +227,7 @@ export default function DeliveryPackagePage() {
                           onClick={() => revokeLink(link.id)}
                           type="button"
                         >
-                          {action === link.id ? "Revoking..." : "Revoke"}
+                          {action === link.id ? "Trekker tilbake..." : "Trekk tilbake"}
                         </button>
                       </div>
                     ))}
@@ -236,22 +239,14 @@ export default function DeliveryPackagePage() {
             <aside className="space-y-6">
               {actionError ? <ErrorState message={actionError} /> : null}
 
-              <DemoGuidePanel
-                activeStep={7}
-                nextDescription="Lag eller åpne kundelenken, og avslutt demoen med en samlet oppsummering av arbeidsflyten."
-                nextHref="/summary"
-                nextLabel="Se oppsummering"
-              />
-
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <h3 className="text-lg font-semibold">Summary PDF</h3>
+                <h3 className="text-lg font-semibold">PDF-oppsummering</h3>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  Generate a real PDF summary document for this delivery
-                  package. The generated PDF is stored with the demo workspace
-                  and is removed when the demo session expires.
+                  Lag en PDF-oppsummering for leveransen. PDF-en lagres i
+                  demoarbeidsområdet og slettes når demoen utløper.
                 </p>
                 <dl className="mt-4 text-sm">
-                  <dt className="font-semibold text-[#334155]">Generated</dt>
+                  <dt className="font-semibold text-[#334155]">Generert</dt>
                   <dd className="mt-1 text-[#64748b]">
                     {formatDateTime(deliveryPackage.summaryGeneratedAt)}
                   </dd>
@@ -262,7 +257,7 @@ export default function DeliveryPackagePage() {
                   onClick={generatePdf}
                   type="button"
                 >
-                  {action === "pdf" ? "Generating..." : "Generate PDF summary"}
+                  {action === "pdf" ? "Genererer..." : "Generer PDF"}
                 </button>
               </section>
 
@@ -270,10 +265,10 @@ export default function DeliveryPackagePage() {
                 className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
                 onSubmit={createLink}
               >
-                <h3 className="text-lg font-semibold">Create public link</h3>
+                <h3 className="text-lg font-semibold">Lag kundelenke</h3>
                 <label className="block">
                   <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                    Recipient email
+                    Mottaker e-post
                   </span>
                   <input
                     className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
@@ -284,7 +279,7 @@ export default function DeliveryPackagePage() {
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                    Expires at
+                    Utløper
                   </span>
                   <input
                     className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
@@ -304,7 +299,7 @@ export default function DeliveryPackagePage() {
                 {newPublicUrl ? (
                   <div className="rounded-md border border-[#bbf7d0] bg-[#f0fdf4] p-3 text-sm">
                     <p className="font-semibold text-[#166534]">
-                      Public link created
+                      Kundelenke opprettet
                     </p>
                     <Link
                       className="mt-2 block break-all text-[#2563eb] hover:text-[#1d4ed8]"

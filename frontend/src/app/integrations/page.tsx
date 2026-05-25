@@ -6,12 +6,12 @@ import {
   DemoCapabilityBadge,
   DemoCapabilityNote,
 } from "@/components/demo-capability-badge";
-import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { IntegrationFlowMap } from "@/components/integration-flow-map";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WorkflowProgress } from "@/components/workflow-progress";
 import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { getIntegrationCapability } from "@/lib/demo-capabilities";
@@ -129,6 +129,9 @@ export default function IntegrationsPage() {
             dokumentarkiv, regnskap, rapportering, kundeportal og audit log
             uten å bruke ekte Microsoft-, regnskaps- eller Fabric-miljøer.
           </p>
+          <div className="mt-5">
+            <WorkflowProgress activeStep={5} />
+          </div>
         </div>
 
         {error ? (
@@ -146,13 +149,6 @@ export default function IntegrationsPage() {
                 regnskap, rapportering og kundeportal.
               </p>
             </WhyThisMatters>
-
-            <DemoGuidePanel
-              activeStep={6}
-              nextDescription="Kjør en demo-sync for å se hvordan godkjente data sendes videre. Gå deretter til oppsummeringen."
-              nextHref="/summary"
-              nextLabel="Se oppsummering"
-            />
 
             {actionError ? <ErrorState message={actionError} /> : null}
             {integrations.length === 0 ? (

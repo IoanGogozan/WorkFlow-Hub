@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WorkflowProgress } from "@/components/workflow-progress";
 import { WhyThisMatters } from "@/components/why-this-matters";
 import { api } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -71,7 +70,7 @@ export default function CaseDetailPage() {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Case could not be loaded.",
+              : "Saken kunne ikke lastes.",
           );
         }
       }
@@ -103,7 +102,9 @@ export default function CaseDetailPage() {
       await refreshActivity();
     } catch (taskError) {
       setActionError(
-        taskError instanceof Error ? taskError.message : "Task could not be added.",
+        taskError instanceof Error
+          ? taskError.message
+          : "Oppgaven kunne ikke legges til.",
       );
     } finally {
       setSubmitting(null);
@@ -126,7 +127,9 @@ export default function CaseDetailPage() {
       await refreshActivity();
     } catch (noteError) {
       setActionError(
-        noteError instanceof Error ? noteError.message : "Note could not be added.",
+        noteError instanceof Error
+          ? noteError.message
+          : "Notatet kunne ikke legges til.",
       );
     } finally {
       setSubmitting(null);
@@ -136,7 +139,7 @@ export default function CaseDetailPage() {
   async function createDeliveryPackage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (selectedDocumentIds.length === 0) {
-      setActionError("Select at least one linked document for delivery.");
+      setActionError("Velg minst ett godkjent dokument for levering.");
       return;
     }
 
@@ -158,7 +161,7 @@ export default function CaseDetailPage() {
       setActionError(
         deliveryError instanceof Error
           ? deliveryError.message
-          : "Delivery package could not be created.",
+          : "Leveringspakken kunne ikke opprettes.",
       );
     } finally {
       setSubmitting(null);
@@ -173,13 +176,22 @@ export default function CaseDetailPage() {
     );
   }
 
+  const approvedDocuments = documents.filter(
+    (document) => document.status.toLowerCase() === "approved",
+  );
+  const latestActivity = activity?.slice(0, 5) ?? [];
+  const firstDocument = documents[0];
+  const firstPendingDocument = documents.find(
+    (document) => document.status.toLowerCase() !== "approved",
+  );
+
   return (
     <AppShell>
       <div className="mx-auto max-w-6xl px-6 py-6">
         {error ? (
           <ErrorState message={error} />
         ) : !caseDetail || !activity ? (
-          <LoadingState label="Loading case" />
+          <LoadingState label="Laster sak" />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
             <section className="space-y-6">
@@ -198,9 +210,12 @@ export default function CaseDetailPage() {
                   {caseDetail.caseNumber} - opprettet{" "}
                   {formatDateTime(caseDetail.createdAt)}
                 </p>
+                <div className="mt-5">
+                  <WorkflowProgress activeStep={4} />
+                </div>
               </div>
 
-              <WhyThisMatters title="Steg 4: Fra forespørsel til sporbar sak">
+              <WhyThisMatters title="Fra godkjent input til sporbar sak">
                 <p>
                   Når input er godkjent, opprettes en sak med ansvar, status,
                   dokumenter, oppgaver og historikk.
@@ -210,59 +225,64 @@ export default function CaseDetailPage() {
                 </p>
               </WhyThisMatters>
 
-              <article className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Description</h3>
+              <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <ProcessMetric
+                  detail={caseDetail.caseNumber}
+                  label="Sak"
+                  value={caseDetail.status}
+                />
+                <ProcessMetric
+                  detail="koblet til saken"
+                  label="Dokumenter"
+                  value={`${documents.length}`}
+                />
+                <ProcessMetric
+                  detail="klar for levering"
+                  label="Godkjent"
+                  value={`${approvedDocuments.length}`}
+                />
+                <ProcessMetric
+                  detail="kan settes senere"
+                  label="Frist"
+                  value={formatDate(caseDetail.dueDate) ?? "Ikke satt"}
+                />
+              </section>
+
+              <section className="rounded-md border border-[#d8deea] bg-white p-6">
+                <h3 className="text-lg font-semibold">Hva handler saken om?</h3>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
-                  {caseDetail.description ?? "No description."}
+                  {caseDetail.description ?? "Ingen beskrivelse."}
                 </p>
-              </article>
-
-              <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Case fields</h3>
-                <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <FieldValue label="Due date" value={formatDate(caseDetail.dueDate)} />
-                  <FieldValue
-                    label="Source intake"
-                    value={caseDetail.sourceIntakeItemId}
-                  />
-                  <FieldValue label="Owner user" value={caseDetail.ownerUserId} />
-                  <FieldValue label="Tenant" value={caseDetail.tenantId} />
-                </dl>
               </section>
 
               <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Activity</h3>
-                {activity.length === 0 ? (
-                  <div className="mt-4">
-                    <EmptyState
-                      message="No audit activity was returned for this case yet."
-                      title="No activity"
-                    />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">Dokumenter på saken</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#64748b]">
+                      Dokumenter må være godkjent før de kan sendes videre.
+                    </p>
                   </div>
-                ) : (
-                  <div className="mt-4 divide-y divide-[#e2e8f0]">
-                    {activity.map((item) => (
-                      <div className="py-3" key={item.id}>
-                        <p className="font-medium text-[#162033]">
-                          {activityLabel(item.action)}
-                        </p>
-                        <p className="mt-1 text-sm text-[#64748b]">
-                          {entityLabel(item.entityType)} -{" "}
-                          {formatDateTime(item.createdAt)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Linked documents</h3>
+                  <Link
+                    className="inline-flex w-fit rounded-md border border-[#bfdbfe] px-3 py-2 text-sm font-semibold text-[#2563eb] hover:bg-[#eff6ff]"
+                    href="/documents"
+                  >
+                    Gå til dokumenter
+                  </Link>
+                </div>
                 {documents.length === 0 ? (
                   <div className="mt-4">
                     <EmptyState
-                      message="Link approved documents to this case before creating a delivery package."
-                      title="No linked documents"
+                      action={
+                        <Link
+                          className="inline-flex rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8]"
+                          href="/documents"
+                        >
+                          Opprett dokument
+                        </Link>
+                      }
+                      message="Opprett eller åpne et demo-dokument, godkjenn klassifisering og koble det til denne saken."
+                      title="Ingen dokumenter koblet ennå"
                     />
                   </div>
                 ) : (
@@ -280,7 +300,7 @@ export default function CaseDetailPage() {
                             {document.title}
                           </Link>
                           <p className="mt-1 text-sm text-[#64748b]">
-                            {document.documentType ?? "Unclassified"} -{" "}
+                            {document.documentType ?? "Ikke klassifisert"} -{" "}
                             {formatDate(document.expiryDate)}
                           </p>
                         </div>
@@ -290,158 +310,223 @@ export default function CaseDetailPage() {
                   </div>
                 )}
               </section>
+
+              <section className="rounded-md border border-[#d8deea] bg-white p-6">
+                <h3 className="text-lg font-semibold">Siste aktivitet</h3>
+                {latestActivity.length === 0 ? (
+                  <div className="mt-4">
+                    <EmptyState
+                      message="Ingen aktivitet er registrert på saken ennå."
+                      title="Ingen aktivitet"
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-4 divide-y divide-[#e2e8f0]">
+                    {latestActivity.map((item) => (
+                      <div className="py-3" key={item.id}>
+                        <p className="font-medium text-[#162033]">
+                          {activityLabel(item.action)}
+                        </p>
+                        <p className="mt-1 text-sm text-[#64748b]">
+                          {entityLabel(item.entityType)} -{" "}
+                          {formatDateTime(item.createdAt)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <details className="rounded-md border border-[#d8deea] bg-white p-6">
+                <summary className="cursor-pointer text-lg font-semibold">
+                  Interne notater og oppgaver
+                </summary>
+                <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                  <form className="space-y-4" onSubmit={addTask}>
+                    <h4 className="font-semibold">Legg til oppgave</h4>
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-semibold text-[#334155]">
+                        Tittel
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                        maxLength={240}
+                        onChange={(event) => setTaskTitle(event.target.value)}
+                        required
+                        value={taskTitle}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-semibold text-[#334155]">
+                        Beskrivelse
+                      </span>
+                      <textarea
+                        className="min-h-24 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                        onChange={(event) =>
+                          setTaskDescription(event.target.value)
+                        }
+                        value={taskDescription}
+                      />
+                    </label>
+                    <button
+                      className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={submitting !== null}
+                      type="submit"
+                    >
+                      {submitting === "task"
+                        ? "Legger til..."
+                        : "Legg til oppgave"}
+                    </button>
+                  </form>
+
+                  <form className="space-y-4" onSubmit={addNote}>
+                    <h4 className="font-semibold">Legg til notat</h4>
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-semibold text-[#334155]">
+                        Notat
+                      </span>
+                      <textarea
+                        className="min-h-28 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                        maxLength={4000}
+                        onChange={(event) => setNoteBody(event.target.value)}
+                        required
+                        value={noteBody}
+                      />
+                    </label>
+                    <button
+                      className="rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-[#065f46] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={submitting !== null}
+                      type="submit"
+                    >
+                      {submitting === "note"
+                        ? "Legger til..."
+                        : "Legg til notat"}
+                    </button>
+                  </form>
+                </div>
+              </details>
             </section>
 
             <aside className="space-y-6">
               {actionError ? <ErrorState message={actionError} /> : null}
 
-              <DemoGuidePanel
-                activeStep={5}
-                nextDescription="Kontroller dokumentene i saken og lag en leveringspakke når de er klare for kunde."
-                nextHref="/documents"
-                nextLabel="Se dokumenter"
-              />
-
-              <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <h3 className="text-lg font-semibold">
-                  Manuell jobb som erstattes
-                </h3>
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-[#475569]">
-                  <li>Kopiere data fra e-post</li>
-                  <li>Opprette mappe manuelt</li>
-                  <li>Lage oppgaver manuelt</li>
-                  <li>Oppdatere Excel-status</li>
-                  <li>Spørre kollegaer om status</li>
-                </ul>
-              </section>
-
               <form
-                className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
-                onSubmit={addTask}
-              >
-                <h3 className="text-lg font-semibold">Legg til oppgave</h3>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                    Title
-                  </span>
-                  <input
-                    className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
-                    maxLength={240}
-                    onChange={(event) => setTaskTitle(event.target.value)}
-                    required
-                    value={taskTitle}
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                    Description
-                  </span>
-                  <textarea
-                    className="min-h-24 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
-                    onChange={(event) => setTaskDescription(event.target.value)}
-                    value={taskDescription}
-                  />
-                </label>
-                <button
-                  className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={submitting !== null}
-                  type="submit"
-                >
-                  {submitting === "task" ? "Legger til..." : "Legg til oppgave"}
-                </button>
-              </form>
-
-              <form
-                className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
-                onSubmit={addNote}
-              >
-                <h3 className="text-lg font-semibold">Legg til notat</h3>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                    Note
-                  </span>
-                  <textarea
-                    className="min-h-28 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
-                    maxLength={4000}
-                    onChange={(event) => setNoteBody(event.target.value)}
-                    required
-                    value={noteBody}
-                  />
-                </label>
-                <button
-                  className="rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-[#065f46] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={submitting !== null}
-                  type="submit"
-                >
-                  {submitting === "note" ? "Legger til..." : "Legg til notat"}
-                </button>
-              </form>
-
-              <form
-                className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
+                className="space-y-4 rounded-md border border-[#bfdbfe] bg-[#eff6ff] p-5"
                 onSubmit={createDeliveryPackage}
               >
-                <h3 className="text-lg font-semibold">Lag leveringspakke</h3>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                    Package title
-                  </span>
-                  <input
-                    className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
-                    onChange={(event) => setDeliveryTitle(event.target.value)}
-                    placeholder={caseDetail.title}
-                    value={deliveryTitle}
-                  />
-                </label>
+                <p className="text-sm font-semibold uppercase tracking-wide text-[#2563eb]">
+                  Neste handling
+                </p>
+                <h3 className="text-xl font-semibold">
+                  {documents.length === 0
+                    ? "Koble dokument til saken"
+                    : approvedDocuments.length === 0
+                      ? "Godkjenn dokument"
+                      : "Lag leveringspakke"}
+                </h3>
                 {documents.length === 0 ? (
-                  <p className="text-sm leading-6 text-[#64748b]">
-                    Ingen saksdokumenter er tilgjengelige for levering.
+                  <p className="text-sm leading-6 text-[#334155]">
+                    Saken er opprettet. Nå mangler et dokument som kan
+                    klassifiseres, godkjennes og kobles til saken.
+                  </p>
+                ) : approvedDocuments.length === 0 ? (
+                  <p className="text-sm leading-6 text-[#334155]">
+                    Dokumentet er koblet til, men klassifiseringen må godkjennes
+                    før levering kan opprettes.
                   </p>
                 ) : (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-[#334155]">
-                      Documents
+                  <>
+                    <p className="text-sm leading-6 text-[#334155]">
+                      Velg godkjente dokumenter og opprett pakken som sendes
+                      videre til kunden.
                     </p>
-                    {documents.map((document) => {
-                      const isApproved =
-                        document.status.toLowerCase() === "approved";
-                      return (
-                        <label
-                          className="flex items-start gap-3 rounded-md border border-[#e2e8f0] p-3 text-sm"
-                          key={document.id}
-                        >
-                          <input
-                            checked={selectedDocumentIds.includes(document.id)}
-                            className="mt-1"
-                            disabled={!isApproved}
-                            onChange={() => toggleDocument(document.id)}
-                            type="checkbox"
-                          />
-                          <span>
-                            <span className="block font-medium text-[#162033]">
-                              {document.title}
+                    <label className="block">
+                      <span className="mb-1 block text-sm font-semibold text-[#334155]">
+                        Tittel på leveringspakke
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+                        onChange={(event) => setDeliveryTitle(event.target.value)}
+                        placeholder={caseDetail.title}
+                        value={deliveryTitle}
+                      />
+                    </label>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-[#334155]">
+                        Dokumenter
+                      </p>
+                      {documents.map((document) => {
+                        const isApproved =
+                          document.status.toLowerCase() === "approved";
+                        return (
+                          <label
+                            className="flex items-start gap-3 rounded-md border border-[#d8deea] bg-white p-3 text-sm"
+                            key={document.id}
+                          >
+                            <input
+                              checked={selectedDocumentIds.includes(document.id)}
+                              className="mt-1"
+                              disabled={!isApproved}
+                              onChange={() => toggleDocument(document.id)}
+                              type="checkbox"
+                            />
+                            <span>
+                              <span className="block font-medium text-[#162033]">
+                                {document.title}
+                              </span>
+                              <span className="block text-[#64748b]">
+                                {isApproved
+                                  ? document.documentType ?? "Godkjent"
+                                  : "Godkjenn klassifisering før levering"}
+                              </span>
                             </span>
-                            <span className="block text-[#64748b]">
-                              {isApproved
-                                ? document.documentType ?? "Approved"
-                                : "Approve classification before delivery"}
-                            </span>
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
-                <button
-                  className="rounded-md bg-[#162033] px-4 py-2 text-sm font-semibold text-white hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={submitting !== null || documents.length === 0}
-                  type="submit"
-                >
-                  {submitting === "delivery"
-                    ? "Oppretter..."
-                    : "Lag leveringspakke"}
-                </button>
+                {documents.length === 0 ? (
+                  <Link
+                    className="inline-flex rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8]"
+                    href="/documents"
+                  >
+                    Opprett dokument
+                  </Link>
+                ) : approvedDocuments.length === 0 && firstPendingDocument ? (
+                  <Link
+                    className="inline-flex rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8]"
+                    href={`/documents/${firstPendingDocument.id}`}
+                  >
+                    Åpne dokument
+                  </Link>
+                ) : (
+                  <button
+                    className="rounded-md bg-[#162033] px-4 py-2 text-sm font-semibold text-white hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={
+                      submitting !== null || selectedDocumentIds.length === 0
+                    }
+                    type="submit"
+                  >
+                    {submitting === "delivery"
+                      ? "Oppretter..."
+                      : "Lag leveringspakke"}
+                  </button>
+                )}
               </form>
+
+              <section className="rounded-md border border-[#d8deea] bg-white p-5">
+                <h3 className="text-lg font-semibold">Automatisert i demoen</h3>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-[#475569]">
+                  <li>Input er sortert av AI og godkjent av menneske.</li>
+                  <li>Sak er opprettet med sporbar historikk.</li>
+                  <li>
+                    {firstDocument
+                      ? "Dokumentflyten er koblet til saken."
+                      : "Neste del er dokumentflyt og levering."}
+                  </li>
+                </ul>
+              </section>
             </aside>
           </div>
         )}
@@ -450,38 +535,47 @@ export default function CaseDetailPage() {
   );
 }
 
-function FieldValue({ label, value }: { label: string; value: string | null }) {
+function ProcessMetric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
   return (
-    <div>
-      <dt className="text-sm font-semibold text-[#334155]">{label}</dt>
-      <dd className="mt-1 break-all text-sm text-[#64748b]">
-        {value ?? "Not set"}
-      </dd>
+    <div className="rounded-md border border-[#d8deea] bg-white p-4">
+      <p className="text-sm font-semibold text-[#64748b]">{label}</p>
+      <p className="mt-2 break-words text-xl font-semibold text-[#162033]">
+        {value}
+      </p>
+      <p className="mt-1 text-sm text-[#64748b]">{detail}</p>
     </div>
   );
 }
 
 function activityLabel(action: string) {
   const labels: Record<string, string> = {
-    AiAnalysisRequested: "AI suggestion generated",
-    AiSuggestionApproved: "AI suggestion approved",
-    AiSuggestionRejected: "AI suggestion rejected",
-    CaseCreated: "Case created",
-    CaseNoteCreated: "Case note added",
-    CaseTaskCreated: "Case task added",
-    DeliveryLinkCreated: "Public delivery link created",
-    DeliveryLinkRevoked: "Public delivery link revoked",
-    DeliveryPackageCreated: "Delivery package created",
-    DeliveryPdfGenerated: "Delivery PDF generated",
-    DocumentClassificationApproved: "Document classification approved",
-    DocumentClassificationRequested: "Document classification suggested",
-    DocumentLinkedToCase: "Document linked to case",
-    DocumentUploaded: "Document uploaded",
-    DocumentVersionUploaded: "Document version uploaded",
-    IntakeCreated: "Intake created",
-    SampleDocumentCreated: "Sample document added",
-    ViewedDocument: "Public delivery document opened",
-    ViewedPackage: "Public delivery page opened",
+    AiAnalysisRequested: "AI-forslag generert",
+    AiSuggestionApproved: "AI-forslag godkjent",
+    AiSuggestionRejected: "AI-forslag avvist",
+    CaseCreated: "Sak opprettet",
+    CaseNoteCreated: "Notat lagt til",
+    CaseTaskCreated: "Oppgave lagt til",
+    DeliveryLinkCreated: "Kundelenke opprettet",
+    DeliveryLinkRevoked: "Kundelenke deaktivert",
+    DeliveryPackageCreated: "Leveringspakke opprettet",
+    DeliveryPdfGenerated: "PDF generert",
+    DocumentClassificationApproved: "Dokumentklassifisering godkjent",
+    DocumentClassificationRequested: "Dokumentklassifisering foreslått",
+    DocumentLinkedToCase: "Dokument koblet til sak",
+    DocumentUploaded: "Dokument lastet opp",
+    DocumentVersionUploaded: "Ny dokumentversjon lastet opp",
+    IntakeCreated: "Input mottatt",
+    SampleDocumentCreated: "Demo-dokument opprettet",
+    ViewedDocument: "Kundedokument åpnet",
+    ViewedPackage: "Kundeside åpnet",
   };
 
   return labels[action] ?? action;
@@ -489,11 +583,11 @@ function activityLabel(action: string) {
 
 function entityLabel(entityType: string) {
   const labels: Record<string, string> = {
-    Case: "Case",
-    DeliveryPackage: "Delivery",
-    Document: "Document",
-    IntakeItem: "Intake",
-    PublicDelivery: "Public link",
+    Case: "Sak",
+    DeliveryPackage: "Levering",
+    Document: "Dokument",
+    IntakeItem: "Input",
+    PublicDelivery: "Kundelenke",
   };
 
   return labels[entityType] ?? entityType;

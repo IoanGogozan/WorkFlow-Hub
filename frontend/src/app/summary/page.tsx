@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { WorkflowProgress } from "@/components/workflow-progress";
 
 const timeline = [
   "Input mottatt fra flere kilder",
-  "AI foreslo struktur",
+  "AI sorterte og foreslo struktur",
   "Menneske godkjente data",
-  "Sak ble opprettet",
-  "Dokumenter ble knyttet til saken",
-  "Integrasjoner ble synkronisert",
-  "Leveringspakke ble opprettet",
-  "Audit trail ble lagret",
+  "Sak ble opprettet automatisk",
+  "Godkjente data ble lagret og synkronisert",
+  "Leveringspakke og kundelenke ble opprettet",
 ];
 
 const reducedSteps = [
@@ -37,6 +36,9 @@ export default function SummaryPage() {
             godkjent, gjort om til sak, distribuert via integrasjoner og levert
             ryddig til kunde.
           </p>
+          <div className="mt-5">
+            <WorkflowProgress activeStep={6} completed />
+          </div>
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">

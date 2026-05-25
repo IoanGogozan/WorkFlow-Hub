@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WorkflowProgress } from "@/components/workflow-progress";
 import { WhyThisMatters } from "@/components/why-this-matters";
 import { api, apiForm } from "@/lib/api";
 import { getDemoSessionToken } from "@/lib/demo-session";
@@ -110,13 +110,16 @@ export default function DocumentsPage() {
         <section className="space-y-6">
           <div>
             <p className="text-sm font-medium text-[#64748b]">
-              Steg 5: Dokumentflyt
+              Steg 6: Leveranse
             </p>
             <h2 className="mt-2 text-3xl font-semibold">Dokumenter</h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
-              Dokumenter kan knyttes til saken, klassifiseres og brukes i en
-              kontrollert kundeleveranse.
+              Opprett et demo-dokument, la AI foreslå klassifisering, godkjenn
+              og koble dokumentet til saken før leveranse.
             </p>
+            <div className="mt-5">
+              <WorkflowProgress activeStep={6} />
+            </div>
           </div>
 
           <WhyThisMatters>
@@ -187,13 +190,6 @@ export default function DocumentsPage() {
         </section>
 
         <aside className="space-y-6">
-          <DemoGuidePanel
-            activeStep={7}
-            nextDescription="Når dokumentene er klare, lag en leveringspakke fra saken eller gå videre til oppsummeringen av demoen."
-            nextHref="/summary"
-            nextLabel="Se oppsummering"
-          />
-
           <form
             className="space-y-5 rounded-md border border-[#d8deea] bg-white p-5"
             onSubmit={uploadDocument}
@@ -219,7 +215,7 @@ export default function DocumentsPage() {
                 onClick={createSampleDocument}
                 type="button"
               >
-                {creatingSample ? "Lager sample..." : "Bruk sample-dokument"}
+                {creatingSample ? "Lager dokument..." : "Opprett demo-dokument"}
               </button>
             ) : null}
             <label className="block">

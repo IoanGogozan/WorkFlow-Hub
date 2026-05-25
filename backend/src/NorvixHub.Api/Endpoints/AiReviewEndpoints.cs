@@ -18,10 +18,45 @@ public static class AiReviewEndpoints
 {
     public static IEndpointRouteBuilder MapAiReviewEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/api/intakes/{id:guid}/latest-ai", GetLatestIntakeAi).WithName("GetLatestIntakeAi");
         app.MapPost("/api/intakes/{id:guid}/analyze", AnalyzeIntake).WithName("AnalyzeIntake");
         app.MapPost("/api/intakes/{id:guid}/approve-ai", ApproveIntakeAi).WithName("ApproveIntakeAi");
         app.MapPost("/api/intakes/{id:guid}/reject-ai", RejectIntakeAi).WithName("RejectIntakeAi");
         return app;
+    }
+
+    private static async Task<IResult> GetLatestIntakeAi(
+        Guid id,
+        ITenantContext tenantContext,
+        NorvixHubDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (!CanReview(tenantContext))
+        {
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+
+        var intake = await FindIntakeAsync(id, tenantContext, dbContext, cancellationToken);
+        if (intake is null)
+        {
+            return Results.NotFound();
+        }
+
+        var run = await dbContext.AiAnalysisRuns
+            .Where(candidate =>
+                candidate.TenantId == intake.TenantId &&
+                candidate.EntityType == "IntakeItem" &&
+                candidate.EntityId == intake.Id)
+            .OrderByDescending(candidate => candidate.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (run is null)
+        {
+            return Results.NotFound();
+        }
+
+        var suggestion = JsonSerializer.Deserialize<AiIntakeSuggestionResponse>(run.OutputJson);
+        return suggestion is null ? Results.NotFound() : Results.Ok(ToResponse(run, suggestion));
     }
 
     private static async Task<IResult> AnalyzeIntake(
@@ -42,6 +77,26 @@ public static class AiReviewEndpoints
         if (intake is null)
         {
             return Results.NotFound();
+        }
+
+        var inputHash = HashInput(intake);
+        var existingRun = await dbContext.AiAnalysisRuns
+            .Where(candidate =>
+                candidate.TenantId == intake.TenantId &&
+                candidate.EntityType == "IntakeItem" &&
+                candidate.EntityId == intake.Id &&
+                candidate.InputHash == inputHash &&
+                candidate.Status == AiAnalysisStatus.NeedsReview)
+            .OrderByDescending(candidate => candidate.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingRun is not null)
+        {
+            var existingSuggestion = JsonSerializer.Deserialize<AiIntakeSuggestionResponse>(existingRun.OutputJson);
+            if (existingSuggestion is not null)
+            {
+                return Results.Ok(ToResponse(existingRun, existingSuggestion));
+            }
         }
 
         var suggestion = aiReviewProvider.AnalyzeIntake(intake);
@@ -213,6 +268,21 @@ public static class AiReviewEndpoints
             run.CreatedAt);
     }
 
+    private static AiAnalysisRunResponse ToResponse(AiAnalysisRun run, AiIntakeSuggestionResponse suggestion)
+    {
+        return new AiAnalysisRunResponse(
+            run.Id,
+            run.EntityId,
+            run.EntityType,
+            run.Provider,
+            run.Model,
+            run.PromptVersion,
+            run.Confidence,
+            run.Status.ToString(),
+            suggestion,
+            run.CreatedAt);
+    }
+
     private static AiIntakeSuggestionResponse ToResponse(AiIntakeSuggestion suggestion)
     {
         return new AiIntakeSuggestionResponse(
@@ -252,4 +322,3 @@ public static class AiReviewEndpoints
 
     private sealed record ReviewState(IntakeItem Intake, AiAnalysisRun Run, ReviewTask Task);
 }
-

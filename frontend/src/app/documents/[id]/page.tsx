@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { StatusBadge } from "@/components/status-badge";
+import { WorkflowProgress } from "@/components/workflow-progress";
 import { api } from "@/lib/api";
 import { documentAiCapability } from "@/lib/demo-capabilities";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -175,28 +176,31 @@ export default function DocumentDetailPage() {
                   className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
                   href="/documents"
                 >
-                  Back to documents
+                  Tilbake til dokumenter
                 </Link>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <h2 className="text-3xl font-semibold">{document.title}</h2>
                   <StatusBadge status={document.status} />
                 </div>
                 <p className="mt-2 text-sm text-[#64748b]">
-                  Created {formatDateTime(document.createdAt)}
+                  Opprettet {formatDateTime(document.createdAt)}
                 </p>
+                <div className="mt-5">
+                  <WorkflowProgress activeStep={6} />
+                </div>
               </div>
 
               <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Document fields</h3>
+                <h3 className="text-lg font-semibold">Dokumentstruktur</h3>
                 <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <FieldValue label="Document type" value={document.documentType} />
+                  <FieldValue label="Dokumenttype" value={document.documentType} />
                   <FieldValue
-                    label="Current version"
+                    label="Versjon"
                     value={document.currentVersionId}
                   />
-                  <FieldValue label="Linked case" value={document.caseId} />
+                  <FieldValue label="Koblet sak" value={document.caseId} />
                   <FieldValue
-                    label="Expiry date"
+                    label="Utløpsdato"
                     value={formatDate(document.expiryDate)}
                   />
                 </dl>
@@ -204,9 +208,9 @@ export default function DocumentDetailPage() {
 
               {classification ? (
                 <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                  <h3 className="text-lg font-semibold">Latest AI suggestion</h3>
+                  <h3 className="text-lg font-semibold">AI-forslag</h3>
                   <p className="mt-2 text-sm text-[#64748b]">
-                    Confidence: {Math.round(classification.confidence * 100)}%
+                    Sikkerhet: {Math.round(classification.confidence * 100)}%
                   </p>
                   <p className="mt-3 text-sm leading-6 text-[#475569]">
                     {classification.summary}
@@ -220,12 +224,12 @@ export default function DocumentDetailPage() {
 
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-semibold">Classification</h3>
+                  <h3 className="text-lg font-semibold">AI-klassifisering</h3>
                   <DemoCapabilityBadge capability={documentAiCapability} />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  Analyze the current document version and approve the reviewed
-                  document type before delivery use.
+                  La AI foreslå dokumenttype og utløpsdato. Mennesket
+                  godkjenner før dokumentet brukes i leveranse.
                 </p>
                 <div className="mt-3">
                   <DemoCapabilityNote capability={documentAiCapability} />
@@ -236,7 +240,7 @@ export default function DocumentDetailPage() {
                   onClick={analyzeDocument}
                   type="button"
                 >
-                  {action === "analyze" ? "Analyzing..." : "Analyze document"}
+                  {action === "analyze" ? "Analyserer..." : "Kjør AI-klassifisering"}
                 </button>
               </section>
 
@@ -245,10 +249,10 @@ export default function DocumentDetailPage() {
                   className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
                   onSubmit={approveClassification}
                 >
-                  <h3 className="text-lg font-semibold">Approve classification</h3>
+                  <h3 className="text-lg font-semibold">Godkjenn klassifisering</h3>
                   <label className="block">
                     <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                      Document type
+                      Dokumenttype
                     </span>
                     <input
                       className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
@@ -266,7 +270,7 @@ export default function DocumentDetailPage() {
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                      Expiry date
+                      Utløpsdato
                     </span>
                     <input
                       className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
@@ -287,8 +291,8 @@ export default function DocumentDetailPage() {
                     type="submit"
                   >
                     {action === "approve"
-                      ? "Approving..."
-                      : "Approve classification"}
+                      ? "Godkjenner..."
+                      : "Godkjenn klassifisering"}
                   </button>
                 </form>
               ) : null}
@@ -297,17 +301,17 @@ export default function DocumentDetailPage() {
                 className="space-y-4 rounded-md border border-[#d8deea] bg-white p-5"
                 onSubmit={linkToCase}
               >
-                <h3 className="text-lg font-semibold">Link to case</h3>
+                <h3 className="text-lg font-semibold">Koble til sak</h3>
                 {cases.length === 0 ? (
                   <EmptyState
-                    message="Create or convert an intake to a case before linking documents."
-                    title="No cases available"
+                    message="Godkjenn et input og opprett sak før dokumentet kobles."
+                    title="Ingen saker tilgjengelig"
                   />
                 ) : (
                   <>
                     <label className="block">
                       <span className="mb-1 block text-sm font-semibold text-[#334155]">
-                        Case
+                        Sak
                       </span>
                       <select
                         className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
@@ -326,7 +330,7 @@ export default function DocumentDetailPage() {
                       disabled={action !== null}
                       type="submit"
                     >
-                      {action === "link" ? "Linking..." : "Link document"}
+                      {action === "link" ? "Kobler..." : "Koble dokument"}
                     </button>
                   </>
                 )}

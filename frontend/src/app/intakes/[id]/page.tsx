@@ -2,20 +2,15 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import {
-  DemoCapabilityBadge,
-  DemoCapabilityNote,
-} from "@/components/demo-capability-badge";
-import { DemoGuidePanel } from "@/components/demo-guide-panel";
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
 import { SourceBadge } from "@/components/source-badge";
 import { StatusBadge } from "@/components/status-badge";
-import { WhyThisMatters } from "@/components/why-this-matters";
+import { WorkflowProgress } from "@/components/workflow-progress";
 import { api } from "@/lib/api";
-import { aiCapability } from "@/lib/demo-capabilities";
+import { cleanDemoSubject } from "@/lib/demo-intakes";
 import { formatDateTime } from "@/lib/format";
 import type { AiAnalysisRun, IntakeItem, CaseDetail } from "@/lib/types";
 
@@ -38,6 +33,16 @@ export default function IntakeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [action, setAction] = useState<string | null>(null);
+  const autoAnalyzeStarted = useRef(false);
+
+  const populateSuggestionForm = useCallback((run: AiAnalysisRun) => {
+    setSuggestionForm({
+      customerName: run.suggestion.customerName ?? "",
+      organizationNumber: run.suggestion.organizationNumber ?? "",
+      category: run.suggestion.category ?? "",
+      urgency: run.suggestion.urgency ?? "",
+    });
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,11 +50,21 @@ export default function IntakeDetailPage() {
     async function loadIntake() {
       try {
         setError(null);
-        setIntake(
-          await api<IntakeItem>(`/api/intakes/${intakeId}`, {
+        const loadedIntake = await api<IntakeItem>(`/api/intakes/${intakeId}`, {
             signal: controller.signal,
-          }),
-        );
+          });
+        setIntake(loadedIntake);
+
+        try {
+          const latestAnalysis = await api<AiAnalysisRun>(
+            `/api/intakes/${intakeId}/latest-ai`,
+            { signal: controller.signal },
+          );
+          setAnalysis(latestAnalysis);
+          populateSuggestionForm(latestAnalysis);
+        } catch {
+          // No AI proposal exists yet. The next effect will start one when needed.
+        }
       } catch (loadError) {
         if (!controller.signal.aborted) {
           setError(
@@ -63,9 +78,9 @@ export default function IntakeDetailPage() {
 
     void loadIntake();
     return () => controller.abort();
-  }, [intakeId]);
+  }, [intakeId, populateSuggestionForm]);
 
-  async function analyze() {
+  const analyze = useCallback(async () => {
     try {
       setAction("analyze");
       setActionError(null);
@@ -73,12 +88,7 @@ export default function IntakeDetailPage() {
         method: "POST",
       });
       setAnalysis(run);
-      setSuggestionForm({
-        customerName: run.suggestion.customerName ?? "",
-        organizationNumber: run.suggestion.organizationNumber ?? "",
-        category: run.suggestion.category ?? "",
-        urgency: run.suggestion.urgency ?? "",
-      });
+      populateSuggestionForm(run);
       setIntake(await api<IntakeItem>(`/api/intakes/${intakeId}`));
     } catch (analysisError) {
       setActionError(
@@ -89,7 +99,22 @@ export default function IntakeDetailPage() {
     } finally {
       setAction(null);
     }
-  }
+  }, [intakeId, populateSuggestionForm]);
+
+  useEffect(() => {
+    if (
+      !intake ||
+      analysis ||
+      action !== null ||
+      autoAnalyzeStarted.current ||
+      isFinishedStatus(intake.status)
+    ) {
+      return;
+    }
+
+    autoAnalyzeStarted.current = true;
+    void analyze();
+  }, [action, analysis, analyze, intake]);
 
   async function approve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -111,11 +136,16 @@ export default function IntakeDetailPage() {
         },
       );
       setIntake(updated);
+      const createdCase = await api<CaseDetail>(
+        `/api/intakes/${intakeId}/convert-to-case`,
+        { method: "POST" },
+      );
+      router.push(`/cases/${createdCase.id}`);
     } catch (approveError) {
       setActionError(
         approveError instanceof Error
           ? approveError.message
-          : "AI suggestion could not be approved.",
+          : "AI suggestion could not be approved and routed.",
       );
     } finally {
       setAction(null);
@@ -150,7 +180,7 @@ export default function IntakeDetailPage() {
         ) : !intake ? (
           <LoadingState label="Loading intake" />
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
             <section className="space-y-6">
               <div>
                 <Link
@@ -160,44 +190,47 @@ export default function IntakeDetailPage() {
                   Tilbake til input
                 </Link>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <h2 className="text-3xl font-semibold">{intake.subject}</h2>
+                  <h2 className="text-3xl font-semibold">
+                    {cleanDemoSubject(intake.subject)}
+                  </h2>
                   <StatusBadge status={intake.status} />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-[#64748b]">
                   <SourceBadge source={intake.source} />
                   <span>Mottatt {formatDateTime(intake.receivedAt)}</span>
                 </div>
+                <div className="mt-5">
+                  <WorkflowProgress activeStep={getWorkflowStep(intake.status, analysis)} />
+                </div>
               </div>
 
-              <WhyThisMatters title="Steg 2: AI foreslår struktur">
-                <p>
-                  Dette viser hvordan ustrukturert tekst fra e-post, skjema
-                  eller API kan tolkes og gjøres om til felter som kundenavn,
-                  org.nr., kategori, hastegrad og oppgaver.
+              <article className="rounded-md border border-[#d8deea] bg-white p-5">
+                <p className="text-sm font-semibold text-[#64748b]">
+                  1. Original
                 </p>
-                <p>
-                  AI kan foreslå struktur, men mennesket godkjenner før dataene
-                  brukes videre.
-                </p>
-              </WhyThisMatters>
-
-              <article className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Request body</h3>
+                <h3 className="mt-1 text-lg font-semibold">
+                  Input slik det kom inn
+                </h3>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
                   {intake.body}
                 </p>
               </article>
 
-              <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                <h3 className="text-lg font-semibold">Gjeldende felter</h3>
+              <section className="rounded-md border border-[#d8deea] bg-white p-5">
+                <p className="text-sm font-semibold text-[#64748b]">
+                  3. Lagret resultat
+                </p>
+                <h3 className="mt-1 text-lg font-semibold">
+                  Gjeldende struktur
+                </h3>
                 <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <FieldValue label="Customer" value={intake.customerName} />
+                  <FieldValue label="Kunde" value={intake.customerName} />
                   <FieldValue
-                    label="Organization number"
+                    label="Organisasjonsnummer"
                     value={intake.organizationNumber}
                   />
-                  <FieldValue label="Category" value={intake.category} />
-                  <FieldValue label="Urgency" value={intake.urgency} />
+                  <FieldValue label="Kategori" value={intake.category} />
+                  <FieldValue label="Prioritet" value={intake.urgency} />
                 </dl>
               </section>
             </section>
@@ -205,34 +238,28 @@ export default function IntakeDetailPage() {
             <aside className="space-y-6">
               {actionError ? <ErrorState message={actionError} /> : null}
 
-              <DemoGuidePanel
-                activeStep={3}
-                nextDescription="Kjør AI-forslag, juster feltene ved behov og godkjenn strukturen før du oppretter saken."
-                nextHref={`/intakes/${intake.id}`}
-                nextLabel="Kjør AI-forslag"
-              />
-
-              <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-semibold">
-                    AI-forslag og godkjenning
-                  </h3>
-                  <DemoCapabilityBadge capability={aiCapability} />
-                </div>
-                <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  AI-forslag må godkjennes av menneske før intake-data endres.
+              <section className="rounded-md border border-[#bfdbfe] bg-[#eff6ff] p-5">
+                <h3 className="text-lg font-semibold text-[#1e3a8a]">
+                  Automatisk AI-sortering
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[#475569]">
+                  Når input åpnes, analyserer AI automatisk innholdet og fyller
+                  ut forslag. Mennesket skal bare kontrollere og godkjenne ved
+                  behov.
                 </p>
-                <div className="mt-3">
-                  <DemoCapabilityNote capability={aiCapability} />
-                </div>
-                <button
-                  className="mt-4 rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={action !== null}
-                  onClick={analyze}
-                  type="button"
-                >
-                  {action === "analyze" ? "Analyserer..." : "Kjør AI-forslag"}
-                </button>
+                {action === "analyze" ? (
+                  <p className="mt-3 text-sm font-semibold text-[#1d4ed8]">
+                    AI sorterer input...
+                  </p>
+                ) : analysis ? (
+                  <p className="mt-3 text-sm font-semibold text-[#047857]">
+                    Forslag klart for godkjenning
+                  </p>
+                ) : isFinishedStatus(intake.status) ? (
+                  <p className="mt-3 text-sm font-semibold text-[#047857]">
+                    Input er allerede behandlet
+                  </p>
+                ) : null}
               </section>
 
               {analysis && suggestionForm ? (
@@ -241,36 +268,43 @@ export default function IntakeDetailPage() {
                   onSubmit={approve}
                 >
                   <div>
-                    <h3 className="text-lg font-semibold">
-                      AI-forslag - må godkjennes av menneske
+                    <p className="text-sm font-semibold text-[#64748b]">
+                      2. AI-forslag
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold">
+                      Kontroller og godkjenn
                     </h3>
                     <p className="mt-1 text-sm text-[#64748b]">
-                    Sikkerhet: {Math.round(analysis.confidence * 100)}%
+                      Sikkerhet: {Math.round(analysis.confidence * 100)}%
                     </p>
                   </div>
                   <p className="text-sm leading-6 text-[#475569]">
                     {analysis.suggestion.summary}
                   </p>
+                  <div className="rounded-md border border-[#e2e8f0] bg-[#f8fafc] p-3 text-sm leading-6 text-[#475569]">
+                    Er noe feil, retter mennesket feltene under før godkjenning.
+                    Når forslaget godkjennes, opprettes saken automatisk.
+                  </div>
                   <SuggestionInput
-                    label="Customer name"
+                    label="Kunde"
                     name="customerName"
                     setSuggestionForm={setSuggestionForm}
                     value={suggestionForm.customerName}
                   />
                   <SuggestionInput
-                    label="Organization number"
+                    label="Organisasjonsnummer"
                     name="organizationNumber"
                     setSuggestionForm={setSuggestionForm}
                     value={suggestionForm.organizationNumber}
                   />
                   <SuggestionInput
-                    label="Category"
+                    label="Kategori"
                     name="category"
                     setSuggestionForm={setSuggestionForm}
                     value={suggestionForm.category}
                   />
                   <SuggestionInput
-                    label="Urgency"
+                    label="Prioritet"
                     name="urgency"
                     setSuggestionForm={setSuggestionForm}
                     value={suggestionForm.urgency}
@@ -285,41 +319,82 @@ export default function IntakeDetailPage() {
                       </ul>
                     </div>
                   ) : null}
+                  {analysis.suggestion.missingInformation.length > 0 ? (
+                    <div className="rounded-md border border-[#fde68a] bg-[#fffbeb] p-3">
+                      <p className="text-sm font-semibold text-[#92400e]">
+                        Mangler før full automatikk
+                      </p>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#92400e]">
+                        {analysis.suggestion.missingInformation.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <button
                     className="rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-[#065f46] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={action !== null}
                     type="submit"
                   >
                     {action === "approve"
-                      ? "Godkjenner..."
-                      : "Godkjenn og lagre struktur"}
+                      ? "Godkjenner og oppretter sak..."
+                      : "Godkjenn og opprett sak"}
                   </button>
                 </form>
+              ) : isFinishedStatus(intake.status) ? (
+                <section className="rounded-md border border-[#d8deea] bg-white p-5">
+                  <p className="text-sm font-semibold text-[#64748b]">
+                    2. AI-forslag
+                  </p>
+                  <h3 className="mt-1 text-lg font-semibold">
+                    Forslag er ikke tilgjengelig her
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[#64748b]">
+                    Dette inputet er allerede behandlet i eksisterende demo-data.
+                    Bruk Reset demo for å starte med ferske input der AI-forslag
+                    vises før godkjenning.
+                  </p>
+                </section>
               ) : null}
 
-              <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <h3 className="text-lg font-semibold">Opprett sak</h3>
-                <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  Ingen data sendes videre før forslaget er godkjent. Opprett
-                  deretter en sporbar sak fra godkjent input.
-                </p>
-                <button
-                  className="mt-4 rounded-md bg-[#162033] px-4 py-2 text-sm font-semibold text-white hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={action !== null}
-                  onClick={convertToCase}
-                  type="button"
-                >
-                  {action === "convert"
-                    ? "Oppretter..."
-                    : "Opprett sak fra godkjent input"}
-                </button>
-              </section>
+              {intake.status.toLowerCase() === "approved" ? (
+                <section className="rounded-md border border-[#d8deea] bg-white p-5">
+                  <h3 className="text-lg font-semibold">Godkjent input</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#64748b]">
+                    Strukturen er godkjent. Du kan sende den videre til sak hvis
+                    den ikke allerede er rutet.
+                  </p>
+                  <button
+                    className="mt-4 rounded-md bg-[#162033] px-4 py-2 text-sm font-semibold text-white hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={action !== null}
+                    onClick={convertToCase}
+                    type="button"
+                  >
+                    {action === "convert" ? "Oppretter..." : "Opprett sak"}
+                  </button>
+                </section>
+              ) : null}
             </aside>
           </div>
         )}
       </div>
     </AppShell>
   );
+}
+
+function isFinishedStatus(status: string) {
+  const normalized = status.replace(/\s/g, "").toLowerCase();
+  return normalized === "approved" || normalized === "convertedtocase";
+}
+
+function getWorkflowStep(status: string, analysis: AiAnalysisRun | null) {
+  const normalized = status.replace(/\s/g, "").toLowerCase();
+
+  if (normalized === "approved" || normalized === "convertedtocase") {
+    return 4;
+  }
+
+  return analysis ? 3 : 2;
 }
 
 function FieldValue({ label, value }: { label: string; value: string | null }) {
