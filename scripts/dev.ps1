@@ -3,6 +3,22 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $root
 
+function Use-Utf8Console {
+    try {
+        $utf8 = [System.Text.UTF8Encoding]::new($false)
+        [Console]::InputEncoding = $utf8
+        [Console]::OutputEncoding = $utf8
+        $global:OutputEncoding = $utf8
+
+        if ($env:OS -eq "Windows_NT") {
+            chcp.com 65001 | Out-Null
+        }
+    }
+    catch {
+        # Console encoding is best-effort; startup should continue if the host does not allow it.
+    }
+}
+
 function Assert-PortAvailable {
     param([int[]] $Ports)
 
@@ -52,6 +68,7 @@ function Wait-BackendReady {
     throw "Backend did not become ready at $Url within $TimeoutSeconds seconds."
 }
 
+Use-Utf8Console
 Assert-PortAvailable -Ports @(3000, 5000)
 
 Write-Host "Starting local dependencies with Docker Compose..."
@@ -81,22 +98,32 @@ try {
     $jobs += Start-Job -Name "NorvixHub.Api" -ScriptBlock {
         param([string] $Root)
 
+        $utf8 = [System.Text.UTF8Encoding]::new($false)
+        [Console]::InputEncoding = $utf8
+        [Console]::OutputEncoding = $utf8
+        $global:OutputEncoding = $utf8
         Set-Location $Root
         $env:ASPNETCORE_ENVIRONMENT = "Development"
         $env:ASPNETCORE_URLS = "http://localhost:5000"
         $env:MSBUILDDISABLENODEREUSE = "1"
-        dotnet run --project backend/src/NorvixHub.Api -nr:false
+        dotnet run --no-restore --project backend/src/NorvixHub.Api -nr:false
     } -ArgumentList $root.Path
-
-    Write-Host "Waiting for backend to become ready..."
-    Wait-BackendReady -Url "http://localhost:5000/health" -Job $jobs[0]
 
     $jobs += Start-Job -Name "NorvixHub.Frontend" -ScriptBlock {
         param([string] $FrontendRoot)
 
+        $utf8 = [System.Text.UTF8Encoding]::new($false)
+        [Console]::InputEncoding = $utf8
+        [Console]::OutputEncoding = $utf8
+        $global:OutputEncoding = $utf8
         Set-Location $FrontendRoot
+        $env:PYTHONIOENCODING = "utf-8"
+        $env:NODE_DISABLE_COLORS = "0"
         npm run dev -- -p 3000
     } -ArgumentList (Join-Path $root "frontend")
+
+    Write-Host "Waiting for backend to become ready..."
+    Wait-BackendReady -Url "http://localhost:5000/health" -Job $jobs[0]
 
     while (($jobs | Where-Object { $_.State -eq "Running" }).Count -eq $jobs.Count) {
         foreach ($job in $jobs) {

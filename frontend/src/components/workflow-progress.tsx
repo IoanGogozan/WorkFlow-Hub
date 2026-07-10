@@ -2,28 +2,20 @@ import Link from "next/link";
 
 const workflowSteps = [
   {
-    label: "Input",
+    label: "Motta henvendelse",
     href: "/intakes",
   },
   {
-    label: "AI sortering",
+    label: "Kontroll og beriking",
     href: "/intakes",
   },
   {
-    label: "Godkjenn",
-    href: "/intakes",
-  },
-  {
-    label: "Sak",
+    label: "Sak og dokumentasjon",
     href: "/cases",
   },
   {
-    label: "Lagre/send",
-    href: "/integrations",
-  },
-  {
-    label: "Leveranse",
-    href: "/documents",
+    label: "Klar for leveranse",
+    href: "/summary",
   },
 ] as const;
 
@@ -36,13 +28,15 @@ export function WorkflowProgress({
   activeStep = 1,
   completed = false,
 }: WorkflowProgressProps) {
+  const displayedActiveStep = Math.min(activeStep, workflowSteps.length);
+
   return (
     <nav aria-label="Arbeidsflyt">
       <ol className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
         {workflowSteps.map((step, index) => {
           const stepNumber = index + 1;
-          const isDone = completed || stepNumber < activeStep;
-          const isActive = !completed && stepNumber === activeStep;
+          const isDone = completed || stepNumber < displayedActiveStep;
+          const isActive = !completed && stepNumber === displayedActiveStep;
 
           return (
             <li key={step.label}>

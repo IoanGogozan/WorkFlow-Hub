@@ -10,6 +10,52 @@
 - Local development should be easy to run with Docker Compose.
 - Code files should stay small and modular. Large files must be split according to `docs/coding-standards.md`.
 
+The public presentation is a single client-facing integration case study. The
+broader architecture remains available as technical evidence and is not exposed
+as a generic SaaS dashboard in the primary visitor flow.
+
+## System Diagram
+
+```mermaid
+flowchart LR
+    Visitor[Public demo visitor] --> ClientDemo[Client-facing integration story]
+    Internal[Technical reviewer] --> Technical[Technical application]
+    Recipient[External recipient] --> DeliveryPublic[Public delivery link]
+
+    ClientDemo --> Api[ASP.NET Core API]
+    Technical --> Api
+    DeliveryPublic --> Api
+
+    Api --> Auth[Demo session or local development auth]
+    Api --> Tenant[Tenant context and RBAC]
+    Api --> Db[(PostgreSQL)]
+    Api --> Storage[Blob-compatible storage]
+    Api --> Audit[Audit events]
+
+    Api --> Intake[Intake]
+    Api --> Cases[Case workspace]
+    Api --> Documents[Document workflow]
+    Api --> Integrations[Integration adapters]
+    Api --> Delivery[Delivery package]
+    Api --> Metrics[Analytics and exports]
+
+    Integrations --> Brreg[Brreg public data capability]
+    Integrations --> Graph[Microsoft Graph demo adapter]
+    Integrations --> Accounting[Accounting/project demo adapter]
+    Integrations --> Fabric[Reporting demo adapter]
+```
+
+## Request Flow
+
+1. A request enters through the fictional email/form scenario, manual entry, or API.
+2. The API resolves tenant context from the authenticated user or demo session.
+3. Every business query is scoped to the current tenant.
+4. AI and external-system behavior is isolated behind adapter interfaces.
+5. Human approvals convert suggestions into final data.
+6. Documents and delivery artifacts are stored through the configured provider.
+7. Delivery links use random tokens, expose only selected items, and record access.
+8. Audit and analytics provide tenant-scoped operational evidence.
+
 ## Repository Structure
 
 ```txt
@@ -195,3 +241,13 @@ Initial cloud target:
 - Application Insights.
 
 Infrastructure is described with Terraform.
+
+```mermaid
+flowchart TB
+    Github[GitHub Actions] --> Azure[Azure deployment]
+    Azure --> App[Azure App Service or Container Apps]
+    Azure --> Pg[Azure Database for PostgreSQL]
+    Azure --> Blob[Azure Blob Storage]
+    Azure --> KeyVault[Azure Key Vault]
+    Azure --> Insights[Application Insights]
+```

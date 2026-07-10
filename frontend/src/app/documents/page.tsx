@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/empty-state";
@@ -15,6 +16,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import type { DocumentRecord } from "@/lib/types";
 
 export default function DocumentsPage() {
+  const router = useRouter();
   const [documents, setDocuments] = useState<DocumentRecord[] | null>(null);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -53,7 +55,7 @@ export default function DocumentsPage() {
   async function uploadDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isPublicDemo) {
-      setUploadError("Public demo upload is disabled. Use sample documents instead.");
+      setUploadError("Opplasting er deaktivert i offentlig demo. Bruk demo-dokumentet i stedet.");
       return;
     }
 
@@ -93,6 +95,7 @@ export default function DocumentsPage() {
         method: "POST",
       });
       setDocuments((current) => [sample, ...(current ?? [])]);
+      router.push(`/documents/${sample.id}`);
     } catch (sampleFailure) {
       setUploadError(
         sampleFailure instanceof Error
@@ -110,15 +113,16 @@ export default function DocumentsPage() {
         <section className="space-y-6">
           <div>
             <p className="text-sm font-medium text-[#64748b]">
-              Steg 6: Leveranse
+              Sak og dokumenter
             </p>
             <h2 className="mt-2 text-3xl font-semibold">Dokumenter</h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
-              Opprett et demo-dokument, la AI foreslå klassifisering, godkjenn
+              Opprett et demo-dokument, bruk valgfri AI-støtte for klassifisering,
+              godkjenn
               og koble dokumentet til saken før leveranse.
             </p>
             <div className="mt-5">
-              <WorkflowProgress activeStep={6} />
+              <WorkflowProgress activeStep={4} />
             </div>
           </div>
 

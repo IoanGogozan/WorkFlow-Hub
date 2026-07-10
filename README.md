@@ -1,6 +1,11 @@
 # Norvix WorkFlow Hub
 
-Norvix WorkFlow Hub is a B2B workflow platform for Norwegian organizations that need to connect intake, company lookup, case handling, document control, AI-assisted review, secure delivery, audit logs, and operational reporting.
+Norvix WorkFlow Hub presents **Automatisert serviceflyt**, a client-facing
+integration example for Norwegian technical service companies. Start at
+`/demo`; the primary experience at `/` follows one fictional service request
+from email to a traceable case without repeated manual entry. The broader
+workflow application remains available at `/technical` as implementation
+evidence.
 
 Norwegian subtitle:
 
@@ -33,7 +38,10 @@ The application is intended to support one complete operational flow:
 
 Norvix WorkFlow Hub currently has a working local product flow backed by ASP.NET Core APIs, PostgreSQL persistence, tenant-scoped data access, audit events, a Next.js frontend, document workflow, delivery links, analytics, and automated backend coverage.
 
-The active target is a public interactive demo for Norvix AS. The demo should let each website visitor start an isolated temporary workspace with fictional data, complete the full workflow, and have demo data expire automatically.
+The active target is a simplified client-facing integration demo for Norvix AS.
+Each visitor receives an isolated temporary workspace with fictional data, but
+the main presentation follows one service request rather than asking the visitor
+to navigate every application module.
 
 Implemented capabilities:
 
@@ -47,13 +55,21 @@ Implemented capabilities:
 - Delivery packages with selected documents, generated simple PDF summary, secure expiring public link, revoke, public page, and access log.
 - Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
 - Frontend pages for dashboard, intakes, cases, documents, delivery packages, public delivery links, and integrations.
-- Frontend demo labels clearly identify Mock AI, mock Microsoft/accounting/Fabric integrations, and Brreg real-capable behavior.
+- Frontend demo labels clearly identify Mock AI, mock Microsoft/accounting/Fabric
+  integrations, and Brreg public-data-capable behavior backed by stored demo evidence.
 
-Public demo components now implemented:
+Public integration demo components now implemented:
 
 - Demo session creation endpoint with bearer-token auth.
+- Tenant-scoped read-only demo-story endpoint that supplies the simplified
+  request, evidence timeline, outcome, integration modes, and technical links.
 - Isolated demo tenant/user/membership creation.
 - Rich fictional per-session seed data with intakes, a customer, case workspace, approved document, delivery package, generated summary document, integrations, and audit trail.
+- Frontend evidence labels distinguish implemented behavior, public-data-capable
+  behavior using a deterministic demo snapshot, and demo adapters. No real
+  Microsoft, accounting, reporting, or AI customer integration is claimed.
+- Responsive client presentation, editable savings calculator, reduced-motion
+  behavior, keyboard-accessible controls, and separate client/technical E2E paths.
 - Expired demo session cleanup for database records and stored local files.
 - Public privacy and terms pages linked from the demo entry, app shell, and public delivery page.
 - Rate limiting for demo session creation and public delivery endpoints.
@@ -191,9 +207,9 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 
 ## Documentation Index
 
-- [Public Demo Implementation Plan - Draft](docs/public-demo-implementation-plan-draft.md)
+- [Client-Facing Integration Demo — Approved Direction and Implementation Plan](docs/client-facing-integration-demo.md)
+- [Product Overview](docs/product-overview.md)
 - [Current Implementation Status](docs/current-implementation-status.md)
-- [Product Brief](docs/product-brief.md)
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
 - [Data Model](docs/data-model.md)
@@ -205,8 +221,6 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 - [Testing Strategy](docs/testing-strategy.md)
 - [Coding Standards](docs/coding-standards.md)
 - [Product Walkthrough](docs/product-walkthrough.md)
-- [Portfolio Summary](docs/portfolio-summary.md)
-- [Architecture Diagram](docs/architecture-diagram.md)
 - [Screenshots](docs/screenshots.md)
 - [References](docs/references.md)
 
@@ -245,13 +259,11 @@ https://github.com/IoanGogozan/WorkFlow-Hub
 Recommended 5-minute product walkthrough path:
 
 1. Start a demo workspace from `/demo`.
-2. Show the operational dashboard and integration status.
-3. Create/list an intake.
-4. Run AI analysis and approve suggestions.
-5. Convert intake to case.
-6. Enrich customer data through Brreg.
-7. Select or attach a demo-safe document and classify it.
-8. Link the document to the case.
-9. Create a delivery package and public link.
-10. Open the public delivery link and show access logging.
-11. Export metrics as CSV/JSON.
+2. Use **Se automatiseringen** to open the primary story at `/`.
+3. Recognize the fictional incoming email and its business fields.
+4. Compare the manual process with the seven-step evidence timeline.
+5. Show the demo case result and remaining human control point.
+6. Adjust the transparent time-savings assumptions; do not present them as a
+   measured customer result.
+7. Review the honestly labeled integration modes and optional technical evidence.
+8. Open `/technical` only when a deeper product walkthrough is useful.

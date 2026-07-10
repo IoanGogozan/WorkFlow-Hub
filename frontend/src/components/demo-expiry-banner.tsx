@@ -30,7 +30,7 @@ export function DemoExpiryBanner() {
     <div className="border-b border-[#bfdbfe] bg-[#eff6ff] px-6 py-2 text-xs font-semibold text-[#1d4ed8]">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-2 sm:flex-row">
         <span>
-          Public demo - fiktive data - demo-safe integrasjoner - slettes{" "}
+          Offentlig demo - fiktive data - demo-trygge integrasjoner - slettes{" "}
           {expiryText}
         </span>
         <button
@@ -39,7 +39,7 @@ export function DemoExpiryBanner() {
           onClick={resetDemo}
           type="button"
         >
-          {isResetting ? "Resetter..." : "Reset demo"}
+          {isResetting ? "Starter på nytt..." : "Start ny demo"}
         </button>
       </div>
     </div>

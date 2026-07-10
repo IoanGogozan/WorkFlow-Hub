@@ -6,52 +6,52 @@ import {
 export default function PrivacyPage() {
   return (
     <PublicLegalLayout
-      intro="This notice describes the limited data handling for the public interactive demo. It is not a customer production privacy notice."
-      title="Privacy Notice"
+      intro="Denne teksten beskriver den begrensede databehandlingen i den offentlige interaktive demoen. Den er ikke en personvernerklæring for produksjonskunder."
+      title="Personvern"
     >
-      <LegalSection title="Demo scope">
+      <LegalSection title="Demoens omfang">
         <p>
-          The demo uses fictional customers, cases, documents, integrations, and
-          AI suggestions. It is intended for evaluating the workflow only.
+          Demoen bruker fiktive kunder, saker, dokumenter, integrasjoner og
+          forslag. Den er kun ment for å evaluere arbeidsflyten.
         </p>
         <p>
-          Do not upload or enter personal, sensitive, confidential, or customer
-          production information in the demo.
-        </p>
-      </LegalSection>
-
-      <LegalSection title="Data processed">
-        <p>
-          The demo may process a temporary demo session identifier, generated
-          fictional workspace data, browser requests, technical logs, IP-derived
-          technical metadata, user agent information, timestamps, and error
-          events needed to operate and secure the demo.
-        </p>
-        <p>
-          Demo AI and integration behavior is mock or demo-safe unless clearly
-          marked otherwise in the interface.
+          Ikke last opp eller skriv inn personlige, sensitive, konfidensielle
+          eller produksjonsrelaterte kundedata i demoen.
         </p>
       </LegalSection>
 
-      <LegalSection title="Retention and deletion">
+      <LegalSection title="Data som behandles">
         <p>
-          Demo workspaces expire automatically. Expired demo sessions are cleaned
-          up together with their database records and stored local demo files.
+          Demoen kan behandle en midlertidig demoidentifikator, genererte
+          fiktive arbeidsområdedata, nettleserforespørsler, tekniske logger,
+          IP-avledet teknisk metadata, brukeragent, tidsstempler og feilhendelser
+          som trengs for å drifte og sikre demoen.
         </p>
         <p>
-          Technical logs may be retained separately for security, troubleshooting,
-          and service operation for a limited period.
+          AI- og integrasjonsflyt er simulert eller demo-trygg med mindre noe
+          annet er tydelig markert i grensesnittet.
         </p>
       </LegalSection>
 
-      <LegalSection title="Controller and contact">
+      <LegalSection title="Lagring og sletting">
         <p>
-          Norvix AS is responsible for the public demo operation and the limited
-          technical data processed for that purpose.
+          Demoarbeidsområder utløper automatisk. Utløpte demoer ryddes opp
+          sammen med databaseposter og lagrede lokale demofiler.
         </p>
         <p>
-          Contact: Norvix AS. Use the contact channel published on the Norvix
-          website for privacy or deletion requests related to the demo.
+          Tekniske logger kan lagres separat for sikkerhet, feilsøking og drift
+          i en begrenset periode.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Ansvarlig og kontakt">
+        <p>
+          Norvix AS er ansvarlig for drift av den offentlige demoen og den
+          begrensede tekniske databehandlingen som trengs for dette formålet.
+        </p>
+        <p>
+          Kontakt: Norvix AS. Bruk kontaktkanalen publisert på Norvix-nettstedet
+          for personvern- eller sletteforespørsler knyttet til demoen.
         </p>
       </LegalSection>
     </PublicLegalLayout>

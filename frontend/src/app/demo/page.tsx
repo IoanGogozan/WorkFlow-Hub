@@ -7,28 +7,16 @@ import { api } from "@/lib/api";
 import { saveDemoSession, type DemoSession } from "@/lib/demo-session";
 
 const reasonText: Record<string, string> = {
-  expired: "Demoarbeidsområdet er utløpt. Start et nytt for å fortsette.",
-  missing: "Start et demoarbeidsområde før du åpner appen.",
-  invalid: "Demo-tokenet ble ikke godtatt. Start et nytt arbeidsområde.",
+  expired: "Demoen er utløpt. Start en ny for å fortsette.",
+  missing: "Start demoen før du åpner integrasjonseksempelet.",
+  invalid: "Demo-tokenet ble ikke godtatt. Start en ny demo.",
 };
 
-const demoCards = [
-  {
-    title: "Input fra flere kilder",
-    text: "E-post, skjema, API og manuell registrering samles i én innboks.",
-  },
-  {
-    title: "AI foreslår struktur",
-    text: "Ustrukturert tekst gjøres om til felter, oppgaver og mangelliste.",
-  },
-  {
-    title: "Mennesker godkjenner",
-    text: "AI endrer ikke data direkte. Forslag må godkjennes før saken går videre.",
-  },
-  {
-    title: "Integrasjoner distribuerer data",
-    text: "Data kan sendes til dokumentarkiv, økonomisystem, rapportering, kundeportal og audit log.",
-  },
+const demoBoundaries = [
+  "Fiktive data",
+  "Ingen innlogging",
+  "Ingen ekte kundesystemer kontaktes",
+  "Demoen slettes automatisk",
 ];
 
 export default function DemoStartPage() {
@@ -64,7 +52,7 @@ function DemoStartContent() {
       setError(
         startError instanceof Error
           ? startError.message
-          : "Demo workspace could not be started.",
+          : "Demoen kunne ikke startes.",
       );
       setIsStarting(false);
     }
@@ -97,103 +85,99 @@ function DemoPageShell({
   onStartDemo,
 }: DemoPageShellProps) {
   return (
-    <main className="min-h-screen bg-[#f5f7fb]">
+    <main className="min-h-screen bg-[#f7f8fa]">
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-12">
-        <div className="mb-6">
-          <Link
-            className="text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]"
-            href="/"
-          >
-            Norvix WorkFlow Hub
-          </Link>
-        </div>
+        <Link
+          className="w-fit text-lg font-semibold tracking-tight text-[#172033] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+          href="/"
+        >
+          Norvix
+        </Link>
 
-        <div className="rounded-md border border-[#d8deea] bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-sm font-semibold text-[#4f46e5]">
-            Public interactive demo
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold text-[#162033] sm:text-4xl">
-            Test en integrert arbeidsflyt
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-[#475569]">
-            Denne demoen viser hvordan Norvix kan koble sammen e-post,
-            skjema, API, dokumenter, AI-forslag, menneskelig godkjenning,
-            integrasjoner, rapportering og kundeleveranse i én samlet flyt.
-          </p>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {demoCards.map((card) => (
-              <article
-                className="rounded-md border border-[#e2e8f0] bg-[#f8fafc] p-4"
-                key={card.title}
-              >
-                <h2 className="text-base font-semibold text-[#162033]">
-                  {card.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#475569]">
-                  {card.text}
-                </p>
-              </article>
-            ))}
-          </div>
-
-          <ul className="mt-6 grid gap-3 text-sm text-[#334155] sm:grid-cols-2 lg:grid-cols-4">
-            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
-              Fiktive data
-            </li>
-            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
-              Demo-safe integrasjoner
-            </li>
-            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
-              Ingen innlogging
-            </li>
-            <li className="rounded-md border border-[#e2e8f0] bg-white p-3">
-              Slettes automatisk etter 24 timer
-            </li>
-          </ul>
-
-          {reason && reasonText[reason] ? (
-            <div className="mt-6 rounded-md border border-[#fde68a] bg-[#fffbeb] p-4 text-sm text-[#92400e]">
-              {reasonText[reason]}
-            </div>
-          ) : null}
-
-          {error ? (
-            <div className="mt-6 rounded-md border border-[#fca5a5] bg-[#fef2f2] p-4 text-sm text-[#991b1b]">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
-              className="inline-flex w-fit rounded-md bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!isReady || isStarting || !onStartDemo}
-              onClick={onStartDemo}
-              type="button"
-            >
-              {!isReady
-                ? "Laster demo..."
-                : isStarting
-                  ? "Starter arbeidsområde..."
-                  : "Start demoarbeidsområde"}
-            </button>
-            <p className="text-sm text-[#64748b]">
-              Ingen innlogging er nødvendig for den offentlige demoen.
+        <div className="mt-8 grid gap-8 rounded-xl border border-[#d8dee8] bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-12 lg:p-12">
+          <div>
+            <p className="text-sm font-semibold text-[#315ea8]">
+              Praktisk integrasjonseksempel
             </p>
+            <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-[#172033] sm:text-5xl">
+              Se hvordan én manuell serviceflyt kan automatiseres
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#526075]">
+              En henvendelse kommer på e-post. Kundeinformasjon må kontrolleres,
+              sak opprettes, dokumenter lagres og status oppdateres. Demoen viser
+              hvordan disse stegene kan bindes sammen uten å erstatte systemene
+              bedriften allerede bruker.
+            </p>
+
+            {reason && reasonText[reason] ? (
+              <div
+                className="mt-6 rounded-md border border-[#e5cb7d] bg-[#fff9e8] p-4 text-sm text-[#6f571a]"
+                role="status"
+              >
+                {reasonText[reason]}
+              </div>
+            ) : null}
+
+            {error ? (
+              <div
+                className="mt-6 rounded-md border border-[#f3b7b7] bg-[#fff2f2] p-4 text-sm text-[#8f2525]"
+                role="alert"
+              >
+                {error}
+              </div>
+            ) : null}
+
+            <div className="mt-8">
+              <button
+                className="inline-flex rounded-md bg-[#315ea8] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#274d8b] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+                disabled={!isReady || isStarting || !onStartDemo}
+                onClick={onStartDemo}
+                type="button"
+              >
+                {!isReady
+                  ? "Laster demo..."
+                  : isStarting
+                    ? "Starter demo..."
+                    : "Se automatiseringen"}
+              </button>
+              <p className="mt-3 text-sm text-[#64748b]">
+                Ingen innlogging eller egne data er nødvendig.
+              </p>
+            </div>
           </div>
 
-          <nav
-            aria-label="Demo legal links"
-            className="mt-6 flex flex-wrap gap-4 text-sm font-semibold"
-          >
-            <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/privacy">
-              Privacy notice
-            </Link>
-            <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/terms">
-              Terms of use
-            </Link>
-          </nav>
+          <aside className="rounded-lg border border-[#dce3ec] bg-[#f3f6fa] p-5 sm:p-6">
+            <h2 className="text-base font-semibold text-[#243147]">
+              Trygg å utforske
+            </h2>
+            <ul className="mt-4 grid gap-3 text-sm text-[#445268]">
+              {demoBoundaries.map((boundary) => (
+                <li className="flex gap-3" key={boundary}>
+                  <span aria-hidden="true" className="font-bold text-[#24613f]">
+                    ✓
+                  </span>
+                  {boundary}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 border-t border-[#d8dee8] pt-4 text-xs leading-5 text-[#64748b]">
+              Demoen spiller av en ferdig, fiktiv arbeidsflyt. Den sender ikke
+              data til eksterne kunde-, dokument- eller økonomisystemer.
+            </p>
+          </aside>
         </div>
+
+        <nav
+          aria-label="Juridiske lenker"
+          className="mt-6 flex flex-wrap gap-4 text-sm font-semibold"
+        >
+          <Link className="text-[#315ea8] hover:text-[#274d8b]" href="/privacy">
+            Personvern
+          </Link>
+          <Link className="text-[#315ea8] hover:text-[#274d8b]" href="/terms">
+            Vilkår
+          </Link>
+        </nav>
       </section>
     </main>
   );

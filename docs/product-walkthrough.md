@@ -1,220 +1,170 @@
 # Product Walkthrough
 
-## Goal
+## Purpose
 
-Show the public interactive demo of Norvix WorkFlow Hub: a visitor starts an isolated demo workspace, uses fictional data, completes the main workflow, and sees how intake, AI-assisted review, case handling, documents, delivery, audit, and integrations fit together.
+This document defines two presentation paths:
 
-Target length: 5 minutes.
+- a short client-facing integration story for non-technical visitors;
+- a secondary technical walkthrough that verifies the broader implementation.
 
-This walkthrough is for product evaluation and sales presentation. It must stay aligned with the actual browser UI and must not claim that mock adapters are production integrations.
+Both paths use fictional data and must describe demo adapters honestly. The
+client-facing path is the primary product presentation.
 
-## Setup
+## Client-Facing Walkthrough
 
-Public demo tenant:
+Target length: 2–3 minutes.
 
-- Created per demo session from fictional seed data.
-- Expires automatically.
+Current route: `/demo` → `/`.
 
-Reference customer:
+`/automation` is retained only as a compatibility redirect to `/`. The old
+technical overview is available at `/technical`, and `/summary` redirects to
+the single result presentation at `/#resultat`.
 
-- Agder Drift & Service AS or equivalent fictional Norwegian service company.
-
-Reference case:
-
-- Incoming service request with attachments and incomplete customer/document metadata.
-
-## Positioning
-
-"Norvix WorkFlow Hub is a workflow control layer for organizations that already use Microsoft 365, document libraries, accounting/project tools, and reporting dashboards. This public demo shows the workflow with fictional data in a temporary sandbox."
-
-Public demo boundaries:
-
-- Demo data is fictional and expires automatically.
-- Visitors should not upload personal or confidential information.
-- AI behavior is demo-safe and mock-backed unless explicitly configured otherwise.
-- Microsoft Graph/SharePoint, accounting, and Power BI/Fabric integrations are mock adapters.
-- Brreg lookup can be shown as a real-capable integration where implemented.
-- Delivery links are functional; production PDF rendering remains a hardening item until implemented.
-
-## Step 1 - Start Demo
+### 1. Introduce the Manual Problem
 
 Open `/demo`.
 
-Show:
+Explain that a service request arrives by email and an employee normally needs
+to check customer data, create a case, store attachments, update status, and
+record what happened across several systems.
 
-- public demo notice;
-- fictional data warning;
-- automatic expiry message;
-- `Start demo workspace` button.
+Make these boundaries visible:
 
-Message:
+- all business data is fictional;
+- no login is required;
+- no real customer systems are contacted;
+- the temporary demo workspace expires automatically.
 
-"Each visitor gets a temporary sandbox. The demo is interactive, but it is not a production customer environment."
+Primary action: **Se automatiseringen**.
 
-## Step 2 - Dashboard
+### 2. Recognize the Incoming Request
 
-Show:
+Show the fictional email for service and documentation for pump station 14.
+Point out the sender, customer, organization number, customer reference,
+attachments, category, and requested outcome.
 
-- new intakes;
-- waiting review;
-- missing information;
-- documents needing review;
-- integration failures;
-- cases ready for delivery.
+The visitor should immediately recognize a normal operational request rather
+than a software dashboard.
 
-Message:
+### 3. Show the Manual Process
 
-"This is the operational control layer. It shows what entered the workflow, what needs review, what is blocked, and what is ready for delivery."
+Show the concrete manual actions: interpret the message, copy customer and
+reference data, check Brreg, create a case, create a document structure, save
+attachments, update reporting/delivery preparation, and record the work.
 
-## Step 3 - Intake Inbox
+The displayed manual-time range is explicitly an example estimate, not a
+measured customer result. The savings calculator later in the story is editable.
 
-Open or create an intake.
+### 4. Replay the Automated Flow
 
-Show:
+Select **Kjør automatisert flyt**.
 
-- source;
-- subject/body;
-- attachments when available;
-- status `New`.
+Explain that the timeline replays a completed fictional workflow using evidence
+already loaded from the demo workspace. It does not simulate direct calls to
+customer systems.
 
-Message:
+The sequence should show:
 
-"Requests can arrive from manual entry, email/form adapters, or API. The first value is that they become structured and trackable."
+1. email received;
+2. data structured and validated;
+3. company data checked;
+4. case created;
+5. document structure created;
+6. reporting and delivery basis updated;
+7. traceability stored.
 
-## Step 4 - AI Suggestions
+Each step must state whether its evidence is implemented, public-data capable,
+or provided through a demo adapter.
 
-Run AI analysis.
+### 5. Explain the Result
 
-Show suggestions:
+Show the actual demo case number, customer, linked-document count, delivery
+status, audit-event count, and the remaining human review point.
 
-- customer;
-- organization number;
-- category;
-- urgency;
-- tasks;
-- document metadata;
-- missing information;
-- summary.
+Use the before/after comparison to explain reduced repeated entry and improved
+traceability without promising zero errors or guaranteed savings.
 
-Message:
+### 6. Use the Transparent Estimate
 
-"AI prepares the work, but it does not decide. Suggestions stay pending until a person approves or edits them."
+Change one calculator input and show that the result updates. Keep the disclaimer
+visible:
 
-## Step 5 - Human Review
+> Eksempelberegning basert på valgte forutsetninger. Faktisk effekt må måles i
+> en avgrenset pilot.
 
-Approve or edit suggestions.
+### 7. Verify Integration Honesty
 
-Show:
+Briefly show the integration list:
 
-- proposed fields;
-- changed values;
-- status change;
-- audit event when visible.
+- email/Outlook as the scenario source;
+- Brreg as public-data capable;
+- ERP/project and reporting as demo adapters;
+- SharePoint/document archive as a demo adapter alongside implemented internal
+  document control;
+- audit history as implemented.
 
-Message:
+Open the collapsed technical evidence only if the visitor wants implementation
+details.
 
-"This is AI-assisted administration with human control and auditability."
+### 8. Close with One Next Step
 
-## Step 6 - Convert to Case
+Finish at **Har dere en lignende manuell prosess?** Explain that a first pilot
+can map one limited workflow and measure its actual effect before expanding.
 
-Convert intake to case.
+## Technical Evidence Walkthrough
 
-Show:
+Target length: up to 5 minutes. Use this path only after the client-facing story
+or when the audience specifically requests technical detail.
 
-- case title and status;
-- case fields;
-- tasks;
-- notes;
-- linked documents;
-- delivery section;
-- activity.
+### 1. Session and Isolation
 
-Message:
+Start at `/demo`, then open **Tekniske detaljer** or `/technical`. Explain
+temporary tenant/user creation, bearer-token session
+access, fictional seeding, automatic expiry, and cleanup. Do not describe local
+development headers as production authentication.
 
-"The approved intake becomes a case workspace, not another spreadsheet row."
+### 2. Intake and Human-Controlled AI
 
-## Step 7 - Brreg Lookup
+Open the source intake. Show structured source data, mock AI suggestions, human
+approval/editing, and the audit event. AI prepares work but does not make an
+autonomous final decision.
 
-Search Bronnoysundregistrene by organization number or name.
+### 3. Case Workspace
 
-Show:
+Open the linked case. Show tasks, notes, customer/reference data, linked
+documents, delivery information, and aggregated activity.
 
-- selected company data;
-- organization number;
-- organization form;
-- municipality/address;
-- deleted status;
-- customer creation/enrichment.
+### 4. Brreg and Documents
 
-Message:
+Show Brreg-capable organization enrichment and clearly state whether the current
+view uses a deterministic snapshot or a live public lookup. Show document
+versioning, classification, approval, and case linking using demo-safe files.
 
-"Norwegian company data can be looked up and stored with source traceability."
+### 5. Integrations and Failure Evidence
 
-## Step 8 - Document Workflow
+Open integration status. Distinguish implemented capabilities from demo adapters.
+Where available, show sync history, failure state, and retry without implying a
+real Microsoft, accounting, or reporting connection.
 
-Select a sample document or use the demo-safe document input. Do not use personal or confidential files in the public demo.
+### 6. Delivery and Audit
 
-Show:
+Show the delivery package, generated demo PDF summary, expiring/revocable public
+link, recipient page, access logging, and related audit history.
 
-- document version;
-- AI classification;
-- human approval;
-- expiry metadata;
-- linked case.
+### 7. Architecture and Production Boundary
 
-Message:
+Summarize the ASP.NET Core, Next.js, PostgreSQL, tenant-scoped data, adapter,
+storage, audit, and automated-test foundation. Close by distinguishing the
+public demo from a real customer deployment requiring production identity,
+secrets, governed integrations, operational controls, and customer legal work.
 
-"Documents are no longer just files in a folder. They become reviewed, linked, versioned case evidence."
+## Presentation Rules
 
-## Step 9 - Workflow Readiness
-
-Show the case readiness checklist.
-
-Message:
-
-"The system shows what is blocking delivery instead of requiring someone to remember it manually."
-
-## Step 10 - Integration Dashboard
-
-Show connector states:
-
-- Brreg;
-- Microsoft Graph/SharePoint adapter;
-- accounting/project adapter;
-- Power BI/Fabric export adapter.
-
-Message:
-
-"Each integration has visible status, sync history, failure handling, and retry. Mock adapters are labelled until real provider credentials are configured."
-
-## Step 11 - Delivery Package
-
-Generate a delivery package and create a delivery link.
-
-Show:
-
-- selected documents;
-- expiring secure link;
-- external recipient page;
-- access log;
-- revoke action.
-
-Message:
-
-"The recipient gets a controlled delivery link, not a loose email thread with attachments."
-
-## Step 12 - Audit and Analytics
-
-Show:
-
-- audit events;
-- case status metrics;
-- export option.
-
-Message:
-
-"Management gets operational visibility, and the organization gets a traceable record of what happened."
-
-## Closing Message
-
-"Norvix WorkFlow Hub is being prepared as a public interactive demo: functional, honest about mock integrations, and safe to try with fictional data. The later production SaaS work is separate: real authentication, real provider credentials, durable storage, governed AI, customer contracts, and operational runbooks."
+- Lead with the business process, not the technology stack.
+- Keep the main experience to one scenario.
+- Never use real customer data or confidential files.
+- Never call mock AI or a demo adapter a production integration.
+- Do not claim measured savings without a real pilot and publication permission.
+- Keep AI optional and human-controlled.
+- Use the technical application as evidence, not as the main navigation the
+  client must learn.

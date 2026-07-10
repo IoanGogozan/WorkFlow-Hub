@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import {
   DemoCapabilityBadge,
@@ -28,6 +28,7 @@ type ClassificationForm = {
 };
 
 export default function DocumentDetailPage() {
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const documentId = params.id;
   const [document, setDocument] = useState<DocumentRecord | null>(null);
@@ -150,6 +151,7 @@ export default function DocumentDetailPage() {
         },
       );
       setDocument(linked);
+      router.push(`/cases/${linked.caseId ?? selectedCaseId}`);
     } catch (linkError) {
       setActionError(
         linkError instanceof Error
@@ -186,7 +188,7 @@ export default function DocumentDetailPage() {
                   Opprettet {formatDateTime(document.createdAt)}
                 </p>
                 <div className="mt-5">
-                  <WorkflowProgress activeStep={6} />
+                  <WorkflowProgress activeStep={4} />
                 </div>
               </div>
 
@@ -208,7 +210,7 @@ export default function DocumentDetailPage() {
 
               {classification ? (
                 <section className="rounded-md border border-[#d8deea] bg-white p-6">
-                  <h3 className="text-lg font-semibold">AI-forslag</h3>
+                  <h3 className="text-lg font-semibold">Forslag med kontroll</h3>
                   <p className="mt-2 text-sm text-[#64748b]">
                     Sikkerhet: {Math.round(classification.confidence * 100)}%
                   </p>
@@ -224,12 +226,12 @@ export default function DocumentDetailPage() {
 
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-semibold">AI-klassifisering</h3>
+                <h3 className="text-lg font-semibold">Valgfri AI-klassifisering</h3>
                   <DemoCapabilityBadge capability={documentAiCapability} />
                 </div>
                 <p className="mt-2 text-sm leading-6 text-[#64748b]">
-                  La AI foreslå dokumenttype og utløpsdato. Mennesket
-                  godkjenner før dokumentet brukes i leveranse.
+                  La AI foreslå dokumenttype og utløpsdato når det gir verdi.
+                  Mennesket godkjenner før dokumentet brukes i leveranse.
                 </p>
                 <div className="mt-3">
                   <DemoCapabilityNote capability={documentAiCapability} />
@@ -348,7 +350,7 @@ function FieldValue({ label, value }: { label: string; value: string | null }) {
     <div>
       <dt className="text-sm font-semibold text-[#334155]">{label}</dt>
       <dd className="mt-1 break-all text-sm text-[#64748b]">
-        {value ?? "Not set"}
+        {value ?? "Ikke satt"}
       </dd>
     </div>
   );
