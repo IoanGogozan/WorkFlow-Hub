@@ -4,7 +4,7 @@ type ErrorStateProps = {
 };
 
 export function ErrorState({
-  title = "Could not load data",
+  title = "Kunne ikke laste data",
   message,
 }: ErrorStateProps) {
   return (

@@ -15,10 +15,10 @@ public static partial class DemoSessionEndpoints
 {
     private static readonly (string Provider, string DisplayName, bool Connected)[] DemoIntegrations =
     [
-        ("brreg", "Bronnoysundregistrene", true),
-        ("microsoft-graph", "Microsoft Graph / SharePoint mock", false),
-        ("tripletex", "Tripletex Accounting mock", false),
-        ("powerbi-fabric", "Power BI / Fabric mock", false)
+        ("brreg", "Brreg – offentlig datakilde", true),
+        ("microsoft-graph", "SharePoint / dokumentarkiv – demo-adapter", true),
+        ("tripletex", "Prosjekt/ERP – demo-adapter", true),
+        ("powerbi-fabric", "Rapportering – demo-adapter", true)
     ];
 
     public static IEndpointRouteBuilder MapDemoSessionEndpoints(this IEndpointRouteBuilder app)
@@ -105,8 +105,8 @@ public static partial class DemoSessionEndpoints
                 TenantId = tenantId,
                 CreatedBy = userId,
                 Source = IntakeSource.MockEmail,
-                Subject = "E-post: service request - pump station inspection",
-                Body = "Hei, vi trenger inspeksjonsrapport, dokumentasjon og en ryddig leveringspakke for pumpestasjon 14. Send gjerne status og mangelliste til driftsteamet.",
+                Subject = "Service og dokumentasjon – pumpestasjon 14",
+                Body = "Hei,\nVi trenger service og dokumentasjon for pumpestasjon 14.\nKundereferanse: PO-10482.\nVedlagt ligger inspeksjonsnotat og bilder.\nBekreft mottak og opprett saken for driftsteamet.",
                 CustomerName = "Kristiansand Kommune",
                 OrganizationNumber = "963296746",
                 Category = "Inspection",

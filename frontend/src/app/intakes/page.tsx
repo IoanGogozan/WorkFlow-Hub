@@ -77,7 +77,8 @@ export default function IntakesPage() {
             <div>
               <h2 className="text-3xl font-semibold">Input til behandling</h2>
               <p className="mt-3 max-w-3xl text-base leading-7 text-[#475569]">
-                Her samles henvendelser fra flere kanaler før AI foreslår
+                Her samles henvendelser fra flere kanaler før informasjonen
+                kontrolleres, berikes og eventuelt får AI-forslag
                 struktur og en person godkjenner veien videre.
               </p>
             </div>
@@ -113,7 +114,7 @@ export default function IntakesPage() {
               <h3 className="text-lg font-semibold">Velg input</h3>
               <p className="mt-1 text-sm text-[#64748b]">
                 Viser de mest relevante demo-eksemplene. Åpne en rad for å se
-                AI-forslag, manglende informasjon og neste handling.
+                Forslag, manglende informasjon og neste handling.
               </p>
             </div>
             <p className="text-sm font-semibold text-[#475569]">

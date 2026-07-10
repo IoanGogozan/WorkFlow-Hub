@@ -5,12 +5,11 @@ import { usePathname } from "next/navigation";
 import { DemoExpiryBanner } from "@/components/demo-expiry-banner";
 
 const navItems = [
-  { key: "overview", label: "Oversikt", href: "/" },
-  { key: "input", label: "Input", href: "/intakes" },
-  { key: "case", label: "Sak", href: "/cases" },
-  { key: "documents", label: "Dokumenter", href: "/documents" },
-  { key: "integrations", label: "Integrasjoner", href: "/integrations" },
-  { key: "summary", label: "Oppsummering", href: "/summary" },
+  { key: "overview", label: "Oversikt", href: "/technical" },
+  { key: "entry", label: "Inngang", href: "/intakes" },
+  { key: "review", label: "Vurdering", href: "/intakes" },
+  { key: "case-documents", label: "Sak og dokumenter", href: "/cases" },
+  { key: "delivery-summary", label: "Leveranse og oppsummering", href: "/summary" },
 ];
 
 type AppShellProps = {
@@ -33,13 +32,19 @@ export function AppShell({ children }: AppShellProps) {
               Agder Drift & Service AS
             </h1>
           </div>
-          <nav aria-label="Main navigation" className="flex flex-wrap gap-1.5">
+          <nav aria-label="Hovednavigasjon" className="flex flex-wrap gap-1.5">
+            <Link
+              className="rounded-md px-3 py-2 text-sm font-semibold text-[#1d4ed8] hover:bg-[#eff6ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
+              href="/"
+            >
+              Til integrasjonseksempelet
+            </Link>
             {navItems.map((item) => (
               <Link
                 key={item.key}
-                aria-current={isActiveNavItem(item.href, pathname) ? "page" : undefined}
+                aria-current={isActiveNavItem(item.key, item.href, pathname) ? "page" : undefined}
                 className={
-                  isActiveNavItem(item.href, pathname)
+                  isActiveNavItem(item.key, item.href, pathname)
                     ? "rounded-md bg-[#eff6ff] px-3 py-2 text-sm font-semibold text-[#1d4ed8] ring-1 ring-[#bfdbfe] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                     : "rounded-md px-3 py-2 text-sm font-medium text-[#334155] hover:bg-[#eef2ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 }
@@ -54,13 +59,13 @@ export function AppShell({ children }: AppShellProps) {
       {children}
       <footer className="border-t border-[#d8deea] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-4 text-xs text-[#64748b] sm:flex-row sm:items-center sm:justify-between">
-          <p>Public demo uses fictional data. Do not submit confidential information.</p>
-          <nav aria-label="Legal links" className="flex gap-4 font-semibold">
+          <p>Offentlig demo bruker fiktive data. Ikke send inn konfidensiell informasjon.</p>
+          <nav aria-label="Juridiske lenker" className="flex gap-4 font-semibold">
             <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/privacy">
-              Privacy
+              Personvern
             </Link>
             <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/terms">
-              Terms
+              Vilkår
             </Link>
           </nav>
         </div>
@@ -69,13 +74,25 @@ export function AppShell({ children }: AppShellProps) {
   );
 }
 
-function isActiveNavItem(href: string, pathname: string) {
-  if (href === "/") {
-    return pathname === "/";
+function isActiveNavItem(key: string, href: string, pathname: string) {
+  if (key === "entry") {
+    return pathname === "/intakes" || pathname === "/intakes/new";
   }
 
-  if (href === "/summary") {
-    return pathname === "/summary";
+  if (key === "review") {
+    return pathname.startsWith("/intakes/");
+  }
+
+  if (key === "case-documents") {
+    return pathname.startsWith("/cases") || pathname.startsWith("/documents");
+  }
+
+  if (key === "delivery-summary") {
+    return (
+      pathname.startsWith("/delivery") ||
+      pathname.startsWith("/integrations") ||
+      pathname === "/summary"
+    );
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);

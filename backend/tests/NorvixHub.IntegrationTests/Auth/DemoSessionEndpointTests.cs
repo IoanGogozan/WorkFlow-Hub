@@ -88,11 +88,24 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
             TestContext.Current.CancellationToken);
         sourceIntake.Status.Should().Be(IntakeStatus.ConvertedToCase);
         sourceIntake.ConvertedCaseId.Should().Be(caseWorkspace.Id);
+        sourceIntake.Subject.Should().Be("Service og dokumentasjon – pumpestasjon 14");
+        sourceIntake.Body.Should().Contain("Kundereferanse: PO-10482");
+        caseWorkspace.Title.Should().Be("Service og dokumentasjon – pumpestasjon 14");
+        caseWorkspace.ExternalProjectId.Should().Be("PO-10482");
+        var attachmentNames = await dbContext.IntakeAttachments
+            .Where(attachment => attachment.TenantId == body.DemoTenantId &&
+                attachment.IntakeItemId == sourceIntake.Id)
+            .OrderBy(attachment => attachment.OriginalFilename)
+            .Select(attachment => attachment.OriginalFilename)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        attachmentNames.Should().BeEquivalentTo(
+            "inspeksjonsnotat.pdf",
+            "bilder-pumpestasjon-14.zip");
 
         var linkedDocument = await dbContext.Documents.SingleAsync(
             document => document.TenantId == body.DemoTenantId &&
                 document.CaseId == caseWorkspace.Id &&
-                document.Title == "Approved pump station inspection report",
+                document.Title == "Godkjent inspeksjonsnotat – pumpestasjon 14",
             TestContext.Current.CancellationToken);
         linkedDocument.Status.Should().Be(DocumentStatus.Approved);
 
@@ -100,6 +113,7 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
             package => package.TenantId == body.DemoTenantId,
             TestContext.Current.CancellationToken);
         package.CaseId.Should().Be(caseWorkspace.Id);
+        package.Title.Should().Be("Leveringsgrunnlag – pumpestasjon 14");
         (await dbContext.DeliveryPackageItems.AnyAsync(
             item => item.TenantId == body.DemoTenantId &&
                 item.DeliveryPackageId == package.Id &&

@@ -55,7 +55,7 @@ export default function CasesPage() {
             dokumenter og historikk.
           </p>
           <div className="mt-5">
-            <WorkflowProgress activeStep={4} />
+            <WorkflowProgress activeStep={3} />
           </div>
         </div>
 

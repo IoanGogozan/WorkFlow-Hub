@@ -7,36 +7,36 @@ export type DemoCapability = {
 };
 
 export const aiCapability: DemoCapability = {
-  label: "Mock AI",
-  detail: "Deterministic demo suggestions. No external model call.",
+  label: "Valgfri AI-støtte",
+  detail: "Forutsigbare demoforslag uten ekstern modellkall.",
   tone: "mock",
 };
 
 export const documentAiCapability: DemoCapability = {
-  label: "Mock AI",
-  detail: "Deterministic document classification for demo files.",
+  label: "Valgfri AI-støtte",
+  detail: "Forutsigbar dokumentklassifisering for demofiler.",
   tone: "mock",
 };
 
 const integrationCapabilities: Record<string, DemoCapability> = {
   brreg: {
-    label: "Real-capable",
-    detail: "Uses the Brreg-capable API path; safe demo data only.",
+    label: "Kan kobles mot ekte system",
+    detail: "Bruker API-stien som kan kobles mot Brønnøysundregistrene.",
     tone: "real",
   },
   "microsoft-graph": {
-    label: "Mock Microsoft",
-    detail: "SharePoint/Microsoft Graph behavior is simulated in this demo.",
+    label: "Simulert dokumentarkiv",
+    detail: "SharePoint-lignende dokumentflyt er simulert i demoen.",
     tone: "mock",
   },
   "powerbi-fabric": {
-    label: "Mock Fabric",
-    detail: "Power BI/Fabric status is simulated; CSV/JSON export is functional.",
+    label: "Rapportering simulert",
+    detail: "Power BI/Fabric-lignende rapportering er simulert i demoen.",
     tone: "mock",
   },
   tripletex: {
-    label: "Mock accounting",
-    detail: "Accounting/project sync is simulated. No Tripletex tenant is used.",
+    label: "Regnskap simulert",
+    detail: "Regnskap og prosjektflyt er simulert uten Tripletex-tenant.",
     tone: "mock",
   },
 };

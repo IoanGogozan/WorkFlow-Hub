@@ -38,7 +38,7 @@ export default function NewIntakePage() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Intake could not be created.",
+          : "Input kunne ikke opprettes.",
       );
     } finally {
       setSubmitting(false);
@@ -53,8 +53,8 @@ export default function NewIntakePage() {
     <AppShell>
       <div className="mx-auto max-w-3xl px-6 py-6">
         <div className="mb-6">
-          <p className="text-sm font-medium text-[#64748b]">New intake</p>
-          <h2 className="mt-2 text-3xl font-semibold">New intake</h2>
+          <p className="text-sm font-medium text-[#64748b]">Nytt input</p>
+          <h2 className="mt-2 text-3xl font-semibold">Nytt input</h2>
         </div>
 
         {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}
@@ -63,21 +63,21 @@ export default function NewIntakePage() {
           className="space-y-5 rounded-md border border-[#d8deea] bg-white p-6"
           onSubmit={submit}
         >
-          <Field label="Source">
+          <Field label="Kilde">
             <select
               className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
               name="source"
               onChange={(event) => updateField("source", event.target.value)}
               value={form.source}
             >
-              <option value="Manual">Manual</option>
-              <option value="MockEmail">Mock email</option>
-              <option value="MockForm">Mock form</option>
+              <option value="Manual">Manuell</option>
+              <option value="MockEmail">Demo-e-post</option>
+              <option value="MockForm">Demo-skjema</option>
               <option value="Api">API</option>
             </select>
           </Field>
 
-          <Field label="Subject">
+          <Field label="Emne">
             <input
               className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
               maxLength={240}
@@ -87,7 +87,7 @@ export default function NewIntakePage() {
             />
           </Field>
 
-          <Field label="Body">
+          <Field label="Innhold">
             <textarea
               className="min-h-40 w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
               maxLength={8000}
@@ -98,14 +98,14 @@ export default function NewIntakePage() {
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Customer name">
+            <Field label="Kundenavn">
               <input
                 className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 onChange={(event) => updateField("customerName", event.target.value)}
                 value={form.customerName}
               />
             </Field>
-            <Field label="Organization number">
+            <Field label="Organisasjonsnummer">
               <input
                 className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 onChange={(event) =>
@@ -114,24 +114,24 @@ export default function NewIntakePage() {
                 value={form.organizationNumber}
               />
             </Field>
-            <Field label="Category">
+            <Field label="Kategori">
               <input
                 className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 onChange={(event) => updateField("category", event.target.value)}
                 value={form.category}
               />
             </Field>
-            <Field label="Urgency">
+            <Field label="Prioritet">
               <select
                 className="w-full rounded-md border border-[#cbd5e1] px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
                 onChange={(event) => updateField("urgency", event.target.value)}
                 value={form.urgency}
               >
-                <option value="">Not set</option>
-                <option value="Low">Low</option>
+                <option value="">Ikke satt</option>
+                <option value="Low">Lav</option>
                 <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
+                <option value="High">Høy</option>
+                <option value="Urgent">Haster</option>
               </select>
             </Field>
           </div>
@@ -141,7 +141,7 @@ export default function NewIntakePage() {
             disabled={submitting}
             type="submit"
           >
-            {submitting ? "Creating..." : "Create intake"}
+            {submitting ? "Oppretter..." : "Opprett input"}
           </button>
         </form>
       </div>

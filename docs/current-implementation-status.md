@@ -17,11 +17,22 @@ This file records the current technical status. It is not a final acceptance sta
 - Demo session model, migration, creation endpoint, bearer-token auth, and non-Development rejection of local dev headers.
 - Rich fictional per-session demo seeding now includes intakes, a customer, case workspace, task, note, approved document, delivery package, generated summary document, integrations, and audit trail.
 - Frontend `/demo` start page, demo token storage, API client bearer-token support, and public demo banner.
+- Read-only, tenant-scoped `/api/demo-story` projection for the simplified
+  client experience, with cross-tenant, missing-story, authentication, and
+  response-header coverage.
+- Client-facing `/` experience with incoming request, manual-process comparison,
+  replayable evidence timeline, real demo outcome, editable calculator,
+  integration boundaries, technical evidence, and CTA.
+- `/automation` compatibility redirect, `/technical` technical overview, and
+  `/summary` consolidation redirect to `/#resultat`.
+- Separate client-facing and technical Playwright paths, responsive checks at
+  375/768/1280 px, keyboard focus checks, and reduced-motion support.
 - Worker-backed expired demo session cleanup for demo tenants, tenant-scoped records, and stored local files.
 - Explicit demo session isolation tests and public demo upload blocking.
 - Demo-safe sample document endpoint and frontend action for public demo document workflow.
 - Case activity now aggregates related intake, AI review, document, delivery package, and public delivery access events for the visible demo audit trail.
-- Frontend demo labels identify Mock AI, mock accounting, mock Microsoft/SharePoint, mock Fabric/Power BI, and Brreg real-capable status.
+- Frontend demo labels identify Mock AI, mock accounting, mock Microsoft/SharePoint,
+  mock Fabric/Power BI, and Brreg public-data-capable status backed by stored demo evidence.
 - Public `/privacy` and `/terms` pages exist and are linked from the demo start page, app shell, and public delivery page.
 - Rate limiting is enabled for `POST /api/demo-sessions` and public delivery endpoints.
 - Global request body size limits and upload file size/type limits are configured and tested.
@@ -33,19 +44,21 @@ This file records the current technical status. It is not a final acceptance sta
 - Demo deploy workflow has a main/tag gate, fictional-data confirmation, validation jobs, a `demo` environment gate, ACR image publishing, and Azure Container Apps update steps.
 - Azure Blob Storage adapter is implemented for shared deployed document storage and idempotent cleanup, with Azurite integration coverage for expired demo cleanup.
 - Bootstrap scripts exist for first-pass Azure demo resource provisioning and GitHub `demo` environment configuration.
-- Product documentation, walkthrough, architecture diagram, and screenshot instructions.
+- Consolidated product documentation, client and technical walkthroughs,
+  architecture diagrams, and screenshot instructions.
 
-## Current Target
+## Current Public Direction
 
-The next target is a public interactive demo for Norvix AS.
+The implemented public direction is a client-facing integration case study for Norvix AS. It
+shows one fictional service request moving from email through validation, case
+creation, document handling, reporting/delivery preparation, and audit evidence.
+The existing detailed application remains available as technical evidence.
 
-The demo should let a website visitor start an isolated temporary workspace with fictional data, complete the main workflow, and have all demo data expire automatically.
+The approved direction and staged implementation plan are:
 
-The active implementation plan is:
+- [Client-Facing Integration Demo](client-facing-integration-demo.md)
 
-- [Public Demo Implementation Plan - Draft](public-demo-implementation-plan-draft.md)
-
-## Current Gaps Before Public Demo
+## Current Gaps Before Public Deployment
 
 - Production-grade PDF rendering is not yet implemented; the current demo generates a simple PDF summary.
 - Azure resources have not been created because public demo deployment is intentionally deferred until an Azure subscription is available and costs are approved.
@@ -53,7 +66,8 @@ The active implementation plan is:
 
 ## Local-Only Or Mock-Backed Components
 
-- Local development auth is used instead of public demo session auth or Microsoft Entra ID.
+- Local development uses header auth for technical API work. The public demo
+  path uses isolated bearer-token demo sessions; Microsoft Entra ID is not implemented.
 - Microsoft Graph / SharePoint integration is mocked.
 - Tripletex/accounting integration is mocked.
 - Power BI/Fabric export status is mocked while CSV/JSON export is functional.
@@ -85,11 +99,52 @@ The public demo is not the same as a real customer SaaS deployment. Before proce
 - EF migration drift check.
 - Docker Compose config validation.
 - Manual file-size check for hand-written files.
-- Full public demo smoke test once demo session mode exists.
+- Full client-facing and technical demo smoke tests.
 
 ## Validated Locally
 
 Record exact date and command output summaries here only after validation commands have been run in the current environment.
+
+2026-07-10 — client-facing integration demo documentation gate:
+
+- `git diff --check` — passed; Git emitted only informational LF/CRLF warnings.
+- `npm --prefix frontend run lint` — passed with no ESLint errors.
+- `npm --prefix frontend run build` — passed with Next.js 16.2.6; all public,
+  compatibility, technical, and detailed routes compiled successfully.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` — passed
+  103 tests: 1 contract, 2 unit, and 100 integration; 0 failed and 0 skipped.
+
+2026-07-10 — final regression gate:
+
+- `npm --prefix frontend ci` — passed; 361 packages installed. The complete
+  dependency tree reported 1 low and 1 moderate advisory.
+- `npm --prefix frontend run lint` and `npm --prefix frontend run build` — passed.
+- `npm --prefix frontend audit --omit=dev --audit-level=high` — passed with
+  0 production vulnerabilities.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` — passed
+  103 tests with 0 failed and 0 skipped.
+- `dotnet tool restore --tool-manifest dotnet-tools.json` — passed.
+- EF `migrations has-pending-model-changes` — passed; no model drift.
+- `docker compose config --quiet` — passed.
+- `npm run test:e2e:public-demo` — passed both client-facing and technical
+  Chromium scenarios.
+- Manual release checklist was cross-checked against the E2E and integration
+  coverage for session creation/expiry, routing, replay, calculator, technical
+  evidence, legal routes, clean errors, blocked public upload, fictional data,
+  honest integration labels, and mobile overflow.
+
+2026-07-10 — pre-redesign baseline on the existing working tree:
+
+- `npm --prefix frontend ci` — passed; installed 361 packages and audited 362.
+  npm reported 2 known dependency vulnerabilities: 1 low and 1 moderate. No
+  dependency fix or upgrade was performed during baseline capture.
+- `npm --prefix frontend run lint` — passed with no ESLint errors.
+- `npm --prefix frontend run build` — passed with Next.js 16.2.6; TypeScript,
+  static generation, and production optimization completed. Node emitted a
+  non-blocking `DEP0205` deprecation warning for `module.register()`.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` — passed
+  99 tests: 1 contract, 2 unit, and 96 integration; 0 failed and 0 skipped.
+- `docker compose config --quiet` — passed.
 
 2026-05-17:
 

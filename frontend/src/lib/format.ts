@@ -1,9 +1,9 @@
 export function formatDateTime(value: string | null) {
   if (!value) {
-    return "Never";
+    return "Aldri";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("nb-NO", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -11,10 +11,10 @@ export function formatDateTime(value: string | null) {
 
 export function formatDate(value: string | null) {
   if (!value) {
-    return "Not set";
+    return "Ikke satt";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("nb-NO", {
     dateStyle: "medium",
   }).format(new Date(value));
 }

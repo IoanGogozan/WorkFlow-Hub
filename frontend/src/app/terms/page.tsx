@@ -6,53 +6,55 @@ import {
 export default function TermsPage() {
   return (
     <PublicLegalLayout
-      intro="These terms apply only to the public interactive demo of Norvix WorkFlow Hub."
-      title="Terms of Use"
+      intro="Disse vilkårene gjelder bare den offentlige interaktive demoen av Norvix WorkFlow Hub."
+      title="Vilkår for bruk"
     >
-      <LegalSection title="Permitted use">
+      <LegalSection title="Tillatt bruk">
         <p>
-          You may use the demo to explore fictional workflow scenarios, including
-          intake, AI-assisted review, case handling, document classification,
-          delivery packages, public delivery links, audit trail, and integration
-          status.
+          Du kan bruke demoen til å utforske fiktive arbeidsflyter med input,
+          kontroll med valgfri AI-støtte, saksbehandling, dokumentklassifisering,
+          leveringspakker, kundelenker, hendelseslogg og integrasjonsstatus.
         </p>
       </LegalSection>
 
-      <LegalSection title="No real customer data">
+      <LegalSection title="Ingen ekte kundedata">
         <p>
-          Do not submit personal data, confidential information, production
-          customer data, credentials, secrets, contracts, or regulated content.
+          Ikke send inn persondata, konfidensiell informasjon, produksjonsdata
+          om kunder, innloggingsdata, hemmeligheter, kontrakter eller regulert
+          innhold.
         </p>
         <p>
-          Public upload is intentionally disabled in the demo. Use the provided
-          sample document flow only.
-        </p>
-      </LegalSection>
-
-      <LegalSection title="Demo limitations">
-        <p>
-          The demo is provided for evaluation and presentation. It is not a
-          production SaaS service, and it does not include customer onboarding,
-          billing, service-level commitments, real Microsoft Graph, real
-          accounting integration, or real Fabric/Power BI integration.
-        </p>
-        <p>
-          AI, Microsoft, accounting, and Fabric behavior is mock unless the
-          interface clearly marks a capability as real-capable.
+          Offentlig opplasting er bevisst deaktivert i demoen. Bruk kun den
+          innebygde demo-dokumentflyten.
         </p>
       </LegalSection>
 
-      <LegalSection title="Availability and cleanup">
+      <LegalSection title="Begrensninger i demoen">
         <p>
-          Demo sessions are temporary and may expire, reset, or be removed at any
-          time. Norvix AS may change, suspend, or remove the demo without notice.
+          Demoen er laget for evaluering og presentasjon. Den er ikke en
+          produksjonstjeneste og inkluderer ikke kundeonboarding, fakturering,
+          SLA-forpliktelser eller ekte Microsoft Graph-, regnskaps- eller
+          Fabric/Power BI-integrasjon.
+        </p>
+        <p>
+          AI-, Microsoft-, regnskaps- og Fabric-flyt er simulert med mindre
+          grensesnittet tydelig markerer at funksjonen kan kobles mot ekte
+          system.
         </p>
       </LegalSection>
 
-      <LegalSection title="Contact">
+      <LegalSection title="Tilgjengelighet og opprydding">
         <p>
-          Contact: Norvix AS. Use the contact channel published on the Norvix
-          website for questions about the demo.
+          Demoarbeidsområder er midlertidige og kan utløpe, nullstilles eller
+          fjernes når som helst. Norvix AS kan endre, stanse eller fjerne demoen
+          uten varsel.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Kontakt">
+        <p>
+          Kontakt: Norvix AS. Bruk kontaktkanalen publisert på Norvix-nettstedet
+          ved spørsmål om demoen.
         </p>
       </LegalSection>
     </PublicLegalLayout>

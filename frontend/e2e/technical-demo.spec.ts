@@ -1,16 +1,19 @@
 import { expect, test } from "@playwright/test";
 
-test("visitor can complete the automated public demo workflow", async ({ page }) => {
+test("technical reviewer can complete the detailed demo workflow", async ({ page }) => {
   await page.goto("/demo");
-  await page.getByRole("button", { name: /Start demo/ }).click();
+  await page.getByRole("button", { name: "Se automatiseringen" }).click();
+  await expect(page).toHaveURL(/\/$/);
 
-  await expect(page.getByRole("heading", { name: "Fra input til leveranse" })).toBeVisible();
-  await expect(page.getByText("Public demo - fiktive data")).toBeVisible();
-
-  await page.goto("/intakes");
-  await page.getByRole("link", { name: "Behandle første input" }).click();
-
-  await expect(page.getByRole("heading", { name: "Input slik det kom inn" })).toBeVisible();
+  await page.goto("/technical");
+  await expect(
+    page.getByRole("heading", { name: "Fra henvendelse til sak og leveranse uten dobbeltregistrering" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Start teknisk gjennomgang" }).click();
+  const firstIntakeLink = page.getByRole("link", { name: "Behandle første input" });
+  await expect(firstIntakeLink).toHaveAttribute("href", /\/intakes\/[0-9a-f-]+$/i);
+  await firstIntakeLink.click();
+  await expect(page.getByRole("heading", { name: "Original henvendelse" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Kontroller og godkjenn" })).toBeVisible();
   await expect(page.getByText("Forslag klart for godkjenning")).toBeVisible();
 
@@ -18,22 +21,27 @@ test("visitor can complete the automated public demo workflow", async ({ page })
   await expect(page).toHaveURL(/\/cases\/[0-9a-f-]+$/i);
   const caseUrl = page.url();
   const caseId = caseUrl.split("/").pop()!;
-  await expect(page.getByRole("heading", { name: /Fra godkjent input til sporbar sak/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Fra godkjent input til sporbar sak/ }),
+  ).toBeVisible();
 
   await page.goto("/documents");
   await page.getByRole("button", { name: "Opprett demo-dokument" }).click();
-  await page
+  const sampleDocumentLink = page
     .locator("article")
-    .filter({ hasText: "Uploaded" })
+    .filter({ hasText: "Demo inspection report" })
     .first()
-    .getByRole("link", { name: "Åpne dokument" })
-    .click();
+    .getByRole("link", { name: "Åpne dokument" });
+  await expect(sampleDocumentLink).toHaveAttribute("href", /\/documents\/[0-9a-f-]+$/i);
+  await page.goto((await sampleDocumentLink.getAttribute("href"))!);
   await expect(page).toHaveURL(/\/documents\/[0-9a-f-]+$/i);
   const documentTitle = (await page.getByRole("heading", { level: 2 }).textContent())!;
 
-  await expect(page.getByRole("heading", { name: "AI-klassifisering" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Valgfri AI-klassifisering" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Kjør AI-klassifisering" }).click();
-  await expect(page.getByRole("heading", { name: "AI-forslag" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forslag med kontroll" })).toBeVisible();
   await page.getByRole("button", { name: "Godkjenn klassifisering" }).click();
   await page.getByRole("combobox", { name: "Sak" }).selectOption(caseId);
   await page.getByRole("button", { name: "Koble dokument" }).click();
@@ -41,7 +49,6 @@ test("visitor can complete the automated public demo workflow", async ({ page })
   await page.goto(caseUrl);
   await expect(page.getByRole("heading", { name: "Dokumenter på saken" })).toBeVisible();
   await expect(page.getByRole("link", { name: documentTitle })).toBeVisible();
-
   await page.getByLabel("Tittel på leveringspakke").fill("E2E leveringspakke");
   await page.getByLabel(new RegExp(documentTitle)).check();
   await page.getByRole("button", { name: "Lag leveringspakke" }).click();
@@ -57,11 +64,17 @@ test("visitor can complete the automated public demo workflow", async ({ page })
   await expect(publicLink).toBeVisible();
   const publicHref = await publicLink.getAttribute("href");
   expect(publicHref).toBeTruthy();
-
   await page.goto(publicHref!);
-  await expect(page.getByRole("heading", { name: "Delivery documents" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Dokumenter i leveransen" }),
+  ).toBeVisible();
   await expect(page.getByText(documentTitle)).toBeVisible();
 
   await page.goto("/summary");
-  await expect(page.getByRole("heading", { name: "Du har fullført en integrert arbeidsflyt" })).toBeVisible();
+  await expect(page).toHaveURL(/\/#resultat$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Fra e-post til opprettet sak – uten dobbeltregistrering",
+    }),
+  ).toBeVisible();
 });

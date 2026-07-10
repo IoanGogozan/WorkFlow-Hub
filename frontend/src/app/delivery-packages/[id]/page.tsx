@@ -155,7 +155,7 @@ export default function DeliveryPackagePage() {
                   <StatusBadge status={deliveryPackage.status} />
                 </div>
                 <div className="mt-5">
-                  <WorkflowProgress activeStep={6} />
+                  <WorkflowProgress activeStep={4} />
                 </div>
               </div>
 
@@ -206,9 +206,9 @@ export default function DeliveryPackagePage() {
                             {link.recipientEmail ?? "Ingen mottaker e-post"}
                           </p>
                           <p className="mt-1 text-sm text-[#64748b]">
-                            Expires {formatDateTime(link.expiresAt)}
+                            Utløper {formatDateTime(link.expiresAt)}
                             {link.revokedAt
-                              ? ` - Revoked ${formatDateTime(link.revokedAt)}`
+                              ? ` - Trukket tilbake ${formatDateTime(link.revokedAt)}`
                               : ""}
                           </p>
                           {link.token ? (
@@ -294,7 +294,7 @@ export default function DeliveryPackagePage() {
                   disabled={action !== null}
                   type="submit"
                 >
-                  {action === "link" ? "Creating..." : "Lag kundelenke"}
+                  {action === "link" ? "Oppretter..." : "Lag kundelenke"}
                 </button>
                 {newPublicUrl ? (
                   <div className="rounded-md border border-[#bbf7d0] bg-[#f0fdf4] p-3 text-sm">

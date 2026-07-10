@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import {
   DemoCapabilityBadge,
-  DemoCapabilityNote,
 } from "@/components/demo-capability-badge";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -62,7 +61,7 @@ export default function IntegrationsPage() {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Integrations could not be loaded.",
+              : "Integrasjoner kunne ikke lastes.",
           );
         }
       }
@@ -101,6 +100,10 @@ export default function IntegrationsPage() {
           method: "POST",
         });
       } else {
+        await api(`/api/integrations/${provider}/connect`, {
+          method: "POST",
+          body: { settingsJson: "{}" },
+        });
         await api(`/api/integrations/${provider}/sync`, { method: "POST" });
       }
 
@@ -130,14 +133,14 @@ export default function IntegrationsPage() {
             uten å bruke ekte Microsoft-, regnskaps- eller Fabric-miljøer.
           </p>
           <div className="mt-5">
-            <WorkflowProgress activeStep={5} />
+              <WorkflowProgress activeStep={4} />
           </div>
         </div>
 
         {error ? (
           <ErrorState message={error} />
         ) : !integrations ? (
-          <LoadingState label="Loading integrations" />
+          <LoadingState label="Laster integrasjoner" />
         ) : (
           <div className="space-y-5">
             <IntegrationFlowMap />
@@ -153,8 +156,8 @@ export default function IntegrationsPage() {
             {actionError ? <ErrorState message={actionError} /> : null}
             {integrations.length === 0 ? (
               <EmptyState
-                message="No integration connections were returned by the API."
-                title="No integrations"
+                message="API-et returnerte ingen integrasjoner."
+                title="Ingen integrasjoner"
               />
             ) : (
               integrations.map((integration) => {
@@ -179,77 +182,53 @@ export default function IntegrationsPage() {
                           <StatusBadge status={integration.status} />
                           <DemoCapabilityBadge capability={capability} />
                         </div>
-                        <p className="mt-2 text-sm text-[#64748b]">
-                          Provider: {integration.provider}
-                        </p>
-                        <p className="mt-3 max-w-3xl text-sm leading-6 text-[#475569]">
-                          {businessExplanation(integration.provider)}
-                        </p>
+                        <div className="mt-4 grid gap-4 text-sm md:grid-cols-2">
+                          <BenefitBlock
+                            label="Hva demonstreres"
+                            value={demonstratedValue(integration.provider)}
+                          />
+                          <BenefitBlock
+                            label="Manuell jobb som reduseres"
+                            value={reducedManualWork(integration.provider)}
+                          />
+                        </div>
                         {integration.lastError ? (
                           <p className="mt-2 text-sm font-medium text-[#b91c1c]">
                             {integration.lastError}
                           </p>
                         ) : null}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          className="rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm font-semibold text-[#334155] hover:bg-[#eef2ff] disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={busyProvider === integration.provider}
-                          onClick={() =>
-                            runAction(integration.provider, "connect")
-                          }
-                          type="button"
-                        >
-                          Connect
-                        </button>
-                        <button
-                          className="rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm font-semibold text-[#334155] hover:bg-[#eef2ff] disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={busyProvider === integration.provider}
-                          onClick={() => runAction(integration.provider, "sync")}
-                          type="button"
-                        >
-                          Sync
-                        </button>
-                        <button
-                          className="rounded-md border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-sm font-semibold text-[#b91c1c] hover:bg-[#fee2e2] disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={busyProvider === integration.provider}
-                          onClick={() =>
-                            runAction(integration.provider, "disconnect")
-                          }
-                          type="button"
-                        >
-                          Disconnect
-                        </button>
-                      </div>
+                      <button
+                        className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={busyProvider === integration.provider}
+                        onClick={() => runAction(integration.provider, "sync")}
+                        type="button"
+                      >
+                        {busyProvider === integration.provider
+                          ? "Simulerer..."
+                          : "Simuler dataflyt"}
+                      </button>
                     </div>
 
-                    <div className="mt-5">
-                      <DemoCapabilityNote capability={capability} />
-                    </div>
-
-                    <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-4">
+                    <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
                       <IntegrationValue
-                        label="Connected"
-                        value={formatDateTime(integration.connectedAt)}
+                        label="Demo-status"
+                        value={demoReadiness(integration.provider)}
                       />
                       <IntegrationValue
-                        label="Last sync"
+                        label="Sist simulert"
                         value={formatDateTime(integration.lastSyncAt)}
                       />
                       <IntegrationValue
-                        label="Last success"
+                        label="Sist fullført"
                         value={formatDateTime(integration.lastSuccessfulSyncAt)}
-                      />
-                      <IntegrationValue
-                        label="Failed syncs"
-                        value={String(integration.failedSyncs)}
                       />
                     </dl>
 
                     {failedRuns.length > 0 ? (
                       <div className="mt-5 rounded-md border border-[#fecaca] bg-[#fef2f2] p-4">
                         <p className="text-sm font-semibold text-[#991b1b]">
-                          Failed runs
+                          Feilede simuleringer
                         </p>
                         <div className="mt-3 space-y-3">
                           {failedRuns.slice(0, 3).map((run) => (
@@ -259,7 +238,7 @@ export default function IntegrationsPage() {
                             >
                               <p className="text-sm text-[#7f1d1d]">
                                 {formatDateTime(run.startedAt)} ·{" "}
-                                {run.errorMessage ?? "No error message"}
+                                {run.errorMessage ?? "Ingen feilmelding"}
                               </p>
                               <button
                                 className="rounded-md bg-[#b91c1c] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#991b1b] disabled:cursor-not-allowed disabled:opacity-60"
@@ -273,7 +252,7 @@ export default function IntegrationsPage() {
                                 }
                                 type="button"
                               >
-                                Retry
+                                Prøv igjen
                               </button>
                             </div>
                           ))}
@@ -300,24 +279,59 @@ function IntegrationValue({ label, value }: { label: string; value: string }) {
   );
 }
 
-function businessExplanation(provider: string) {
+function BenefitBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="font-semibold text-[#334155]">{label}</p>
+      <p className="mt-1 leading-6 text-[#475569]">{value}</p>
+    </div>
+  );
+}
+
+function demonstratedValue(provider: string) {
   const normalized = provider.toLowerCase();
 
   if (normalized.includes("brreg")) {
-    return "Henter eller validerer firmadata basert på org.nr. og erstatter manuelt oppslag og copy/paste.";
+    return "Validerer firmadata basert på organisasjonsnummer.";
   }
 
-  if (normalized.includes("sharepoint") || normalized.includes("document")) {
-    return "Oppretter struktur for dokumenter og metadata og erstatter manuell mappehåndtering.";
+  if (normalized.includes("microsoft") || normalized.includes("sharepoint")) {
+    return "Oppretter dokumentstruktur og metadata i SharePoint-lignende arkiv.";
   }
 
-  if (normalized.includes("accounting") || normalized.includes("erp")) {
-    return "Forbereder fakturagrunnlag og erstatter manuell overføring av kunde, referanse og leveransedata.";
+  if (normalized.includes("tripletex")) {
+    return "Forbereder kunde-, prosjekt- og fakturagrunnlag for regnskap.";
   }
 
   if (normalized.includes("fabric") || normalized.includes("power")) {
-    return "Oppdaterer rapportering automatisk og erstatter manuell statusrapportering.";
+    return "Oppdaterer rapporteringsgrunnlag når saken og leveransen endres.";
   }
 
-  return "Sender godkjente data videre til et tilknyttet system og reduserer manuell kopiering mellom verktøy.";
+  return "Sender godkjente data videre til et tilknyttet system.";
+}
+
+function reducedManualWork(provider: string) {
+  const normalized = provider.toLowerCase();
+
+  if (normalized.includes("brreg")) {
+    return "Slå opp firma, kopiere navn og kontrollere organisasjonsnummer manuelt.";
+  }
+
+  if (normalized.includes("microsoft") || normalized.includes("sharepoint")) {
+    return "Opprette mapper, navngi filer og kopiere metadata manuelt.";
+  }
+
+  if (normalized.includes("tripletex")) {
+    return "Kopiere kunde, referanse og leveransedata til økonomisystem.";
+  }
+
+  if (normalized.includes("fabric") || normalized.includes("power")) {
+    return "Lage statusrapporter og oppdatere tall manuelt.";
+  }
+
+  return "Kopiere data mellom verktøy.";
+}
+
+function demoReadiness(provider: string) {
+  return provider.toLowerCase() === "brreg" ? "Demo-klar" : "Simulert";
 }

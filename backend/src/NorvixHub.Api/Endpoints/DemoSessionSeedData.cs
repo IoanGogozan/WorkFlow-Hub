@@ -44,6 +44,11 @@ public static partial class DemoSessionEndpoints
 
         dbContext.Customers.Add(customer);
         dbContext.Cases.Add(caseWorkspace);
+        dbContext.IntakeAttachments.AddRange(CreateSeedIntakeAttachments(
+            tenantId,
+            userId,
+            sourceIntake.Id,
+            now));
         dbContext.CaseTasks.Add(CreateSeedTask(tenantId, userId, caseWorkspace.Id, now));
         dbContext.CaseNotes.Add(CreateSeedNote(tenantId, userId, caseWorkspace.Id, now));
         dbContext.Documents.AddRange(approvedDocument.Document, summaryDocument.Document);
@@ -58,6 +63,37 @@ public static partial class DemoSessionEndpoints
             approvedDocument.Document,
             package,
             now));
+    }
+
+    private static IReadOnlyList<IntakeAttachment> CreateSeedIntakeAttachments(
+        Guid tenantId,
+        Guid userId,
+        Guid intakeId,
+        DateTimeOffset now)
+    {
+        return
+        [
+            new IntakeAttachment
+            {
+                TenantId = tenantId,
+                CreatedBy = userId,
+                CreatedAt = now.AddHours(-6),
+                IntakeItemId = intakeId,
+                OriginalFilename = "inspeksjonsnotat.pdf",
+                ContentType = "application/pdf",
+                SizeBytes = 184_320
+            },
+            new IntakeAttachment
+            {
+                TenantId = tenantId,
+                CreatedBy = userId,
+                CreatedAt = now.AddHours(-6),
+                IntakeItemId = intakeId,
+                OriginalFilename = "bilder-pumpestasjon-14.zip",
+                ContentType = "application/zip",
+                SizeBytes = 2_457_600
+            }
+        ];
     }
 
     private static Customer CreateSeedCustomer(Guid tenantId, Guid userId, DateTimeOffset now)
@@ -89,13 +125,13 @@ public static partial class DemoSessionEndpoints
             CreatedBy = userId,
             CreatedAt = now.AddHours(-5),
             CaseNumber = $"DEMO-{now:yyyyMMdd}-001",
-            Title = "Pump station inspection delivery",
-            Description = "Fictional demo case showing intake, document control, delivery package, and audit trail.",
+            Title = "Service og dokumentasjon – pumpestasjon 14",
+            Description = "Fiktiv demosak som viser serviceinntak, dokumentkontroll, leveringsgrunnlag og sporbarhet.",
             CustomerId = customerId,
             OwnerUserId = userId,
             DueDate = DateOnly.FromDateTime(now.AddDays(7).UtcDateTime),
-            MissingInformationJson = "[\"Customer confirmation of delivery recipient\"]",
-            ExternalProjectId = "TRIPLETEX-MOCK-1042",
+            MissingInformationJson = "[\"Bekreft mottaker hos driftsteamet\"]",
+            ExternalProjectId = "PO-10482",
             SourceIntakeItemId = sourceIntakeId
         };
     }
@@ -108,8 +144,8 @@ public static partial class DemoSessionEndpoints
             CreatedBy = userId,
             CreatedAt = now.AddHours(-4),
             CaseId = caseId,
-            Title = "Review inspection report classification",
-            Description = "Confirm document type and expiry metadata before delivery.",
+            Title = "Kontroller klassifisering av inspeksjonsnotat",
+            Description = "Bekreft dokumenttype og metadata før leveringsgrunnlaget ferdigstilles.",
             AssignedToUserId = userId,
             DueDate = DateOnly.FromDateTime(now.AddDays(2).UtcDateTime)
         };
@@ -123,7 +159,7 @@ public static partial class DemoSessionEndpoints
             CreatedBy = userId,
             CreatedAt = now.AddHours(-3),
             CaseId = caseId,
-            Body = "Demo note: SharePoint/accounting/Fabric integrations are mocked; Brreg lookup is real-capable.",
+            Body = "Demo: Brreg bruker et deterministisk snapshot. SharePoint, prosjekt/ERP og rapportering vises med demo-adaptere.",
             Visibility = "Internal"
         };
     }
@@ -141,9 +177,9 @@ public static partial class DemoSessionEndpoints
             tenantId,
             userId,
             now.AddHours(-3),
-            "Approved pump station inspection report",
-            "approved-pump-station-inspection.pdf",
-            "Approved inspection report for the fictional public demo case.",
+            "Godkjent inspeksjonsnotat – pumpestasjon 14",
+            "godkjent-inspeksjonsnotat-pumpestasjon-14.pdf",
+            "Godkjent inspeksjonsnotat for den fiktive demosaken.",
             cancellationToken);
         approvedDocument.Document.ApproveClassification(
             "Inspection report",
@@ -166,7 +202,7 @@ public static partial class DemoSessionEndpoints
             CreatedBy = userId,
             CreatedAt = now.AddHours(-1),
             CaseId = caseId,
-            Title = "Pump station inspection delivery package"
+            Title = "Leveringsgrunnlag – pumpestasjon 14"
         };
     }
 
@@ -201,9 +237,9 @@ public static partial class DemoSessionEndpoints
             tenantId,
             userId,
             now.AddMinutes(-45),
-            "Pump station inspection delivery package-summary.pdf",
-            "pump-station-inspection-delivery-package-summary.pdf",
-            "Generated fictional delivery summary for the public demo workspace.",
+            "Leveringsgrunnlag – pumpestasjon 14 – sammendrag.pdf",
+            "leveringsgrunnlag-pumpestasjon-14-sammendrag.pdf",
+            "Generert fiktivt leveringssammendrag for demoarbeidsområdet.",
             cancellationToken);
         summaryDocument.Document.LinkToCase(caseId, userId, now.AddMinutes(-45));
         return summaryDocument;
@@ -261,11 +297,13 @@ public static partial class DemoSessionEndpoints
             CreateAudit(tenantId, userId, "IntakeItem", sourceIntake.Id, "IntakeCreated", now.AddHours(-6)),
             CreateAudit(tenantId, userId, "IntakeItem", sourceIntake.Id, "AiAnalysisRequested", now.AddHours(-5).AddMinutes(-40)),
             CreateAudit(tenantId, userId, "IntakeItem", sourceIntake.Id, "AiSuggestionApproved", now.AddHours(-5).AddMinutes(-20)),
+            CreateAudit(tenantId, userId, "Customer", caseWorkspace.CustomerId!.Value, "CompanyDataChecked", now.AddHours(-5).AddMinutes(-10)),
             CreateAudit(tenantId, userId, "CaseWorkspace", caseWorkspace.Id, "CaseCreated", now.AddHours(-5)),
             CreateAudit(tenantId, userId, "DocumentRecord", document.Id, "DocumentUploaded", now.AddHours(-3)),
             CreateAudit(tenantId, userId, "DocumentRecord", document.Id, "DocumentClassificationApproved", now.AddHours(-2)),
             CreateAudit(tenantId, userId, "DocumentRecord", document.Id, "DocumentLinkedToCase", now.AddHours(-2)),
             CreateAudit(tenantId, userId, "DeliveryPackage", package.Id, "DeliveryPackageCreated", now.AddHours(-1)),
+            CreateAudit(tenantId, userId, "DeliveryPackage", package.Id, "ReportingBasisUpdated", now.AddMinutes(-50)),
             CreateAudit(tenantId, userId, "DeliveryPackage", package.Id, "DeliveryPdfGenerated", now.AddMinutes(-45))
         ];
     }

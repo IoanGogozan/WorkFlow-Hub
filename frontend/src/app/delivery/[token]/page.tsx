@@ -16,23 +16,27 @@ export default async function PublicDeliveryPage({
   return (
     <main className="min-h-screen bg-[#f5f7fb] text-[#162033]">
       <div className="border-b border-[#bfdbfe] bg-[#eff6ff] px-6 py-2 text-center text-xs font-semibold text-[#1d4ed8]">
-        Public demo - fictional data - expires automatically
+        Offentlig demo - fiktive data - utløper automatisk
       </div>
       <div className="mx-auto max-w-4xl px-6 py-10">
         <header className="border-b border-[#d8deea] pb-6">
           <p className="text-sm font-medium text-[#4f46e5]">
             Norvix WorkFlow Hub
           </p>
-          <h1 className="mt-2 text-3xl font-semibold">{delivery.title}</h1>
+          <h1 className="mt-2 text-3xl font-semibold">
+            Leveranse fra Agder Drift & Service AS
+          </h1>
           <p className="mt-3 text-sm text-[#64748b]">
-            Case: {delivery.caseTitle} - Expires{" "}
-            {formatDateTime(delivery.expiresAt)}
+            Sak: {delivery.caseTitle}
+          </p>
+          <p className="mt-1 text-sm text-[#64748b]">
+            Tilgjengelig til: {formatDateTime(delivery.expiresAt)}
           </p>
         </header>
 
         <section className="mt-6 rounded-md border border-[#d8deea] bg-white">
           <div className="border-b border-[#d8deea] px-5 py-4">
-            <h2 className="text-lg font-semibold">Delivery documents</h2>
+            <h2 className="text-lg font-semibold">Dokumenter i leveransen</h2>
           </div>
           <div className="divide-y divide-[#e2e8f0]">
             {delivery.documents.map((document) => (
@@ -43,14 +47,14 @@ export default async function PublicDeliveryPage({
                 <div>
                   <p className="font-medium text-[#162033]">{document.title}</p>
                   <p className="mt-1 text-sm text-[#64748b]">
-                    {document.documentType ?? "Document metadata"}
+                    {document.documentType ?? "Dokumentmetadata"}
                   </p>
                 </div>
                 <Link
                   className="rounded-md border border-[#cbd5e1] bg-white px-3 py-2 text-sm font-semibold text-[#334155] hover:bg-[#eef2ff]"
                   href={`/delivery/${token}/documents/${document.documentId}`}
                 >
-                  Download
+                  Last ned
                 </Link>
               </article>
             ))}
@@ -58,10 +62,10 @@ export default async function PublicDeliveryPage({
         </section>
         <footer className="mt-8 flex flex-wrap gap-4 border-t border-[#d8deea] pt-5 text-sm font-semibold">
           <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/privacy">
-            Privacy
+            Personvern
           </Link>
           <Link className="text-[#2563eb] hover:text-[#1d4ed8]" href="/terms">
-            Terms
+            Vilkår
           </Link>
         </footer>
       </div>
@@ -81,11 +85,11 @@ async function getPublicDelivery(token: string) {
   }
 
   if (response.status === 410) {
-    throw new Error("This delivery link has expired or was revoked.");
+    throw new Error("Denne leveranselenken er utløpt eller trukket tilbake.");
   }
 
   if (!response.ok) {
-    throw new Error("Delivery package could not be loaded.");
+    throw new Error("Leveransen kunne ikke lastes.");
   }
 
   return response.json() as Promise<PublicDeliveryPackage>;

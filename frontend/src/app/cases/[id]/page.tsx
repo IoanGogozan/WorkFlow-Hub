@@ -211,7 +211,7 @@ export default function CaseDetailPage() {
                   {formatDateTime(caseDetail.createdAt)}
                 </p>
                 <div className="mt-5">
-                  <WorkflowProgress activeStep={4} />
+                  <WorkflowProgress activeStep={3} />
                 </div>
               </div>
 
@@ -518,7 +518,7 @@ export default function CaseDetailPage() {
               <section className="rounded-md border border-[#d8deea] bg-white p-5">
                 <h3 className="text-lg font-semibold">Automatisert i demoen</h3>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-[#475569]">
-                  <li>Input er sortert av AI og godkjent av menneske.</li>
+                  <li>Input er kontrollert, beriket og godkjent av menneske.</li>
                   <li>Sak er opprettet med sporbar historikk.</li>
                   <li>
                     {firstDocument
@@ -557,9 +557,9 @@ function ProcessMetric({
 
 function activityLabel(action: string) {
   const labels: Record<string, string> = {
-    AiAnalysisRequested: "AI-forslag generert",
-    AiSuggestionApproved: "AI-forslag godkjent",
-    AiSuggestionRejected: "AI-forslag avvist",
+    AiAnalysisRequested: "Forslag generert",
+    AiSuggestionApproved: "Forslag godkjent",
+    AiSuggestionRejected: "Forslag avvist",
     CaseCreated: "Sak opprettet",
     CaseNoteCreated: "Notat lagt til",
     CaseTaskCreated: "Oppgave lagt til",

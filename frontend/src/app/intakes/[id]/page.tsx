@@ -63,7 +63,7 @@ export default function IntakeDetailPage() {
           setAnalysis(latestAnalysis);
           populateSuggestionForm(latestAnalysis);
         } catch {
-          // No AI proposal exists yet. The next effect will start one when needed.
+          // No proposal exists yet. The next effect will start one when needed.
         }
       } catch (loadError) {
         if (!controller.signal.aborted) {
@@ -94,7 +94,7 @@ export default function IntakeDetailPage() {
       setActionError(
         analysisError instanceof Error
           ? analysisError.message
-          : "AI analysis could not be started.",
+          : "Forslaget kunne ikke lages.",
       );
     } finally {
       setAction(null);
@@ -145,7 +145,7 @@ export default function IntakeDetailPage() {
       setActionError(
         approveError instanceof Error
           ? approveError.message
-          : "AI suggestion could not be approved and routed.",
+          : "Forslaget kunne ikke godkjennes og rutes videre.",
       );
     } finally {
       setAction(null);
@@ -206,33 +206,15 @@ export default function IntakeDetailPage() {
 
               <article className="rounded-md border border-[#d8deea] bg-white p-5">
                 <p className="text-sm font-semibold text-[#64748b]">
-                  1. Original
+                  1. Input slik det kom inn
                 </p>
                 <h3 className="mt-1 text-lg font-semibold">
-                  Input slik det kom inn
+                  Original henvendelse
                 </h3>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#475569]">
                   {intake.body}
                 </p>
               </article>
-
-              <section className="rounded-md border border-[#d8deea] bg-white p-5">
-                <p className="text-sm font-semibold text-[#64748b]">
-                  3. Lagret resultat
-                </p>
-                <h3 className="mt-1 text-lg font-semibold">
-                  Gjeldende struktur
-                </h3>
-                <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <FieldValue label="Kunde" value={intake.customerName} />
-                  <FieldValue
-                    label="Organisasjonsnummer"
-                    value={intake.organizationNumber}
-                  />
-                  <FieldValue label="Kategori" value={intake.category} />
-                  <FieldValue label="Prioritet" value={intake.urgency} />
-                </dl>
-              </section>
             </section>
 
             <aside className="space-y-6">
@@ -240,16 +222,15 @@ export default function IntakeDetailPage() {
 
               <section className="rounded-md border border-[#bfdbfe] bg-[#eff6ff] p-5">
                 <h3 className="text-lg font-semibold text-[#1e3a8a]">
-                  Automatisk AI-sortering
+                  Valgfri AI-støtte
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-[#475569]">
-                  Når input åpnes, analyserer AI automatisk innholdet og fyller
-                  ut forslag. Mennesket skal bare kontrollere og godkjenne ved
-                  behov.
+                  Demoen viser hvordan AI kan foreslå struktur når det gir
+                  verdi. Flyten kan også brukes med manuell kontroll uten AI.
                 </p>
                 {action === "analyze" ? (
                   <p className="mt-3 text-sm font-semibold text-[#1d4ed8]">
-                    AI sorterer input...
+                    Lager forslag...
                   </p>
                 ) : analysis ? (
                   <p className="mt-3 text-sm font-semibold text-[#047857]">
@@ -269,7 +250,7 @@ export default function IntakeDetailPage() {
                 >
                   <div>
                     <p className="text-sm font-semibold text-[#64748b]">
-                      2. AI-forslag
+                      2. Forslag med kontroll
                     </p>
                     <h3 className="mt-1 text-lg font-semibold">
                       Kontroller og godkjenn
@@ -284,6 +265,9 @@ export default function IntakeDetailPage() {
                   <div className="rounded-md border border-[#e2e8f0] bg-[#f8fafc] p-3 text-sm leading-6 text-[#475569]">
                     Er noe feil, retter mennesket feltene under før godkjenning.
                     Når forslaget godkjennes, opprettes saken automatisk.
+                  </div>
+                  <div className="rounded-md border border-[#bbf7d0] bg-[#f0fdf4] p-3 text-sm leading-6 text-[#166534]">
+                    4. Sak opprettes automatisk når forslaget godkjennes.
                   </div>
                   <SuggestionInput
                     label="Kunde"
@@ -344,18 +328,20 @@ export default function IntakeDetailPage() {
               ) : isFinishedStatus(intake.status) ? (
                 <section className="rounded-md border border-[#d8deea] bg-white p-5">
                   <p className="text-sm font-semibold text-[#64748b]">
-                    2. AI-forslag
+                    2. Forslag med kontroll
                   </p>
                   <h3 className="mt-1 text-lg font-semibold">
                     Forslag er ikke tilgjengelig her
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#64748b]">
                     Dette inputet er allerede behandlet i eksisterende demo-data.
-                    Bruk Reset demo for å starte med ferske input der AI-forslag
+                    Bruk Start ny demo for å starte med ferske input der forslag
                     vises før godkjenning.
                   </p>
                 </section>
               ) : null}
+
+              <SavedIntakeResult intake={intake} />
 
               {intake.status.toLowerCase() === "approved" ? (
                 <section className="rounded-md border border-[#d8deea] bg-white p-5">
@@ -382,6 +368,28 @@ export default function IntakeDetailPage() {
   );
 }
 
+function SavedIntakeResult({ intake }: { intake: IntakeItem }) {
+  return (
+    <section className="rounded-md border border-[#d8deea] bg-white p-5">
+      <p className="text-sm font-semibold text-[#64748b]">
+        3. Menneskelig godkjenning
+      </p>
+      <h3 className="mt-1 text-lg font-semibold">
+        Resultat etter godkjenning
+      </h3>
+      <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        <FieldValue label="Kunde" value={intake.customerName} />
+        <FieldValue
+          label="Organisasjonsnummer"
+          value={intake.organizationNumber}
+        />
+        <FieldValue label="Kategori" value={intake.category} />
+        <FieldValue label="Prioritet" value={intake.urgency} />
+      </dl>
+    </section>
+  );
+}
+
 function isFinishedStatus(status: string) {
   const normalized = status.replace(/\s/g, "").toLowerCase();
   return normalized === "approved" || normalized === "convertedtocase";
@@ -391,17 +399,17 @@ function getWorkflowStep(status: string, analysis: AiAnalysisRun | null) {
   const normalized = status.replace(/\s/g, "").toLowerCase();
 
   if (normalized === "approved" || normalized === "convertedtocase") {
-    return 4;
+    return 3;
   }
 
-  return analysis ? 3 : 2;
+  return analysis ? 2 : 1;
 }
 
 function FieldValue({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <dt className="text-sm font-semibold text-[#334155]">{label}</dt>
-      <dd className="mt-1 text-sm text-[#64748b]">{value ?? "Not set"}</dd>
+      <dd className="mt-1 text-sm text-[#64748b]">{value ?? "Ikke satt"}</dd>
     </div>
   );
 }
