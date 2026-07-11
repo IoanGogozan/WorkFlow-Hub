@@ -5,6 +5,7 @@ using NorvixHub.Application.AI;
 using NorvixHub.Application.Audit;
 using NorvixHub.Application.Documents;
 using NorvixHub.Application.Integrations;
+using NorvixHub.Application.LiveDemo;
 using NorvixHub.Application.Organizations;
 using NorvixHub.Infrastructure.AI;
 using NorvixHub.Infrastructure.Audit;
@@ -31,7 +32,9 @@ public static class DependencyInjection
             configuration.GetSection("DemoSessionCleanup").Bind(options));
         services.Configure<LiveDemoOptions>(options =>
             configuration.GetSection("LiveDemo").Bind(options));
+        services.AddScoped<ILiveDemoRunProcessor, LiveDemoRunProcessor>();
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();
+        services.AddSingleton<IDemoPdfGenerator, SimpleDemoPdfGenerator>();
         services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
         var storageProvider = configuration["Storage:Provider"];
         if (string.Equals(storageProvider, "AzureBlob", StringComparison.OrdinalIgnoreCase))

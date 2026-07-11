@@ -32,6 +32,7 @@ public static partial class DemoSessionEndpoints
     private static async Task<IResult> CreateDemoSession(
         NorvixHubDbContext dbContext,
         IFileStorage fileStorage,
+        IDemoPdfGenerator demoPdfGenerator,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -84,6 +85,7 @@ public static partial class DemoSessionEndpoints
         await AddSeedWorkspaceAsync(
             dbContext,
             fileStorage,
+            demoPdfGenerator,
             tenantId,
             userId,
             seedIntakes[0],

@@ -14,6 +14,7 @@ public static partial class DemoSessionEndpoints
     private static async Task AddSeedWorkspaceAsync(
         NorvixHubDbContext dbContext,
         IFileStorage fileStorage,
+        IDemoPdfGenerator demoPdfGenerator,
         Guid tenantId,
         Guid userId,
         IntakeItem sourceIntake,
@@ -25,6 +26,7 @@ public static partial class DemoSessionEndpoints
         sourceIntake.MarkConvertedToCase(caseWorkspace.Id, userId, now.AddHours(-5));
         var approvedDocument = await CreateApprovedSeedDocumentAsync(
             fileStorage,
+            demoPdfGenerator,
             tenantId,
             userId,
             caseWorkspace.Id,
@@ -34,6 +36,7 @@ public static partial class DemoSessionEndpoints
         var packageItem = CreateSeedPackageItem(tenantId, userId, package.Id, approvedDocument.Document, now);
         var summaryDocument = await CreateSummarySeedDocumentAsync(
             fileStorage,
+            demoPdfGenerator,
             tenantId,
             userId,
             caseWorkspace.Id,
@@ -166,6 +169,7 @@ public static partial class DemoSessionEndpoints
 
     private static async Task<SeedDocument> CreateApprovedSeedDocumentAsync(
         IFileStorage fileStorage,
+        IDemoPdfGenerator demoPdfGenerator,
         Guid tenantId,
         Guid userId,
         Guid caseId,
@@ -174,6 +178,7 @@ public static partial class DemoSessionEndpoints
     {
         var approvedDocument = await CreateStoredDocumentAsync(
             fileStorage,
+            demoPdfGenerator,
             tenantId,
             userId,
             now.AddHours(-3),
@@ -226,6 +231,7 @@ public static partial class DemoSessionEndpoints
 
     private static async Task<SeedDocument> CreateSummarySeedDocumentAsync(
         IFileStorage fileStorage,
+        IDemoPdfGenerator demoPdfGenerator,
         Guid tenantId,
         Guid userId,
         Guid caseId,
@@ -234,6 +240,7 @@ public static partial class DemoSessionEndpoints
     {
         var summaryDocument = await CreateStoredDocumentAsync(
             fileStorage,
+            demoPdfGenerator,
             tenantId,
             userId,
             now.AddMinutes(-45),
@@ -247,6 +254,7 @@ public static partial class DemoSessionEndpoints
 
     private static async Task<SeedDocument> CreateStoredDocumentAsync(
         IFileStorage fileStorage,
+        IDemoPdfGenerator demoPdfGenerator,
         Guid tenantId,
         Guid userId,
         DateTimeOffset createdAt,
@@ -255,7 +263,7 @@ public static partial class DemoSessionEndpoints
         string body,
         CancellationToken cancellationToken)
     {
-        await using var stream = new MemoryStream(CreateSeedPdfBytes(title, body));
+        await using var stream = new MemoryStream(demoPdfGenerator.Generate(title, body));
         var stored = await fileStorage.SaveAsync(stream, filename, "application/pdf", cancellationToken);
         var document = new DocumentRecord
         {
