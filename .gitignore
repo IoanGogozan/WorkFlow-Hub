@@ -24,6 +24,7 @@ frontend/blob-report/
 .env
 .env.*
 !.env.example
+!.env.home-server.example
 *.pem
 
 # local tools

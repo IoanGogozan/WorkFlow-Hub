@@ -1,0 +1,121 @@
+name: workflow-hub
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://api:8080
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_BASE_URL: http://api:8080
+    expose:
+      - "3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/demo').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      proxy:
+        aliases:
+          - workflow-hub-frontend
+      internal:
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/src/NorvixHub.Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Demo
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Database__ApplyMigrationsOnStartup: "true"
+      Storage__Provider: Local
+      Storage__Local__RootPath: /data/documents
+      Storage__Local__Container: documents
+      Deployment__ForwardedHeadersEnabled: "true"
+      Deployment__EnforceHttps: "true"
+      Deployment__AllowUnknownProxies: "true"
+      AllowedHosts: ${WORKFLOW_HUB_HOST};localhost;127.0.0.1
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nX-Forwarded-Proto: https\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - document_data:/data/documents
+    networks:
+      proxy:
+        aliases:
+          - workflow-hub-api
+      internal:
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/src/NorvixHub.Worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      DOTNET_ENVIRONMENT: Demo
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Storage__Provider: Local
+      Storage__Local__RootPath: /data/documents
+      Storage__Local__Container: documents
+      DemoSessionCleanup__Enabled: "true"
+      DemoSessionCleanup__IntervalMinutes: ${DEMO_CLEANUP_INTERVAL_MINUTES:-60}
+      DemoSessionCleanup__RetentionGraceMinutes: "0"
+      DemoSessionCleanup__BatchSize: ${DEMO_CLEANUP_BATCH_SIZE:-50}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - document_data:/data/documents
+    networks:
+      - internal
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+networks:
+  proxy:
+    external: true
+  internal:
+    internal: true
+
+volumes:
+  postgres_data:
+  document_data:
