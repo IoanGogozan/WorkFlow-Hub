@@ -207,7 +207,7 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 
 ## Documentation Index
 
-- [Client-Facing Integration Demo — Approved Direction and Implementation Plan](docs/client-facing-integration-demo.md)
+- [Real Live Integration Demo V2 — Approved Direction and Implementation Plan](docs/live-integration-demo-v2.md)
 - [Product Overview](docs/product-overview.md)
 - [Current Implementation Status](docs/current-implementation-status.md)
 - [Requirements](docs/requirements.md)

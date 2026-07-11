@@ -105,6 +105,25 @@ The public demo is not the same as a real customer SaaS deployment. Before proce
 
 Record exact date and command output summaries here only after validation commands have been run in the current environment.
 
+2026-07-11 — real live integration demo V2 pre-change baseline:
+
+- `npm --prefix frontend ci` — passed; 361 packages installed. npm reported
+  1 low and 1 moderate advisory for the complete dependency tree.
+- `npm --prefix frontend run lint` — passed with no ESLint errors.
+- `npm --prefix frontend run build` — passed with Next.js 16.2.6; all 15
+  routes compiled successfully. Node emitted a `DEP0205` deprecation warning
+  during the build, but it did not affect the result.
+- `npm --prefix frontend audit --omit=dev --audit-level=high` — passed with
+  0 production vulnerabilities at the requested threshold.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` —
+  passed: 103 tests total (1 contract, 2 unit, 100 integration), 0 failed and
+  0 skipped.
+- `dotnet tool restore --tool-manifest dotnet-tools.json` — passed; restored
+  `dotnet-ef` 10.0.0.
+- `dotnet tool run dotnet-ef -- migrations has-pending-model-changes ...` —
+  passed; no model changes since the last migration.
+- `docker compose config --quiet` — passed with no output.
+
 2026-07-10 — client-facing integration demo documentation gate:
 
 - `git diff --check` — passed; Git emitted only informational LF/CRLF warnings.
