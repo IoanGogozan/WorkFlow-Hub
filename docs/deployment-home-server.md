@@ -111,26 +111,27 @@ calculator, technical evidence, privacy, and terms.
 
 ## Backup
 
-Database backup:
+`scripts/backup-home-server.sh` creates a PostgreSQL custom-format dump and a
+compressed copy of the document volume. It prevents overlapping executions and
+keeps the most recent 14 days of backups.
+
+For a server-wide backup location, run it with a user permitted to write under
+`/srv/backups/workflow-hub`:
 
 ```bash
-mkdir -p /srv/backups/workflow-hub/db
-stamp=$(date +%F-%H%M%S)
-docker compose --env-file .env -f compose.home-server.yml exec -T db \
-  sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' \
-  > "/srv/backups/workflow-hub/db/workflow-hub-$stamp.dump"
+BACKUP_ROOT=/srv/backups/workflow-hub bash scripts/backup-home-server.sh
 ```
 
-Document-volume backup:
+If the deployment user cannot write to `/srv/backups`, use this application
+directory as a temporary local destination:
 
 ```bash
-mkdir -p /srv/backups/workflow-hub/documents
-stamp=$(date +%F-%H%M%S)
-docker run --rm \
-  -v workflow-hub_document_data:/data:ro \
-  -v /srv/backups/workflow-hub/documents:/backup \
-  alpine tar -czf "/backup/workflow-hub-$stamp.tar.gz" -C /data .
+BACKUP_ROOT=/srv/projects/workflow-hub/backups bash scripts/backup-home-server.sh
 ```
+
+Schedule the same command daily with the deployment user's crontab. Backups on
+the same server do not protect against disk loss; copy the backup root to an
+external destination before treating the deployment as production-grade.
 
 ## Rollback
 

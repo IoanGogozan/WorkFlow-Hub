@@ -47,3 +47,6 @@ pnpm-debug.log*
 
 # local document storage
 storage/
+
+# home-server backup output
+backups/
