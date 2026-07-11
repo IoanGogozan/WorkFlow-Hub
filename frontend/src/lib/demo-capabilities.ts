@@ -25,18 +25,18 @@ const integrationCapabilities: Record<string, DemoCapability> = {
     tone: "real",
   },
   "microsoft-graph": {
-    label: "Simulert dokumentarkiv",
-    detail: "SharePoint-lignende dokumentflyt er simulert i demoen.",
+    label: "Simulert – ikke tilkoblet",
+    detail: "SharePoint-lignende dokumentflyt vises uten Microsoft Graph-tilkobling.",
     tone: "mock",
   },
   "powerbi-fabric": {
-    label: "Rapportering simulert",
-    detail: "Power BI/Fabric-lignende rapportering er simulert i demoen.",
+    label: "Simulert – ikke tilkoblet",
+    detail: "Power BI/Fabric-lignende rapportering vises uten ekstern tilkobling.",
     tone: "mock",
   },
   tripletex: {
-    label: "Regnskap simulert",
-    detail: "Regnskap og prosjektflyt er simulert uten Tripletex-tenant.",
+    label: "Simulert – ikke tilkoblet",
+    detail: "Regnskap og prosjektflyt vises uten Tripletex-tenant eller ekstern tilkobling.",
     tone: "mock",
   },
 };

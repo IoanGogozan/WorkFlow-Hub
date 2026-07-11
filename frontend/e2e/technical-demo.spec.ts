@@ -9,6 +9,11 @@ test("technical reviewer can complete the detailed demo workflow", async ({ page
   await expect(
     page.getByRole("heading", { name: "Fra henvendelse til sak og leveranse uten dobbeltregistrering" }),
   ).toBeVisible();
+  await page.goto("/integrations");
+  await expect(page.getByText("Simulert – ingen ekte tilkobling")).toHaveCount(3);
+  await expect(page.getByText("Simulering klar – ingen ekte tilkobling")).toHaveCount(3);
+  await expect(page.getByText("Tilkoblet", { exact: true })).toHaveCount(1);
+  await page.goto("/technical");
   await page.getByRole("link", { name: "Start teknisk gjennomgang" }).click();
   const firstIntakeLink = page.getByRole("link", { name: "Behandle første input" });
   await expect(firstIntakeLink).toHaveAttribute("href", /\/intakes\/[0-9a-f-]+$/i);

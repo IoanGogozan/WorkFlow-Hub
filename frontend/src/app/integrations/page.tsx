@@ -179,7 +179,13 @@ export default function IntegrationsPage() {
                           <h3 className="text-xl font-semibold">
                             {integration.displayName}
                           </h3>
-                          <StatusBadge status={integration.status} />
+                          {capability.tone === "mock" ? (
+                            <span className="inline-flex rounded-full border border-[#fde68a] bg-[#fffbeb] px-2.5 py-1 text-xs font-semibold text-[#92400e]">
+                              Simulert – ingen ekte tilkobling
+                            </span>
+                          ) : (
+                            <StatusBadge status={integration.status} />
+                          )}
                           <DemoCapabilityBadge capability={capability} />
                         </div>
                         <div className="mt-4 grid gap-4 text-sm md:grid-cols-2">
@@ -333,5 +339,7 @@ function reducedManualWork(provider: string) {
 }
 
 function demoReadiness(provider: string) {
-  return provider.toLowerCase() === "brreg" ? "Demo-klar" : "Simulert";
+  return provider.toLowerCase() === "brreg"
+    ? "Demo-klar offentlig kilde"
+    : "Simulering klar – ingen ekte tilkobling";
 }

@@ -142,8 +142,8 @@ public static class DemoStoryEndpoints
     {
         return
         [
-            new("email-received", 1, "E-post mottatt", "Kilde og vedlegg er registrert.",
-                "E-post", "implemented", "Henvendelsen finnes i inntaket", links.IntakeHref),
+            new("email-received", 1, "Fiktiv e-post mottatt", "Scenariokilden og vedleggene er registrert.",
+                "Fiktiv e-postkilde", "scenario-source", "Fiktiv henvendelse i demo-inntaket", links.IntakeHref),
             new("data-validated", 2, "Data strukturert og kontrollert",
                 "Kunde, referanse, kategori og manglende informasjon er identifisert.",
                 "WorkFlow Hub", "implemented", "Strukturerte inntaksdata", links.IntakeHref),
@@ -151,15 +151,18 @@ public static class DemoStoryEndpoints
                 "Organisasjonsinformasjon er knyttet til saken.", "Brreg",
                 "public-data-capable", "Offentlig datakilde / demo-snapshot", links.CaseHref),
             new("case-created", 4, "Sak opprettet",
-                "Saken er opprettet med kunde, referanse og ansvarlig.", "Prosjekt/ERP",
-                "implemented", "Opprettet sak", links.CaseHref),
+                "Saken er opprettet internt med kunde, referanse og ansvarlig.", "Norvix demoarbeidsflyt",
+                "implemented", "Internt opprettet demosak", links.CaseHref),
             new("documents-linked", 5, "Dokumentstruktur opprettet",
                 "Dokumenter er lagret, klassifisert og knyttet til saken.", "Dokumentarkiv",
                 "implemented", $"{documentCount} tilknyttede dokumenter", links.PrimaryDocumentHref),
-            new("delivery-updated", 6, "Rapportering og leveringsgrunnlag oppdatert",
-                "Status og leveringsgrunnlag er samlet uten ny registrering.", "Rapportering",
-                "demo-adapter", "Leveringspakke opprettet", links.DeliveryPackageHref),
-            new("audit-stored", 7, "Sporbarhet lagret",
+            new("delivery-created", 6, "Leveringsgrunnlag opprettet",
+                "Dokumenter og leveringsstatus er samlet internt uten ny registrering.", "Norvix leveringsgrunnlag",
+                "implemented", "Intern leveringspakke opprettet", links.DeliveryPackageHref),
+            new("reporting-simulated", 7, "Ekstern rapportering simulert",
+                "Demo-adapteren viser mulig statusoverføring uten å kontakte Power BI eller et kundesystem.",
+                "Power BI / rapportering", "demo-adapter", "Simulert statusoverføring", links.IntegrationsHref),
+            new("audit-stored", 8, "Sporbarhet lagret",
                 "Viktige handlinger er synlige i hendelsesloggen.", "Hendelseslogg",
                 "implemented", $"{auditEventCount} sporbare hendelser", links.CaseHref)
         ];
@@ -178,7 +181,7 @@ public static class DemoStoryEndpoints
     private static string GetIntegrationExplanation(string provider) =>
         provider.Equals("brreg", StringComparison.OrdinalIgnoreCase)
             ? "Offentlig datakilde; demoen kan bruke et deterministisk snapshot."
-            : "Viser integrasjonsmønsteret uten å sende data til et ekte kundesystem.";
+            : "Simulert demo-adapter; ingen ekte tilkobling eller dataoverføring til kundesystem.";
 
     private static IResult MissingStory() => Results.NotFound(new { error = MissingStoryError });
 }

@@ -31,7 +31,11 @@ test("visitor understands and replays the client-facing automation story", async
   await expect(
     page.getByRole("button", { name: "Spiller av automatisert flyt" }),
   ).toBeFocused();
-  await expect(page.getByText("Flyten er fullført med 7 sporbare trinn.")).toBeVisible();
+  await expect(page.getByText("Flyten er fullført med 8 sporbare trinn.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sak opprettet" })).toBeVisible();
+  await expect(page.getByText("Norvix demoarbeidsflyt")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leveringsgrunnlag opprettet" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ekstern rapportering simulert" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sporbarhet lagret" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Resultatet" })).toBeVisible();
   await expect(page.getByText("Kristiansand Kommune").last()).toBeVisible();
@@ -47,6 +51,9 @@ test("visitor understands and replays the client-facing automation story", async
   await expect(
     page.getByText(/demonstreres uten å sende data til et ekte kundesystem/),
   ).toBeVisible();
+  await expect(page.getByText("Fiktiv scenariokilde")).toBeVisible();
+  await expect(page.getByText(/Outlook er ikke tilkoblet/)).toBeVisible();
+  await expect(page.getByText("Simulert – ikke tilkoblet")).toHaveCount(3);
 
   const technicalSummary = page
     .locator("summary")
@@ -82,7 +89,7 @@ test("visitor understands and replays the client-facing automation story", async
   }
 
   await page.getByRole("button", { name: "Spill av på nytt" }).click();
-  await expect(page.getByText(/Trinn 1 av 7:/)).toBeVisible();
+  await expect(page.getByText(/Trinn 1 av 8:/)).toBeVisible();
 
   await page.goto("/automation");
   await expect(page).toHaveURL(/\/$/);

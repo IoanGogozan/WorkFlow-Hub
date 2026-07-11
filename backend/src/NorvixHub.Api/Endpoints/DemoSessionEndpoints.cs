@@ -16,9 +16,9 @@ public static partial class DemoSessionEndpoints
     private static readonly (string Provider, string DisplayName, bool Connected)[] DemoIntegrations =
     [
         ("brreg", "Brreg – offentlig datakilde", true),
-        ("microsoft-graph", "SharePoint / dokumentarkiv – demo-adapter", true),
-        ("tripletex", "Prosjekt/ERP – demo-adapter", true),
-        ("powerbi-fabric", "Rapportering – demo-adapter", true)
+        ("microsoft-graph", "SharePoint / dokumentarkiv – simulert demo-adapter", false),
+        ("tripletex", "Prosjekt/ERP – simulert demo-adapter", false),
+        ("powerbi-fabric", "Power BI / rapportering – simulert demo-adapter", false)
     ];
 
     public static IEndpointRouteBuilder MapDemoSessionEndpoints(this IEndpointRouteBuilder app)

@@ -55,16 +55,33 @@ public sealed class DemoStoryEndpointTests : IClassFixture<NorvixHubApiFactory>
             "bilder-pumpestasjon-14.zip");
         story.Outcome.CaseTitle.Should().Be("Service og dokumentasjon – pumpestasjon 14");
         story.Outcome.DeliveryPackageTitle.Should().Be("Leveringsgrunnlag – pumpestasjon 14");
-        story.EvidenceSteps.Should().HaveCount(7);
-        story.EvidenceSteps.Select(step => step.Sequence).Should().Equal(1, 2, 3, 4, 5, 6, 7);
+        story.EvidenceSteps.Should().HaveCount(8);
+        story.EvidenceSteps.Select(step => step.Sequence).Should().Equal(1, 2, 3, 4, 5, 6, 7, 8);
         story.Outcome.LinkedDocumentCount.Should().BeGreaterThan(0);
         story.Outcome.AuditEventCount.Should().BeGreaterThan(0);
         story.TechnicalLinks.PrimaryDocumentHref.Should().NotBeNullOrWhiteSpace();
         story.TechnicalLinks.DeliveryPackageHref.Should().NotBeNullOrWhiteSpace();
         story.EvidenceSteps.Should().Contain(step => step.EvidenceMode == "implemented");
         story.EvidenceSteps.Should().Contain(step => step.EvidenceMode == "demo-adapter");
+        story.EvidenceSteps.Should().ContainSingle(step =>
+            step.Key == "email-received" &&
+            step.System == "Fiktiv e-postkilde" &&
+            step.EvidenceMode == "scenario-source");
+        story.EvidenceSteps.Should().ContainSingle(step =>
+            step.Key == "case-created" &&
+            step.System == "Norvix demoarbeidsflyt" &&
+            step.EvidenceMode == "implemented");
+        story.EvidenceSteps.Should().ContainSingle(step =>
+            step.Key == "delivery-created" && step.EvidenceMode == "implemented");
+        story.EvidenceSteps.Should().ContainSingle(step =>
+            step.Key == "reporting-simulated" && step.EvidenceMode == "demo-adapter");
         story.Integrations.Should().Contain(integration => integration.Mode == "public-data-capable");
         story.Integrations.Should().Contain(integration => integration.Mode == "demo-adapter");
+        story.Integrations
+            .Where(integration => integration.Provider is "microsoft-graph" or "tripletex" or "powerbi-fabric")
+            .Should().OnlyContain(integration =>
+                integration.Status == "Disconnected" &&
+                integration.Explanation.Contains("ingen ekte tilkobling"));
         response.Headers.GetValues("X-Correlation-ID").Single().Should().NotBeNullOrWhiteSpace();
         response.Headers.GetValues("X-Content-Type-Options").Should().Contain("nosniff");
         response.Headers.GetValues("X-Frame-Options").Should().Contain("DENY");

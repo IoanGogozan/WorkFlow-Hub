@@ -6,12 +6,14 @@ type IntegrationEvidenceListProps = {
 
 const modeLabels: Record<string, string> = {
   implemented: "Implementert",
+  "scenario-source": "Fiktiv scenariokilde",
   "public-data-capable": "Offentlig datakilde / lagret demoøyeblikk",
   "demo-adapter": "Demo-adapter",
 };
 
 const modeStyles: Record<string, string> = {
   implemented: "border-[#bddbc7] bg-[#edf8f0] text-[#24613f]",
+  "scenario-source": "border-[#d8dee8] bg-[#f5f7fa] text-[#526075]",
   "public-data-capable": "border-[#bed2ec] bg-[#eef5fd] text-[#315a91]",
   "demo-adapter": "border-[#ddd1ad] bg-[#fff9e8] text-[#795d16]",
 };
@@ -39,10 +41,10 @@ export function IntegrationEvidenceList({
         <IntegrationRow
           integration={{
             provider: "email",
-            displayName: "Outlook / e-post",
-            mode: "implemented",
+            displayName: "Fiktiv Outlook-lignende e-post",
+            mode: "scenario-source",
             status: "ScenarioSource",
-            explanation: "Fiktiv e-post er registrert som kilden til henvendelsen.",
+            explanation: "En forhåndslastet fiktiv e-post er scenariokilden; Outlook er ikke tilkoblet.",
           }}
         />
         {integrations.map((integration) => (
@@ -100,8 +102,8 @@ function IntegrationRow({
 
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
-    Connected: "Klar i demo",
-    Disconnected: "Ikke aktiv",
+    Connected: "Demo-klar",
+    Disconnected: "Simulert – ikke tilkoblet",
     Error: "Feilstatus",
     ScenarioSource: "Scenariokilde",
     Stored: "Lagret",
