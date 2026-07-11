@@ -8,6 +8,7 @@ using NorvixHub.Domain.Delivery;
 using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Integrations;
 using NorvixHub.Domain.Intake;
+using NorvixHub.Domain.LiveDemo;
 using NorvixHub.Domain.Reviews;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
@@ -38,6 +39,8 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<DeliveryPackageItem> DeliveryPackageItems => Set<DeliveryPackageItem>();
     public DbSet<DeliveryLink> DeliveryLinks => Set<DeliveryLink>();
     public DbSet<DeliveryAccessLog> DeliveryAccessLogs => Set<DeliveryAccessLog>();
+    public DbSet<LiveDemoRun> LiveDemoRuns => Set<LiveDemoRun>();
+    public DbSet<LiveDemoRunStep> LiveDemoRunSteps => Set<LiveDemoRunStep>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
