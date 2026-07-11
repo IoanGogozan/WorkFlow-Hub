@@ -61,6 +61,7 @@ if (app.Configuration.GetValue("Test:EnableExceptionProbe", false))
 
 app.MapDemoSessionEndpoints();
 app.MapDemoStoryEndpoints();
+app.MapLiveDemoRunEndpoints();
 app.MapSessionEndpoints();
 app.MapIntakeEndpoints();
 app.MapAiReviewEndpoints();

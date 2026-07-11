@@ -13,6 +13,12 @@ public sealed class PublicDemoRateLimitOptions
         PermitLimit = 120,
         WindowSeconds = 60
     };
+
+    public FixedWindowRateLimitOptions LiveDemoRunCreation { get; set; } = new()
+    {
+        PermitLimit = 3,
+        WindowSeconds = 600
+    };
 }
 
 public sealed class FixedWindowRateLimitOptions

@@ -10,6 +10,7 @@ using NorvixHub.Infrastructure.AI;
 using NorvixHub.Infrastructure.Audit;
 using NorvixHub.Infrastructure.Documents;
 using NorvixHub.Infrastructure.Integrations;
+using NorvixHub.Infrastructure.LiveDemo;
 using NorvixHub.Infrastructure.Organizations;
 using NorvixHub.Infrastructure.Persistence;
 
@@ -28,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<DemoSessionCleanupService>();
         services.Configure<DemoSessionCleanupOptions>(options =>
             configuration.GetSection("DemoSessionCleanup").Bind(options));
+        services.Configure<LiveDemoOptions>(options =>
+            configuration.GetSection("LiveDemo").Bind(options));
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();
         services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
         var storageProvider = configuration["Storage:Provider"];
