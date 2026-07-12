@@ -96,6 +96,12 @@ public sealed class DemoSessionCleanupService(
 
     private async Task DeleteTenantScopedDataAsync(Guid[] tenantIds, CancellationToken cancellationToken)
     {
+        await dbContext.SimulatedSharePointOperations
+            .Where(operation => tenantIds.Contains(operation.TenantId))
+            .ExecuteDeleteAsync(cancellationToken);
+        await dbContext.SimulatedSharePointDocumentItems
+            .Where(item => tenantIds.Contains(item.TenantId))
+            .ExecuteDeleteAsync(cancellationToken);
         await dbContext.LiveDemoRunSteps
             .Where(step => tenantIds.Contains(step.TenantId))
             .ExecuteDeleteAsync(cancellationToken);

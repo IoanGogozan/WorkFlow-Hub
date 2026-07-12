@@ -10,6 +10,7 @@ using NorvixHub.Domain.Integrations;
 using NorvixHub.Domain.Intake;
 using NorvixHub.Domain.LiveDemo;
 using NorvixHub.Domain.Reviews;
+using NorvixHub.Domain.SharePoint;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
 
@@ -41,6 +42,8 @@ public sealed class NorvixHubDbContext(DbContextOptions<NorvixHubDbContext> opti
     public DbSet<DeliveryAccessLog> DeliveryAccessLogs => Set<DeliveryAccessLog>();
     public DbSet<LiveDemoRun> LiveDemoRuns => Set<LiveDemoRun>();
     public DbSet<LiveDemoRunStep> LiveDemoRunSteps => Set<LiveDemoRunStep>();
+    public DbSet<SimulatedSharePointDocumentItem> SimulatedSharePointDocumentItems => Set<SimulatedSharePointDocumentItem>();
+    public DbSet<SimulatedSharePointOperation> SimulatedSharePointOperations => Set<SimulatedSharePointOperation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
