@@ -37,6 +37,27 @@ public sealed class SimulatedSharePointDocumentAdapter(
     {
         var configuration = options.Value;
         var key = string.Concat(request.TenantId.ToString("N"), ":", request.CaseId.ToString("N"), ":", request.DocumentId.ToString("N"), ":", request.DocumentVersionId.ToString("N"));
+        if (configuration.SimulateThrottling)
+        {
+            var throttledBefore = await dbContext.SimulatedSharePointOperations.AnyAsync(
+                operation => operation.TenantId == request.TenantId &&
+                    operation.DocumentVersionId == request.DocumentVersionId &&
+                    operation.ErrorCode == "THROTTLED",
+                cancellationToken);
+            if (!throttledBefore)
+            {
+                await RecordAsync(request, "UploadDocument", "PUT", "/simulated-sharepoint/upload", 429, false, "THROTTLED", cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return new SharePointSyncResult(
+                    false,
+                    false,
+                    429,
+                    "THROTTLED",
+                    "Simulated SharePoint throttling. Retry after 2 seconds.",
+                    null);
+            }
+        }
+
         var existing = await dbContext.SimulatedSharePointDocumentItems.SingleOrDefaultAsync(item => item.TenantId == request.TenantId && item.IdempotencyKey == key, cancellationToken);
         if (existing is not null)
         {

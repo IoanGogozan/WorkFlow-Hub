@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using NorvixHub.Application.SharePoint;
 using NorvixHub.Application.Integrations;
 using NorvixHub.Domain.Integrations;
@@ -114,5 +116,27 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
 
         result.Succeeded.Should().BeTrue();
         result.ItemsProcessed.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Opt_in_throttling_fails_once_with_429_and_retry_succeeds()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(
+                new Dictionary<string, string?> { ["SharePoint:SimulateThrottling"] = "true" })));
+        using var scope = factory.Services.CreateScope();
+        var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
+        var request = new SharePointDocumentSyncRequest(
+            Guid.NewGuid(), null, Guid.NewGuid(), "Fjord", "CASE-429", Guid.NewGuid(), Guid.NewGuid(),
+            "throttled.pdf", 10, "Report", "Approved");
+
+        var first = await adapter.SynchronizeAsync(request, TestContext.Current.CancellationToken);
+        var retry = await adapter.SynchronizeAsync(request, TestContext.Current.CancellationToken);
+
+        first.Succeeded.Should().BeFalse();
+        first.StatusCode.Should().Be(429);
+        first.ErrorCode.Should().Be("THROTTLED");
+        retry.Succeeded.Should().BeTrue();
+        retry.StatusCode.Should().Be(201);
     }
 }

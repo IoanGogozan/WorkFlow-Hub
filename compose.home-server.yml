@@ -86,6 +86,7 @@ services:
       DemoSessionCleanup__RetentionGraceMinutes: "0"
       DemoSessionCleanup__BatchSize: ${DEMO_CLEANUP_BATCH_SIZE:-50}
       SharePoint__Mode: ${SHAREPOINT_MODE:-Simulated}
+      SharePoint__SimulateThrottling: ${SHAREPOINT_SIMULATE_THROTTLING:-false}
       SharePoint__MicrosoftTenantId: ${MICROSOFT_TENANT_ID:-}
       SharePoint__MicrosoftClientId: ${MICROSOFT_CLIENT_ID:-}
       SharePoint__MicrosoftClientSecret: ${MICROSOFT_CLIENT_SECRET:-}

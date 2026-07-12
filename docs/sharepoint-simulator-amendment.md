@@ -1,6 +1,7 @@
 # SharePoint Simulator Amendment
 
-Status: proposed temporary implementation direction, pending incremental work.
+Status: implemented temporary direction. The local simulator is active by
+default; Microsoft Graph remains intentionally inactive and unconfigured.
 
 This amendment replaces the live SharePoint prerequisite in the Live
 Integration Demo V2 plan while no Microsoft 365 tenant is available. It does
@@ -135,3 +136,28 @@ No Microsoft Graph package, real HTTP call, external site, Entra setup, secret,
 deployment change, or real SharePoint claim is part of this amendment. A later
 explicit approval can activate the existing provider seam after the original
 SharePoint prerequisites are met.
+
+## Running and verifying the simulator
+
+The safe default requires no Microsoft tenant or secret:
+
+```text
+SharePoint__Mode=Simulated
+SharePoint__SimulateThrottling=false
+```
+
+The worker provisions deterministic SharePoint-like folders, synchronizes
+existing WorkFlow Hub document records, stores safe external metadata and
+Graph-like operation evidence, and preserves tenant isolation. The technical
+evidence page is `/technical/sharepoint` and is limited to tenant owners and
+administrators.
+
+To demonstrate a controlled retry locally, set
+`SharePoint__SimulateThrottling=true`. The first upload attempt for a document
+version returns a simulated 429 with a two-second retry instruction; the next
+identical attempt succeeds. Normal operation never introduces random failure.
+
+`MicrosoftGraph` mode performs configuration validation only. It makes no live
+Microsoft Graph call. A real provider still requires a dedicated tenant,
+approved `Sites.Selected` access, worker-only credentials, and explicit owner
+approval.
