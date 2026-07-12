@@ -317,7 +317,7 @@ public static class LiveDemoRunEndpoints
             CreateStep("brreg-checked", 2, "Kontrollert", "Brreg", "live-or-fallback"),
             CreateStep("case-created", 3, "Opprettet", "Norvix WorkFlow Hub", "implemented"),
             CreateStep("document-created", 4, "Opprettet", "Norvix WorkFlow Hub", "implemented"),
-            CreateStep("sharepoint-synced", 5, "Synkronisert", "SharePoint", "live-external"),
+            CreateStep("sharepoint-synced", 5, "Synkronisert", "SharePoint simulator", "simulated-sharepoint"),
             CreateStep("erp-received", 6, "Synkronisert", "ERP demo receiver", "demo-receiver"),
             CreateStep("run-completed", 7, "Synkronisert", "Norvix WorkFlow Hub", "implemented")
         ];

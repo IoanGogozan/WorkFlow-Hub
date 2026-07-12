@@ -29,7 +29,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
     }
 
     [Fact]
-    public async Task Processor_completes_internal_and_brreg_steps_and_leaves_remaining_external_steps_pending()
+    public async Task Processor_completes_internal_brreg_and_simulated_sharepoint_steps()
     {
         using var factory = _factory.WithWebHostBuilder(builder =>
         {
@@ -71,15 +71,19 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         persistedRun.DocumentId.Should().NotBeNull();
         persistedRun.DeliveryPackageId.Should().NotBeNull();
         persistedRun.BrregMode.Should().Be("live");
-        steps.Where(step => step.Key is "request-created" or "brreg-checked" or "case-created" or "document-created" or "run-completed")
+        steps.Where(step => step.Key is "request-created" or "brreg-checked" or "case-created" or "document-created" or "sharepoint-synced" or "run-completed")
             .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Completed);
-        steps.Where(step => step.Key is "sharepoint-synced" or "erp-received")
+        steps.Where(step => step.Key is "erp-received")
             .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
         (await dbContext.AuditEvents.CountAsync(
             candidate => candidate.TenantId == session.DemoTenantId &&
                 candidate.EntityId == run.RunId.ToString() &&
                 candidate.Action == "LiveDemoStepCompleted",
-            TestContext.Current.CancellationToken)).Should().Be(5);
+            TestContext.Current.CancellationToken)).Should().Be(6);
+        var sharePointStep = steps.Single(step => step.Key == "sharepoint-synced");
+        sharePointStep.EvidenceMode.Should().Be("simulated-sharepoint");
+        sharePointStep.PublicSummary.Should().Contain("no Microsoft 365 tenant connected");
+        persistedRun.SharePointFileItemId.Should().StartWith("01SP-DEMO-");
 
         var customer = await dbContext.Customers.SingleAsync(
             candidate => candidate.Id == persistedRun.CustomerId,

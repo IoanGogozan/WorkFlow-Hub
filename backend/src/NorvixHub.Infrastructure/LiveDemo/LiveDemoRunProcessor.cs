@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NorvixHub.Application.Audit;
 using NorvixHub.Application.Documents;
 using NorvixHub.Application.LiveDemo;
+using NorvixHub.Application.SharePoint;
 using NorvixHub.Domain.Cases;
 using NorvixHub.Domain.Customers;
 using NorvixHub.Domain.Delivery;
@@ -17,7 +18,8 @@ public sealed class LiveDemoRunProcessor(
     IAuditEventWriter auditEventWriter,
     IDemoPdfGenerator demoPdfGenerator,
     IFileStorage fileStorage,
-    ILiveDemoOrganizationResolver organizationResolver) : ILiveDemoRunProcessor
+    ILiveDemoOrganizationResolver organizationResolver,
+    ISharePointDocumentAdapterResolver sharePointAdapterResolver) : ILiveDemoRunProcessor
 {
     public async Task ProcessAsync(Guid runId, CancellationToken cancellationToken)
     {
@@ -25,6 +27,7 @@ public sealed class LiveDemoRunProcessor(
         await ProcessBrregCheckedAsync(runId, cancellationToken);
         await ProcessCaseCreatedAsync(runId, cancellationToken);
         await ProcessDocumentCreatedAsync(runId, cancellationToken);
+        await ProcessSharePointSyncedAsync(runId, cancellationToken);
         await ProcessRunCompletedAsync(runId, cancellationToken);
     }
 
@@ -97,6 +100,35 @@ public sealed class LiveDemoRunProcessor(
             "Internt dokumentsteg gjennomført.",
             "INTERNAL-DOCUMENT",
             cancellationToken);
+
+    private async Task ProcessSharePointSyncedAsync(Guid runId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
+        var step = await dbContext.LiveDemoRunSteps.SingleAsync(candidate => candidate.RunId == runId && candidate.Key == "sharepoint-synced", cancellationToken);
+        if (step.Status == LiveDemoRunStepStatus.Completed || run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed) return;
+        var document = await dbContext.Documents.SingleAsync(candidate => candidate.Id == run.DocumentId && candidate.TenantId == run.TenantId, cancellationToken);
+        var version = await dbContext.DocumentVersions.SingleAsync(candidate => candidate.Id == document.CurrentVersionId && candidate.TenantId == run.TenantId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        try
+        {
+            StartRunAndStep(run, step, now);
+            var result = await sharePointAdapterResolver.GetCurrent().SynchronizeAsync(new SharePointDocumentSyncRequest(
+                run.TenantId, run.CreatedBy, run.CaseId!.Value, "Fiktiv live-demo kunde", run.CustomerReference,
+                document.Id, version.Id, version.OriginalFilename, version.SizeBytes, "LiveDemoPdf", "Approved", null, null, run.Id), cancellationToken);
+            if (!result.Succeeded || result.Item is null) throw new InvalidOperationException(result.PublicMessage);
+            run.SetSharePointEvidence(result.Item.DriveId, result.Item.ParentPath, result.Item.ExternalItemId, now);
+            step.MarkCompleted("Simulated SharePoint adapter — no Microsoft 365 tenant connected.", result.Item.ExternalItemId, now);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await WriteAuditAsync(run, "LiveDemoStepCompleted", "sharepoint-synced", cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await MarkFailedAsync(run, step, "sharepoint-synced", exception, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
 
     private async Task ProcessRunCompletedAsync(Guid runId, CancellationToken cancellationToken)
     {
