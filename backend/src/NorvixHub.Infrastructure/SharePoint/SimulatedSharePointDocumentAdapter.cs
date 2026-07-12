@@ -68,7 +68,8 @@ public sealed class SimulatedSharePointDocumentAdapter(
         }
 
         var parentPath = string.Concat("/", configuration.SimulatedLibraryName, "/Customers/", Sanitize(request.CustomerName), "/", Sanitize(request.CaseNumber), "/Incoming");
-        foreach (var folder in new[] { "/" + configuration.SimulatedLibraryName, "/" + configuration.SimulatedLibraryName + "/Customers", parentPath })
+        var casePath = parentPath[..^"/Incoming".Length];
+        foreach (var folder in new[] { "/" + configuration.SimulatedLibraryName, "/" + configuration.SimulatedLibraryName + "/Customers", casePath, parentPath, casePath + "/Approved", casePath + "/Delivery" })
         {
             await RecordAsync(request, "CreateFolder", "POST", folder, 201, true, null, cancellationToken);
         }

@@ -2,6 +2,8 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NorvixHub.Application.SharePoint;
+using NorvixHub.Application.Integrations;
+using NorvixHub.Domain.Integrations;
 using NorvixHub.Infrastructure.Persistence;
 using NorvixHub.IntegrationTests.Support;
 using Xunit;
@@ -33,7 +35,7 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         second.Succeeded.Should().BeTrue();
         second.AlreadySynchronized.Should().BeTrue();
         (await dbContext.SimulatedSharePointDocumentItems.CountAsync(item => item.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(1);
-        (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(6);
+        (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(9);
     }
 
     [Fact]
@@ -76,5 +78,41 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         denied.ErrorCode.Should().Be("accessDenied");
         (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == firstTenant, TestContext.Current.CancellationToken)).Should().Be(2);
         (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == secondTenant, TestContext.Current.CancellationToken)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Listing_case_documents_is_tenant_scoped()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
+        var caseId = Guid.NewGuid();
+        var firstTenant = Guid.NewGuid();
+        var secondTenant = Guid.NewGuid();
+        await adapter.SynchronizeAsync(new SharePointDocumentSyncRequest(firstTenant, null, caseId, "Customer A", "CASE-A", Guid.NewGuid(), Guid.NewGuid(), "a.pdf", 1, "Report", "Approved"), TestContext.Current.CancellationToken);
+        await adapter.SynchronizeAsync(new SharePointDocumentSyncRequest(secondTenant, null, caseId, "Customer B", "CASE-B", Guid.NewGuid(), Guid.NewGuid(), "b.pdf", 1, "Report", "Approved"), TestContext.Current.CancellationToken);
+
+        var documents = await adapter.ListCaseDocumentsAsync(firstTenant, caseId, TestContext.Current.CancellationToken);
+
+        documents.Should().ContainSingle();
+        documents[0].Name.Should().Be("a.pdf");
+        documents[0].ParentPath.Should().Contain("Incoming");
+    }
+
+    [Fact]
+    public async Task Microsoft_graph_dashboard_sync_uses_real_tenant_operation_count()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
+        var syncAdapter = scope.ServiceProvider.GetRequiredService<IIntegrationSyncAdapter>();
+        var tenantWithOperations = Guid.NewGuid();
+        var otherTenant = Guid.NewGuid();
+        await adapter.TestSiteAccessAsync(tenantWithOperations, "site-demo-service", TestContext.Current.CancellationToken);
+        await adapter.TestSiteAccessAsync(otherTenant, "site-demo-service", TestContext.Current.CancellationToken);
+        await adapter.TestSiteAccessAsync(otherTenant, "site-hr-internal", TestContext.Current.CancellationToken);
+
+        var result = await syncAdapter.SyncAsync(new IntegrationConnection { TenantId = tenantWithOperations, Provider = "microsoft-graph" }, TestContext.Current.CancellationToken);
+
+        result.Succeeded.Should().BeTrue();
+        result.ItemsProcessed.Should().Be(1);
     }
 }
