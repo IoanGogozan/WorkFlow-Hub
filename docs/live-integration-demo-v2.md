@@ -4,6 +4,11 @@ Status: approved direction and implementation plan. This supersedes the earlier
 client-facing demo direction for future work; the earlier document remains the
 historical record of the replay demo already implemented.
 
+Temporary amendment: while no Microsoft 365 tenant is available, SharePoint
+work follows [the SharePoint simulator amendment](sharepoint-simulator-amendment.md).
+It is an explicitly simulated local adapter and not a live SharePoint
+integration.
+
 ## Purpose and public experience
 
 The public demo must process a new fictional request when a visitor starts a

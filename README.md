@@ -50,6 +50,9 @@ Implemented capabilities:
 - AI review workflow with stored analysis runs, review tasks, human approval, and rejection.
 - Case workspace with conversion from intake, tasks, notes, linked documents, and aggregated workflow activity.
 - Brreg organization lookup and customer enrichment APIs.
+- A provider-based local SharePoint/Microsoft Graph simulator direction is
+  documented in [docs/sharepoint-simulator-amendment.md](docs/sharepoint-simulator-amendment.md);
+  it is explicitly not a live Microsoft 365 connection.
 - Document upload, centralized size/type validation, versioning, classification, human approval, and case linking.
 - Integration dashboard with connection state, sync history, failure, and retry flows.
 - Delivery packages with selected documents, generated simple PDF summary, secure expiring public link, revoke, public page, and access log.
