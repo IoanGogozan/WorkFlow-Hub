@@ -1,0 +1,175 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
+using NorvixHub.Application.SharePoint;
+using NorvixHub.Domain.SharePoint;
+using NorvixHub.Infrastructure.Persistence;
+
+namespace NorvixHub.Infrastructure.SharePoint;
+
+public sealed class SimulatedSharePointDocumentAdapter(
+    NorvixHubDbContext dbContext,
+    IOptions<SharePointOptions> options) : ISharePointDocumentAdapter
+{
+    public SimulatedSharePointDocumentAdapter(IOptions<SharePointOptions> options)
+        : this(null!, options)
+    {
+    }
+
+    public string Mode => "Simulated";
+
+    public SharePointAdapterStatus GetStatus()
+    {
+        var configuration = options.Value;
+        return new SharePointAdapterStatus(
+            Mode,
+            true,
+            true,
+            configuration.SimulatedSiteId,
+            configuration.SimulatedSiteName,
+            configuration.SimulatedDriveId,
+            configuration.SimulatedLibraryName,
+            "Sites.Selected simulation",
+            configuration.SimulatedPermission,
+            "Local SharePoint/Microsoft Graph simulator. No Microsoft 365 tenant is connected.");
+    }
+
+    public async Task<SharePointSyncResult> SynchronizeAsync(SharePointDocumentSyncRequest request, CancellationToken cancellationToken)
+    {
+        var startedTimestamp = Stopwatch.GetTimestamp();
+        var configuration = options.Value;
+        var key = string.Concat(request.TenantId.ToString("N"), ":", request.CaseId.ToString("N"), ":", request.DocumentId.ToString("N"), ":", request.DocumentVersionId.ToString("N"));
+        var documentVersionExists = await dbContext.DocumentVersions.AnyAsync(
+            version => version.TenantId == request.TenantId &&
+                version.Id == request.DocumentVersionId &&
+                version.DocumentId == request.DocumentId &&
+                dbContext.Documents.Any(document =>
+                    document.TenantId == request.TenantId && document.Id == request.DocumentId),
+            cancellationToken);
+        if (!documentVersionExists)
+        {
+            await RecordAsync(request, "ValidateDocument", "GET", "/internal/documents", 404, false, "DOCUMENT_NOT_FOUND", startedTimestamp);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new SharePointSyncResult(
+                false,
+                false,
+                404,
+                "DOCUMENT_NOT_FOUND",
+                "The document version is not available for this tenant.",
+                null);
+        }
+
+        if (configuration.SimulateThrottling)
+        {
+            var throttledBefore = await dbContext.SimulatedSharePointOperations.AnyAsync(
+                operation => operation.TenantId == request.TenantId &&
+                    operation.DocumentVersionId == request.DocumentVersionId &&
+                    operation.ErrorCode == "THROTTLED",
+                cancellationToken);
+            if (!throttledBefore)
+            {
+                await RecordAsync(request, "UploadDocument", "PUT", "/simulated-sharepoint/upload", 429, false, "THROTTLED", startedTimestamp);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return new SharePointSyncResult(
+                    false,
+                    false,
+                    429,
+                    "THROTTLED",
+                    "Simulated SharePoint throttling. Retry after 2 seconds.",
+                    null);
+            }
+        }
+
+        var existing = await dbContext.SimulatedSharePointDocumentItems.SingleOrDefaultAsync(item => item.TenantId == request.TenantId && item.IdempotencyKey == key, cancellationToken);
+        if (existing is not null)
+        {
+            await RecordAsync(request, "UploadDocument", "PUT", existing.ParentPath, 200, true, null, startedTimestamp);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new SharePointSyncResult(true, true, 200, null, "Already synchronized — no duplicate created.", ToContract(existing, request));
+        }
+
+        var current = await dbContext.SimulatedSharePointDocumentItems.SingleOrDefaultAsync(item => item.TenantId == request.TenantId && item.DocumentId == request.DocumentId, cancellationToken);
+        if (current is not null && request.ExpectedETag is not null && request.ExpectedETag != current.ETag)
+        {
+            await RecordAsync(request, "UploadVersion", "PUT", current.ParentPath + "/" + current.Name, 412, false, "PRECONDITION_FAILED", startedTimestamp);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new SharePointSyncResult(false, false, 412, "PRECONDITION_FAILED", "Document version is no longer current.", null);
+        }
+
+        if (current is not null)
+        {
+            current.DocumentVersionId = request.DocumentVersionId;
+            current.Version = (int.Parse(current.Version.Split('.')[0], System.Globalization.CultureInfo.InvariantCulture) + 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + ".0";
+            current.ETag = "demo-etag-" + request.DocumentVersionId.ToString("N")[..12];
+            current.MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { request.CaseNumber, Customer = request.CustomerName, request.DocumentType, request.Status });
+            current.IdempotencyKey = key;
+            current.LastSyncedAt = DateTimeOffset.UtcNow;
+            current.MarkUpdated(request.ActorId, current.LastSyncedAt);
+            await RecordAsync(request, "UploadVersion", "PUT", current.ParentPath + "/" + current.Name, 200, true, null, startedTimestamp);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new SharePointSyncResult(true, false, 200, null, "Simulated document version synchronized.", ToContract(current, request));
+        }
+
+        var parentPath = string.Concat("/", configuration.SimulatedLibraryName, "/Customers/", Sanitize(request.CustomerName), "/", Sanitize(request.CaseNumber), "/Incoming");
+        var casePath = parentPath[..^"/Incoming".Length];
+        foreach (var folder in new[] { "/" + configuration.SimulatedLibraryName, "/" + configuration.SimulatedLibraryName + "/Customers", casePath, parentPath, casePath + "/Approved", casePath + "/Delivery" })
+        {
+            await RecordAsync(request, "CreateFolder", "POST", folder, 201, true, null, startedTimestamp);
+        }
+
+        var item = new SimulatedSharePointDocumentItem
+        {
+            TenantId = request.TenantId, CreatedBy = request.ActorId, SiteId = configuration.SimulatedSiteId, DriveId = configuration.SimulatedDriveId,
+            DocumentId = request.DocumentId, DocumentVersionId = request.DocumentVersionId, CaseId = request.CaseId,
+            ExternalItemId = "01SP-DEMO-" + request.DocumentId.ToString("N")[..10].ToUpperInvariant(), ParentPath = parentPath,
+            Name = Sanitize(request.Filename), ETag = "demo-etag-1", Version = "1.0",
+            MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { request.CaseNumber, Customer = request.CustomerName, request.DocumentType, request.Status }),
+            SyncStatus = "Synchronized", IdempotencyKey = key, LastSyncedAt = DateTimeOffset.UtcNow
+        };
+        dbContext.SimulatedSharePointDocumentItems.Add(item);
+        await RecordAsync(request, "UploadDocument", "PUT", parentPath + "/" + item.Name, 201, true, null, startedTimestamp);
+        await RecordAsync(request, "UpdateMetadata", "PATCH", parentPath + "/" + item.Name, 200, true, null, startedTimestamp);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new SharePointSyncResult(true, false, 201, null, "Simulated document synchronized.", ToContract(item, request));
+    }
+
+    public async Task<IReadOnlyList<SharePointDocumentItem>> ListCaseDocumentsAsync(Guid tenantId, Guid caseId, CancellationToken cancellationToken) =>
+        await dbContext.SimulatedSharePointDocumentItems.AsNoTracking().Where(item => item.TenantId == tenantId && item.CaseId == caseId)
+            .Select(item => new SharePointDocumentItem(item.SiteId, item.DriveId, item.ExternalItemId, item.ParentPath, item.Name, item.ETag, item.Version, 0, "Document", item.SyncStatus)).ToListAsync(cancellationToken);
+
+    public async Task<SharePointAccessResult> TestSiteAccessAsync(Guid tenantId, string siteId, CancellationToken cancellationToken)
+    {
+        var startedTimestamp = Stopwatch.GetTimestamp();
+        var allowed = siteId == options.Value.SimulatedSiteId;
+        dbContext.SimulatedSharePointOperations.Add(new SimulatedSharePointOperation
+        {
+            TenantId = tenantId, Operation = "TestSiteAccess", HttpMethod = "GET", Target = "/sites/" + Sanitize(siteId),
+            StatusCode = allowed ? 200 : 403, Succeeded = allowed,
+            DurationMilliseconds = ElapsedMilliseconds(startedTimestamp),
+            ErrorCode = allowed ? null : "accessDenied", ErrorMessage = allowed ? null : "Access to this simulated site is denied."
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return allowed
+            ? new SharePointAccessResult(true, 200, null, "Write access to the simulated site is allowed.")
+            : new SharePointAccessResult(false, 403, "accessDenied", "Access to this simulated site is denied.");
+    }
+
+    private Task RecordAsync(
+        SharePointDocumentSyncRequest request,
+        string operation,
+        string method,
+        string target,
+        int status,
+        bool succeeded,
+        string? error,
+        long startedTimestamp)
+    {
+        dbContext.SimulatedSharePointOperations.Add(new SimulatedSharePointOperation { TenantId = request.TenantId, CreatedBy = request.ActorId, DocumentId = request.DocumentId, DocumentVersionId = request.DocumentVersionId, Operation = operation, HttpMethod = method, Target = target, StatusCode = status, Succeeded = succeeded, DurationMilliseconds = ElapsedMilliseconds(startedTimestamp), ErrorCode = error });
+        return Task.CompletedTask;
+    }
+
+    private static SharePointDocumentItem ToContract(SimulatedSharePointDocumentItem item, SharePointDocumentSyncRequest request) => new(item.SiteId, item.DriveId, item.ExternalItemId, item.ParentPath, item.Name, item.ETag, item.Version, request.SizeBytes, request.DocumentType, request.Status);
+    private static string Sanitize(string value) => string.Concat(value.Select(character => "~#%&*{}\\:<>?/+|\"".Contains(character) ? '-' : character)).Trim(' ', '.');
+    private static long ElapsedMilliseconds(long startedTimestamp) =>
+        Math.Max(1, (long)Stopwatch.GetElapsedTime(startedTimestamp).TotalMilliseconds);
+}

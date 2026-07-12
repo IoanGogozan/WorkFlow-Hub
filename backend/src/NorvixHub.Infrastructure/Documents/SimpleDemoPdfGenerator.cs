@@ -1,10 +1,11 @@
 using System.Text;
+using NorvixHub.Application.Documents;
 
-namespace NorvixHub.Api.Endpoints;
+namespace NorvixHub.Infrastructure.Documents;
 
-public static partial class DemoSessionEndpoints
+public sealed class SimpleDemoPdfGenerator : IDemoPdfGenerator
 {
-    private static byte[] CreateSeedPdfBytes(string title, string body)
+    public byte[] Generate(string title, string body)
     {
         var lines = new[]
         {
@@ -58,8 +59,6 @@ public static partial class DemoSessionEndpoints
         return Encoding.ASCII.GetBytes(builder.ToString());
     }
 
-    private static string EscapePdfText(string value)
-    {
-        return value.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
-    }
+    private static string EscapePdfText(string value) =>
+        value.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
 }

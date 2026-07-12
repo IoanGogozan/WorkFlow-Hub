@@ -1,8 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NorvixHub.Application.Tenancy;
 using NorvixHub.Contracts.Integrations;
+using NorvixHub.Domain.SharePoint;
+using NorvixHub.Infrastructure.Persistence;
 using NorvixHub.IntegrationTests.Support;
 using Xunit;
 
@@ -54,6 +58,33 @@ public sealed class IntegrationEndpointTests : IClassFixture<NorvixHubApiFactory
             "IntegrationConnection",
             "IntegrationSyncRunCreated");
         auditAfter.Should().Be(auditBefore + 1);
+    }
+
+    [Fact]
+    public async Task Microsoft_graph_sync_endpoint_reports_real_tenant_scoped_simulator_operations()
+    {
+        await _factory.SeedExtraTenantsAsync();
+        int expected;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+            var existing = await dbContext.SimulatedSharePointOperations.CountAsync(
+                operation => operation.TenantId == LocalDevTenantContext.DemoTenantId && operation.Succeeded,
+                TestContext.Current.CancellationToken);
+            dbContext.SimulatedSharePointOperations.AddRange(
+                CreateOperation(LocalDevTenantContext.DemoTenantId, "CreateFolder"),
+                CreateOperation(LocalDevTenantContext.DemoTenantId, "UploadDocument"),
+                CreateOperation(NorvixHubApiFactory.SecondTenantId, "UploadDocument"));
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+            expected = existing + 2;
+        }
+        using var client = _factory.CreateClient();
+        await ConnectAsync(client, "microsoft-graph", "{}");
+
+        var sync = await SyncAsync(client, "microsoft-graph");
+
+        sync.Status.Should().Be("Succeeded");
+        sync.ItemsProcessed.Should().Be(expected);
     }
 
     [Fact]
@@ -181,4 +212,16 @@ public sealed class IntegrationEndpointTests : IClassFixture<NorvixHubApiFactory
         DevAuthHeaders.AddDemoAdmin(request);
         return client.SendAsync(request, TestContext.Current.CancellationToken);
     }
+
+    private static SimulatedSharePointOperation CreateOperation(Guid tenantId, string operation) =>
+        new()
+        {
+            TenantId = tenantId,
+            Operation = operation,
+            HttpMethod = "POST",
+            Target = "/simulated-sharepoint/test",
+            StatusCode = 201,
+            Succeeded = true,
+            DurationMilliseconds = 1
+        };
 }

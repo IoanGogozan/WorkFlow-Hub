@@ -8,6 +8,7 @@ public static class PublicDemoRateLimiting
 {
     public const string DemoSessionCreationPolicy = "demo-session-creation";
     public const string PublicDeliveryPolicy = "public-delivery";
+    public const string LiveDemoRunCreationPolicy = "live-demo-run-creation";
 
     public static IServiceCollection AddPublicDemoRateLimiting(
         this IServiceCollection services,
@@ -36,6 +37,15 @@ public static class PublicDemoRateLimiting
                         .GetRequiredService<IOptionsMonitor<PublicDemoRateLimitOptions>>()
                         .CurrentValue;
                     return CreateFixedWindowLimiter(context, options.PublicDelivery);
+                });
+            rateLimiterOptions.AddPolicy(
+                LiveDemoRunCreationPolicy,
+                context =>
+                {
+                    var options = context.RequestServices
+                        .GetRequiredService<IOptionsMonitor<PublicDemoRateLimitOptions>>()
+                        .CurrentValue;
+                    return CreateFixedWindowLimiter(context, options.LiveDemoRunCreation);
                 });
         });
 

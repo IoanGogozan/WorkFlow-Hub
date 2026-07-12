@@ -68,6 +68,13 @@ try {
         $env:ConnectionStrings__Postgres = "Host=localhost;Port=55432;Database=norvixhub;Username=norvixhub;Password=norvixhub_dev_password"
         $env:Database__ApplyMigrationsOnStartup = "true"
         $env:Deployment__EnforceHttps = "false"
+        $env:LiveDemo__Enabled = "true"
+        $env:LiveDemo__OrganizationNumber = "999888777"
+        $env:LiveDemo__WorkerPollMilliseconds = "100"
+        $env:LiveDemo__RunRecoveryMinutes = "5"
+        # Keep the public E2E deterministic: no external Brreg call is allowed in CI.
+        $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
+        $env:LiveDemo__BrregFallbackEnabled = "true"
         $env:MSBUILDDISABLENODEREUSE = "1"
         dotnet run --project backend/src/NorvixHub.Api -nr:false
     } -ArgumentList $root.Path, $BackendPort
@@ -81,6 +88,24 @@ try {
     } -ArgumentList (Join-Path $root "frontend"), $backendUrl, $FrontendPort
 
     Wait-HttpOk -Url "$backendUrl/health/ready" -TimeoutSeconds 120
+
+    $jobs += Start-Job -Name "NorvixHub.Worker.LiveDemo" -ScriptBlock {
+        param([string] $Root)
+
+        Set-Location $Root
+        $env:DOTNET_ENVIRONMENT = "Demo"
+        $env:ConnectionStrings__Postgres = "Host=localhost;Port=55432;Database=norvixhub;Username=norvixhub;Password=norvixhub_dev_password"
+        $env:LiveDemo__Enabled = "true"
+        $env:LiveDemo__OrganizationNumber = "999888777"
+        $env:LiveDemo__WorkerPollMilliseconds = "100"
+        $env:LiveDemo__RunRecoveryMinutes = "5"
+        # Match the API process so the worker uses the labelled local fallback.
+        $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
+        $env:LiveDemo__BrregFallbackEnabled = "true"
+        $env:MSBUILDDISABLENODEREUSE = "1"
+        dotnet run --project backend/src/NorvixHub.Worker -nr:false
+    } -ArgumentList $root.Path
+
     Wait-HttpOk -Url "$frontendUrl/demo" -TimeoutSeconds 120
     Wait-HttpOk -Url "$frontendUrl/intakes/new" -TimeoutSeconds 120
 

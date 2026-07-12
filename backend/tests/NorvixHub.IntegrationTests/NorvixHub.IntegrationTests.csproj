@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\NorvixHub.Api\NorvixHub.Api.csproj" />
+    <ProjectReference Include="..\..\src\NorvixHub.Worker\NorvixHub.Worker.csproj" />
   </ItemGroup>
 </Project>

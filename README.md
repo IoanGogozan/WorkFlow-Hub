@@ -38,10 +38,12 @@ The application is intended to support one complete operational flow:
 
 Norvix WorkFlow Hub currently has a working local product flow backed by ASP.NET Core APIs, PostgreSQL persistence, tenant-scoped data access, audit events, a Next.js frontend, document workflow, delivery links, analytics, and automated backend coverage.
 
-The active target is a simplified client-facing integration demo for Norvix AS.
-Each visitor receives an isolated temporary workspace with fictional data, but
-the main presentation follows one service request rather than asking the visitor
-to navigate every application module.
+The active target is the staged
+[Real Live Integration Demo V2](docs/live-integration-demo-v2.md). Each visitor
+receives an isolated temporary workspace with fictional data and can start a
+new worker-backed run. Brreg is live-or-labelled-fallback, internal artifacts
+are persisted, and SharePoint behavior uses the explicitly local simulator.
+The signed ERP demo receiver and final public-route promotion remain planned.
 
 Implemented capabilities:
 
@@ -50,13 +52,18 @@ Implemented capabilities:
 - AI review workflow with stored analysis runs, review tasks, human approval, and rejection.
 - Case workspace with conversion from intake, tasks, notes, linked documents, and aggregated workflow activity.
 - Brreg organization lookup and customer enrichment APIs.
+- A provider-based local SharePoint/Microsoft Graph simulator is documented in
+  [docs/sharepoint-simulator-amendment.md](docs/sharepoint-simulator-amendment.md).
+  It supports deterministic folders, document metadata, version/eTag evidence,
+  idempotency, restricted-site and throttling demonstrations, and is explicitly
+  not a live Microsoft 365 connection.
 - Document upload, centralized size/type validation, versioning, classification, human approval, and case linking.
 - Integration dashboard with connection state, sync history, failure, and retry flows.
 - Delivery packages with selected documents, generated simple PDF summary, secure expiring public link, revoke, public page, and access log.
 - Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
 - Frontend pages for dashboard, intakes, cases, documents, delivery packages, public delivery links, and integrations.
-- Frontend demo labels clearly identify Mock AI, mock Microsoft/accounting/Fabric
-  integrations, and Brreg public-data-capable behavior backed by stored demo evidence.
+- Frontend demo labels clearly identify Mock AI, simulated SharePoint/Graph,
+  mock accounting/Fabric integrations, and Brreg live-or-fallback evidence.
 
 Public integration demo components now implemented:
 
@@ -207,7 +214,9 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 
 ## Documentation Index
 
-- [Client-Facing Integration Demo — Approved Direction and Implementation Plan](docs/client-facing-integration-demo.md)
+- [Real Live Integration Demo V2 — Active Implementation Plan](docs/live-integration-demo-v2.md)
+- [SharePoint Simulator — Implemented Amendment](docs/sharepoint-simulator-amendment.md)
+- [Client-Facing Integration Demo — Historical Implemented Direction](docs/client-facing-integration-demo.md)
 - [Product Overview](docs/product-overview.md)
 - [Current Implementation Status](docs/current-implementation-status.md)
 - [Requirements](docs/requirements.md)

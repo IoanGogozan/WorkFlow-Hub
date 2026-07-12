@@ -46,29 +46,44 @@ This file records the current technical status. It is not a final acceptance sta
 - Bootstrap scripts exist for first-pass Azure demo resource provisioning and GitHub `demo` environment configuration.
 - Consolidated product documentation, client and technical walkthroughs,
   architecture diagrams, and screenshot instructions.
+- Persistent live-demo runs and steps, rate limits, polling UI, worker
+  processing, retry/recovery, and idempotent internal artifacts are implemented.
+- Brreg live resolution uses a bounded retry and an honestly labelled fallback.
+- The provider-based local SharePoint/Graph simulator is implemented with
+  tenant-scoped evidence, deterministic folders, document metadata,
+  version/eTag handling, idempotency, 403/412/429 demonstrations, cleanup, and
+  the protected `/technical/sharepoint` evidence page.
 
 ## Current Public Direction
 
-The implemented public direction is a client-facing integration case study for Norvix AS. It
-shows one fictional service request moving from email through validation, case
-creation, document handling, reporting/delivery preparation, and audit evidence.
-The existing detailed application remains available as technical evidence.
+The active direction is the staged
+[Real Live Integration Demo V2](live-integration-demo-v2.md), amended by the
+implemented [SharePoint Simulator](sharepoint-simulator-amendment.md). The
+earlier [Client-Facing Integration Demo](client-facing-integration-demo.md) is
+implemented historical context, not the active plan.
 
-The approved direction and staged implementation plan are:
-
-- [Client-Facing Integration Demo](client-facing-integration-demo.md)
+The current `/live-preview` path creates a fresh worker-backed fictional run.
+The existing `/` replay presentation and detailed application remain available
+until the later capability-driven public-route promotion is explicitly approved.
 
 ## Current Gaps Before Public Deployment
 
+- The signed ERP demo receiver, persistence, HMAC/idempotency, fail-once path,
+  main-app client, Compose service, and retry integration are not implemented.
+- The final capability-driven public page, route promotion, accessibility/E2E
+  replacement, dedicated CI job, deployed live smoke script, and final release
+  gate remain in V2 Phases 8–10.
 - Production-grade PDF rendering is not yet implemented; the current demo generates a simple PDF summary.
-- Azure resources have not been created because public demo deployment is intentionally deferred until an Azure subscription is available and costs are approved.
-- Terraform provisioning is not yet implemented in the repository; the current provisioning path is a bootstrap PowerShell script.
+- Azure resources and Terraform are optional/deferred; the approved demo
+  deployment target is currently the home server.
 
 ## Local-Only Or Mock-Backed Components
 
 - Local development uses header auth for technical API work. The public demo
   path uses isolated bearer-token demo sessions; Microsoft Entra ID is not implemented.
-- Microsoft Graph / SharePoint integration is mocked.
+- SharePoint/Microsoft Graph behavior uses the functional local simulator. It
+  is not a live Microsoft 365 connection; the `MicrosoftGraph` provider seam
+  validates configuration but makes no live calls.
 - Tripletex/accounting integration is mocked.
 - Power BI/Fabric export status is mocked while CSV/JSON export is functional.
 - AI provider is mocked and suggestion-only.
@@ -104,6 +119,37 @@ The public demo is not the same as a real customer SaaS deployment. Before proce
 ## Validated Locally
 
 Record exact date and command output summaries here only after validation commands have been run in the current environment.
+
+2026-07-12 — live Brreg and SharePoint simulator completion:
+
+- focused SharePoint, integration-dashboard, and live-processor integration
+  coverage passed: 19 tests, 0 failed;
+- backend Release build passed with 0 warnings and 0 errors;
+- unit tests passed: 20; contract tests passed: 4;
+- frontend lint and production build passed; `/technical/sharepoint` is included
+  in the 17 generated routes;
+- public/technical Playwright suite passed: 7 tests, no failures;
+- EF reported no pending model changes;
+- home-server Compose configuration validated successfully.
+
+2026-07-11 — real live integration demo V2 pre-change baseline:
+
+- `npm --prefix frontend ci` — passed; 361 packages installed. npm reported
+  1 low and 1 moderate advisory for the complete dependency tree.
+- `npm --prefix frontend run lint` — passed with no ESLint errors.
+- `npm --prefix frontend run build` — passed with Next.js 16.2.6; all 15
+  routes compiled successfully. Node emitted a `DEP0205` deprecation warning
+  during the build, but it did not affect the result.
+- `npm --prefix frontend audit --omit=dev --audit-level=high` — passed with
+  0 production vulnerabilities at the requested threshold.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` —
+  passed: 103 tests total (1 contract, 2 unit, 100 integration), 0 failed and
+  0 skipped.
+- `dotnet tool restore --tool-manifest dotnet-tools.json` — passed; restored
+  `dotnet-ef` 10.0.0.
+- `dotnet tool run dotnet-ef -- migrations has-pending-model-changes ...` —
+  passed; no model changes since the last migration.
+- `docker compose config --quiet` — passed with no output.
 
 2026-07-10 — client-facing integration demo documentation gate:
 

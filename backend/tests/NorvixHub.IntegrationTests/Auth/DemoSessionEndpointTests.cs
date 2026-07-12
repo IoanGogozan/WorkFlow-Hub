@@ -15,6 +15,8 @@ using NorvixHub.Domain.Demo;
 using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Integrations;
 using NorvixHub.Domain.Intake;
+using NorvixHub.Domain.LiveDemo;
+using NorvixHub.Domain.SharePoint;
 using NorvixHub.Domain.Tenants;
 using NorvixHub.Domain.Users;
 using NorvixHub.Infrastructure.Persistence;
@@ -312,6 +314,8 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
     {
         var expired = await SeedDemoWorkspaceAsync(_factory, isExpired: true);
         var active = await SeedDemoWorkspaceAsync(_factory, isExpired: false);
+        await SeedLiveDemoRunAsync(expired);
+        await SeedSimulatedSharePointEvidenceAsync(expired);
 
         using (var cleanupScope = _factory.Services.CreateScope())
         {
@@ -336,6 +340,18 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
             TestContext.Current.CancellationToken)).Should().BeFalse();
         (await dbContext.IntegrationConnections.AnyAsync(
             connection => connection.TenantId == expired.TenantId,
+            TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await dbContext.LiveDemoRuns.AnyAsync(
+            run => run.TenantId == expired.TenantId,
+            TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await dbContext.LiveDemoRunSteps.AnyAsync(
+            step => step.TenantId == expired.TenantId,
+            TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await dbContext.SimulatedSharePointDocumentItems.AnyAsync(
+            item => item.TenantId == expired.TenantId,
+            TestContext.Current.CancellationToken)).Should().BeFalse();
+        (await dbContext.SimulatedSharePointOperations.AnyAsync(
+            operation => operation.TenantId == expired.TenantId,
             TestContext.Current.CancellationToken)).Should().BeFalse();
 
         (await dbContext.DemoSessions.AnyAsync(
@@ -516,6 +532,77 @@ public sealed class DemoSessionEndpointTests : IClassFixture<NorvixHubApiFactory
         });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         return token;
+    }
+
+    private async Task SeedLiveDemoRunAsync(SeededDemoWorkspace workspace)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var run = new LiveDemoRun
+        {
+            TenantId = workspace.TenantId,
+            DemoSessionId = workspace.SessionId,
+            CreatedBy = workspace.UserId,
+            ScenarioKey = "cleanup-test",
+            CorrelationId = $"cleanup-{workspace.SessionId:N}",
+            OrganizationNumber = "666666666",
+            CustomerReference = "CLEANUP-TEST",
+            RequestTitle = "Expired cleanup run",
+            RequestBody = "This run should be deleted with its demo tenant."
+        };
+        dbContext.LiveDemoRuns.Add(run);
+        dbContext.LiveDemoRunSteps.Add(new LiveDemoRunStep
+        {
+            TenantId = workspace.TenantId,
+            RunId = run.Id,
+            CreatedBy = workspace.UserId,
+            Key = "request-created",
+            Sequence = 1,
+            PublicStage = "Mottatt",
+            Provider = "Norvix WorkFlow Hub",
+            EvidenceMode = "implemented"
+        });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private async Task SeedSimulatedSharePointEvidenceAsync(SeededDemoWorkspace workspace)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var documentId = Guid.NewGuid();
+        var versionId = Guid.NewGuid();
+        dbContext.SimulatedSharePointDocumentItems.Add(new SimulatedSharePointDocumentItem
+        {
+            TenantId = workspace.TenantId,
+            CreatedBy = workspace.UserId,
+            SiteId = "site-demo-service",
+            DriveId = "drive-shared-documents",
+            DocumentId = documentId,
+            DocumentVersionId = versionId,
+            ExternalItemId = "01SP-DEMO-CLEANUP",
+            ParentPath = "/Shared Documents/Customers/Demo/CLEANUP",
+            Name = "cleanup.pdf",
+            ETag = "demo-etag-1",
+            Version = "1.0",
+            MetadataJson = "{\"source\":\"cleanup-test\"}",
+            SyncStatus = "Synchronized",
+            IdempotencyKey = $"{workspace.TenantId:N}:{documentId:N}:{versionId:N}"
+        });
+        dbContext.SimulatedSharePointOperations.Add(new SimulatedSharePointOperation
+        {
+            TenantId = workspace.TenantId,
+            CreatedBy = workspace.UserId,
+            DocumentId = documentId,
+            DocumentVersionId = versionId,
+            Operation = "UploadDocument",
+            HttpMethod = "PUT",
+            Target = "/Shared Documents/Customers/Demo/CLEANUP/cleanup.pdf",
+            ResponseSummaryJson = "{\"itemId\":\"01SP-DEMO-CLEANUP\"}",
+            StatusCode = 201,
+            Succeeded = true,
+            DurationMilliseconds = 1
+        });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     private static async Task<SeededDemoWorkspace> SeedDemoWorkspaceAsync(
