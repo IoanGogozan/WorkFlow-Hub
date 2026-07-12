@@ -1,6 +1,6 @@
 export type LiveDemoStage = {
   title: string;
-  status: "Fullført" | "Klar";
+  status: "Fullført" | "Pågår" | "Venter" | "Feilet";
   duration: string;
   provider: string;
   summary: string;
@@ -8,7 +8,12 @@ export type LiveDemoStage = {
 };
 
 export function LiveDemoStageCard({ stage }: { stage: LiveDemoStage }) {
-  const isComplete = stage.status === "Fullført";
+  const statusClass = {
+    Fullført: "bg-[#e6f6ee] text-[#1f6b46]",
+    Pågår: "bg-[#e8f0ff] text-[#315ea8]",
+    Venter: "bg-[#eef2f7] text-[#526075]",
+    Feilet: "bg-[#fdecec] text-[#a33a3a]",
+  }[stage.status];
 
   return (
     <li className="rounded-lg border border-[#dce1e8] bg-white p-4 shadow-sm">
@@ -18,11 +23,7 @@ export function LiveDemoStageCard({ stage }: { stage: LiveDemoStage }) {
           <p className="mt-1 text-sm text-[#64748b]">{stage.provider}</p>
         </div>
         <span
-          className={
-            isComplete
-              ? "rounded-full bg-[#e6f6ee] px-2.5 py-1 text-xs font-semibold text-[#1f6b46]"
-              : "rounded-full bg-[#eef2f7] px-2.5 py-1 text-xs font-semibold text-[#526075]"
-          }
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}
         >
           {stage.status}
         </span>

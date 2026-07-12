@@ -1,6 +1,14 @@
+"use client";
+
 import { CLIENT_DEMO_CONTACT_URL } from "@/lib/site-config";
 
-export function LiveDemoHero() {
+type LiveDemoHeroProps = {
+  disabled: boolean;
+  isStarting: boolean;
+  onStart: () => void;
+};
+
+export function LiveDemoHero({ disabled, isStarting, onStart }: LiveDemoHeroProps) {
   return (
     <section className="max-w-4xl pb-10 pt-4 sm:pb-14 sm:pt-10">
       <p className="text-sm font-semibold text-[#315ea8]">
@@ -16,12 +24,14 @@ export function LiveDemoHero() {
       </p>
 
       <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <a
-          className="inline-flex justify-center rounded-md bg-[#315ea8] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#244a86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
-          href="#live-preview-run"
+        <button
+          className="inline-flex justify-center rounded-md bg-[#315ea8] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#244a86] disabled:cursor-not-allowed disabled:bg-[#8295b2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+          disabled={disabled}
+          onClick={onStart}
+          type="button"
         >
-          Kjør live demo
-        </a>
+          {isStarting ? "Starter live demo …" : "Kjør live demo"}
+        </button>
         <a
           className="inline-flex justify-center rounded-md border border-[#9aa8bb] px-5 py-3 text-sm font-semibold text-[#172033] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
           href={CLIENT_DEMO_CONTACT_URL}
@@ -31,8 +41,7 @@ export function LiveDemoHero() {
       </div>
 
       <p className="mt-6 text-sm leading-6 text-[#64748b]">
-        Fiktive data. Dette er en statisk forhåndsvisning av det planlagte,
-        avgrensede demomiljøet.
+        Fiktive data. Live-kjøringen bruker bare det avgrensede demomiljøet.
       </p>
     </section>
   );
