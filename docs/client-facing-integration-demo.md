@@ -1,11 +1,14 @@
 # Client-Facing Integration Demo
 
-Status: approved product direction and implementation guide
+Status: implemented historical direction. Superseded for new work by
+[Real Live Integration Demo V2](live-integration-demo-v2.md).
 Public display name: **Automatisert serviceflyt**
 
-This is the durable repository version of the direction defined in
+This is the historical durable repository version of the direction defined in
 `WORKFLOW_HUB_IMPLEMENTATION_PLAN.md` on 2026-07-10. Implementation should be
-performed one task at a time, with verification and review between tasks.
+performed one task at a time, with verification and review between tasks. Its
+implemented replay experience remains in the product, but this document is not
+the active delivery plan.
 
 ## Purpose
 

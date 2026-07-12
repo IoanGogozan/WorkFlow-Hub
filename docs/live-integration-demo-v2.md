@@ -1,21 +1,23 @@
 # Real Live Integration Demo V2
 
-Status: approved direction and implementation plan. This supersedes the earlier
-client-facing demo direction for future work; the earlier document remains the
-historical record of the replay demo already implemented.
+Status: active implementation plan. Phases through Brreg and the local
+SharePoint simulator are implemented. The signed ERP demo receiver, final
+public-page promotion, CI/release readiness, and deployment runbook remain.
+This supersedes the earlier client-facing demo direction for future work; the
+earlier document remains the historical record of the replay demo.
 
-Temporary amendment: while no Microsoft 365 tenant is available, SharePoint
-work follows [the SharePoint simulator amendment](sharepoint-simulator-amendment.md).
-It is an explicitly simulated local adapter and not a live SharePoint
-integration.
+Implemented amendment: because a Microsoft 365 subscription is not justified
+for this demo, SharePoint work follows
+[the SharePoint simulator amendment](sharepoint-simulator-amendment.md). It is
+an explicitly simulated local adapter and not a live SharePoint integration.
 
 ## Purpose and public experience
 
 The public demo must process a new fictional request when a visitor starts a
-run. In a short flow it demonstrates: public company-data validation, internal
-case and fictional PDF creation, a real upload to a restricted Norvix
-SharePoint demo site, and a signed request accepted by a separate **ERP demo
-receiver**. The detailed application remains available at `/technical`.
+run. In a short flow it demonstrates public company-data validation, internal
+case and fictional PDF creation, an honestly labelled local SharePoint/Graph
+simulation, and—after Phase 7—a signed request accepted by a separate **ERP
+demo receiver**. The detailed application remains available at `/technical`.
 
 The primary page uses four stages:
 
@@ -35,8 +37,9 @@ not needed by the visitor.
   PDF, document/version, delivery basis, audit events, and step evidence.
 - Brreg uses one allowlisted server-configured organization number. Fallback is
   permitted only after a failed real call and is always visibly labelled.
-- SharePoint uses a dedicated least-privilege Norvix demo site, deterministic
-  per-run folders, persisted drive-item references, and expiry cleanup.
+- SharePoint uses the local provider-based simulator: deterministic folders,
+  metadata, versions/eTags, idempotency, restricted-site evidence, throttling,
+  tenant scoping, and expiry cleanup. No Microsoft 365 tenant is connected.
 - The ERP demo receiver validates HMAC, timestamp, payload, and idempotency;
   persists a receipt; and has a controlled fail-once demonstration. It is never
   described as a customer ERP or named accounting product.
@@ -72,7 +75,8 @@ email, free text, URLs, or files.
 - All external actions are tenant-scoped, auditable, retry-safe, and
   public-safe.
 - CI uses fake HTTP handlers/adapters and never calls Brreg, Graph, or ERP.
-- SharePoint secrets are worker-only; no mail permissions are required.
+- Microsoft Graph mode is inactive. If activated later, Graph secrets remain
+  worker-only and no mail permissions are required.
 - Deployment and external infrastructure changes require explicit approval.
 
 ## Delivery sequence
@@ -86,16 +90,19 @@ Each task is an isolated, reviewable change.
 5. Add focused processor, reusable PDF, idempotent internal artifacts, worker,
    polling UI, and E2E.
 6. Add Brreg live/fallback adapter and visible evidence.
-7. After manual prerequisites, add SharePoint operations and cleanup.
+7. Add and verify the local SharePoint simulator amendment. **Implemented.**
 8. Add signed ERP demo receiver, idempotent client, fail-once, and Compose.
-9. Promote the concise page only after real capability approval, then complete
-   CI, smoke, deployment preparation, and final release gate.
+   **Not implemented.**
+9. Align and promote the concise capability-driven page. **Not completed.**
+10. Complete CI, smoke, deployment preparation, and the final release gate.
+    **Not completed.**
 
 ## External gates and non-goals
 
-Before SharePoint work, the owner manually creates a dedicated Entra app/site,
-grants selected-site write access, verifies permissions, and stores credentials
-only in server `.env`. The ERP HMAC is generated and stored on the server.
+Real Microsoft Graph remains deferred until the owner explicitly approves a
+tenant, Entra app, dedicated site, and `Sites.Selected` access. This is not a
+gate for the local simulator. Before ERP receiver activation, an ERP HMAC must
+be generated and stored only in the server `.env`.
 
 Do not add Outlook mailbox integration, public email, real customer ERP,
 public upload, customer onboarding, billing, a workflow builder, broker,
@@ -104,11 +111,11 @@ scenarios.
 
 ## Definition of done
 
-A visitor can start a new run and observe real timings, live Brreg or labelled
-fallback, newly created internal artifacts, a real restricted SharePoint file,
-a signed ERP receipt, controlled failure and duplicate-safe retry. Tenant
-isolation, idempotency, cleanup, frontend/backend tests, migration checks, CI,
-and deployed smoke checks pass.
+A visitor can start a new run and observe measured timings, live Brreg or
+labelled fallback, newly created internal artifacts, clearly simulated
+SharePoint evidence, and—after Phase 7—a signed ERP receipt with controlled
+failure and duplicate-safe retry. Tenant isolation, idempotency, cleanup,
+frontend/backend tests, migration checks, CI, and deployed smoke checks pass.
 
 ## Task rules
 
