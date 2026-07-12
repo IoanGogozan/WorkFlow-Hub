@@ -31,4 +31,8 @@ public sealed class MicrosoftGraphSharePointDocumentAdapter(IOptions<SharePointO
     }
 
     private static bool HasValue(string value) => !string.IsNullOrWhiteSpace(value);
+
+    public Task<SharePointSyncResult> SynchronizeAsync(SharePointDocumentSyncRequest request, CancellationToken cancellationToken) => Task.FromResult(new SharePointSyncResult(false, false, 503, "NOT_CONFIGURED", "Microsoft Graph provider is not configured.", null));
+    public Task<IReadOnlyList<SharePointDocumentItem>> ListCaseDocumentsAsync(Guid tenantId, Guid caseId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<SharePointDocumentItem>>([]);
+    public Task<SharePointAccessResult> TestSiteAccessAsync(Guid tenantId, string siteId, CancellationToken cancellationToken) => Task.FromResult(new SharePointAccessResult(false, 503, "NOT_CONFIGURED", "Microsoft Graph provider is not configured."));
 }

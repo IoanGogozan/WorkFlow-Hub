@@ -20,8 +20,8 @@ public sealed class SimulatedSharePointDocumentItemConfiguration : IEntityTypeCo
         builder.Property(item => item.MetadataJson).HasColumnType("jsonb").IsRequired();
         builder.Property(item => item.SyncStatus).HasMaxLength(40).IsRequired();
         builder.Property(item => item.IdempotencyKey).HasMaxLength(256).IsRequired();
+        builder.HasIndex(item => new { item.TenantId, item.DocumentId }).IsUnique();
         builder.HasIndex(item => new { item.TenantId, item.IdempotencyKey }).IsUnique();
-        builder.HasIndex(item => new { item.TenantId, item.DocumentVersionId }).IsUnique();
         builder.HasIndex(item => new { item.TenantId, item.CaseId, item.LastSyncedAt });
     }
 }
