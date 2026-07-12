@@ -35,4 +35,25 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         (await dbContext.SimulatedSharePointDocumentItems.CountAsync(item => item.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(1);
         (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(6);
     }
+
+    [Fact]
+    public async Task New_version_updates_etag_and_stale_etag_is_rejected()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
+        var tenantId = Guid.NewGuid();
+        var documentId = Guid.NewGuid();
+        var first = new SharePointDocumentSyncRequest(tenantId, null, Guid.NewGuid(), "Fjord Pumpeteknikk AS", "CASE-2026-0015", documentId, Guid.NewGuid(), "report.pdf", 100, "Report", "Approved");
+        var created = await adapter.SynchronizeAsync(first, TestContext.Current.CancellationToken);
+        var updated = await adapter.SynchronizeAsync(first with { DocumentVersionId = Guid.NewGuid(), ExpectedETag = created.Item!.ETag }, TestContext.Current.CancellationToken);
+        var stale = await adapter.SynchronizeAsync(first with { DocumentVersionId = Guid.NewGuid(), ExpectedETag = created.Item!.ETag }, TestContext.Current.CancellationToken);
+
+        updated.Succeeded.Should().BeTrue();
+        updated.Item!.ExternalItemId.Should().Be(created.Item.ExternalItemId);
+        updated.Item.ETag.Should().NotBe(created.Item.ETag);
+        updated.Item.Version.Should().Be("2.0");
+        stale.Succeeded.Should().BeFalse();
+        stale.StatusCode.Should().Be(412);
+        stale.ErrorCode.Should().Be("PRECONDITION_FAILED");
+    }
 }

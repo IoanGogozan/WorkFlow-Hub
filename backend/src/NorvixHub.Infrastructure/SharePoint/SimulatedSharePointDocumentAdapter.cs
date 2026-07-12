@@ -45,6 +45,28 @@ public sealed class SimulatedSharePointDocumentAdapter(
             return new SharePointSyncResult(true, true, 200, null, "Already synchronized — no duplicate created.", ToContract(existing, request));
         }
 
+        var current = await dbContext.SimulatedSharePointDocumentItems.SingleOrDefaultAsync(item => item.TenantId == request.TenantId && item.DocumentId == request.DocumentId, cancellationToken);
+        if (current is not null && request.ExpectedETag is not null && request.ExpectedETag != current.ETag)
+        {
+            await RecordAsync(request, "UploadVersion", "PUT", current.ParentPath + "/" + current.Name, 412, false, "PRECONDITION_FAILED", cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new SharePointSyncResult(false, false, 412, "PRECONDITION_FAILED", "Document version is no longer current.", null);
+        }
+
+        if (current is not null)
+        {
+            current.DocumentVersionId = request.DocumentVersionId;
+            current.Version = (int.Parse(current.Version.Split('.')[0], System.Globalization.CultureInfo.InvariantCulture) + 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + ".0";
+            current.ETag = "demo-etag-" + request.DocumentVersionId.ToString("N")[..12];
+            current.MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { request.CaseNumber, Customer = request.CustomerName, request.DocumentType, request.Status });
+            current.IdempotencyKey = key;
+            current.LastSyncedAt = DateTimeOffset.UtcNow;
+            current.MarkUpdated(request.ActorId, current.LastSyncedAt);
+            await RecordAsync(request, "UploadVersion", "PUT", current.ParentPath + "/" + current.Name, 200, true, null, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return new SharePointSyncResult(true, false, 200, null, "Simulated document version synchronized.", ToContract(current, request));
+        }
+
         var parentPath = string.Concat("/", configuration.SimulatedLibraryName, "/Customers/", Sanitize(request.CustomerName), "/", Sanitize(request.CaseNumber), "/Incoming");
         foreach (var folder in new[] { "/" + configuration.SimulatedLibraryName, "/" + configuration.SimulatedLibraryName + "/Customers", parentPath })
         {
