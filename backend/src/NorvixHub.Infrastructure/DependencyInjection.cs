@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.Configure<LiveDemoOptions>(options =>
             configuration.GetSection("LiveDemo").Bind(options));
         services.AddScoped<ILiveDemoRunProcessor, LiveDemoRunProcessor>();
+        services.AddScoped<ILiveDemoOrganizationResolver, LiveDemoOrganizationResolver>();
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();
         services.AddSingleton<IDemoPdfGenerator, SimpleDemoPdfGenerator>();
         services.AddScoped<IAiReviewProvider, MockAiReviewProvider>();
