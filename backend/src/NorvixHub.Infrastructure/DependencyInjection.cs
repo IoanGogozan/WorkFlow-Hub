@@ -7,6 +7,7 @@ using NorvixHub.Application.Documents;
 using NorvixHub.Application.Integrations;
 using NorvixHub.Application.LiveDemo;
 using NorvixHub.Application.Organizations;
+using NorvixHub.Application.SharePoint;
 using NorvixHub.Infrastructure.AI;
 using NorvixHub.Infrastructure.Audit;
 using NorvixHub.Infrastructure.Documents;
@@ -14,6 +15,7 @@ using NorvixHub.Infrastructure.Integrations;
 using NorvixHub.Infrastructure.LiveDemo;
 using NorvixHub.Infrastructure.Organizations;
 using NorvixHub.Infrastructure.Persistence;
+using NorvixHub.Infrastructure.SharePoint;
 
 namespace NorvixHub.Infrastructure;
 
@@ -32,6 +34,11 @@ public static class DependencyInjection
             configuration.GetSection("DemoSessionCleanup").Bind(options));
         services.Configure<LiveDemoOptions>(options =>
             configuration.GetSection("LiveDemo").Bind(options));
+        services.Configure<SharePointOptions>(options =>
+            configuration.GetSection("SharePoint").Bind(options));
+        services.AddScoped<SimulatedSharePointDocumentAdapter>();
+        services.AddScoped<MicrosoftGraphSharePointDocumentAdapter>();
+        services.AddScoped<ISharePointDocumentAdapterResolver, SharePointDocumentAdapterResolver>();
         services.AddScoped<ILiveDemoRunProcessor, LiveDemoRunProcessor>();
         services.AddScoped<ILiveDemoOrganizationResolver, LiveDemoOrganizationResolver>();
         services.AddScoped<IAuditEventWriter, DatabaseAuditEventWriter>();

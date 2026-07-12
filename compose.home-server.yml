@@ -85,6 +85,12 @@ services:
       DemoSessionCleanup__IntervalMinutes: ${DEMO_CLEANUP_INTERVAL_MINUTES:-60}
       DemoSessionCleanup__RetentionGraceMinutes: "0"
       DemoSessionCleanup__BatchSize: ${DEMO_CLEANUP_BATCH_SIZE:-50}
+      SharePoint__Mode: ${SHAREPOINT_MODE:-Simulated}
+      SharePoint__MicrosoftTenantId: ${MICROSOFT_TENANT_ID:-}
+      SharePoint__MicrosoftClientId: ${MICROSOFT_CLIENT_ID:-}
+      SharePoint__MicrosoftClientSecret: ${MICROSOFT_CLIENT_SECRET:-}
+      SharePoint__MicrosoftSiteId: ${SHAREPOINT_SITE_ID:-}
+      SharePoint__MicrosoftDriveId: ${SHAREPOINT_DRIVE_ID:-}
     depends_on:
       api:
         condition: service_healthy
