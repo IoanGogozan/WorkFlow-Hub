@@ -6,6 +6,7 @@ import { DemoExpiryBanner } from "@/components/demo-expiry-banner";
 
 const navItems = [
   { key: "overview", label: "Oversikt", href: "/technical" },
+  { key: "sharepoint", label: "SharePoint simulator", href: "/technical/sharepoint" },
   { key: "entry", label: "Inngang", href: "/intakes" },
   { key: "review", label: "Vurdering", href: "/intakes" },
   { key: "case-documents", label: "Sak og dokumenter", href: "/cases" },

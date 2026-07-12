@@ -70,6 +70,7 @@ app.MapCaseEndpoints();
 app.MapOrganizationEndpoints();
 app.MapDocumentEndpoints();
 app.MapIntegrationEndpoints();
+app.MapSharePointTechnicalEndpoints();
 app.MapDeliveryEndpoints();
 app.MapAnalyticsEndpoints();
 
