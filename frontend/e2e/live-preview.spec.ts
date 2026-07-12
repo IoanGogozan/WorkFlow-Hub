@@ -25,6 +25,16 @@ test("shows fallback Brreg evidence without presenting it as live", async ({ pag
   await expect(page.getByText("Live kontroll – 0,8 sek")).toHaveCount(0);
 });
 
+test("labels SharePoint synchronization as simulated", async ({ page }) => {
+  await showMockedBrregRun(page, "live", 800);
+
+  const resultCard = page.locator("section[aria-labelledby='live-demo-result-heading']");
+  await expect(
+    resultCard.getByText(/Simulated SharePoint adapter — no Microsoft 365 tenant connected/),
+  ).toBeVisible();
+  await expect(page.getByText(/SharePoint connected/i)).toHaveCount(0);
+});
+
 async function startAndCompleteRun(page: import("@playwright/test").Page) {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
@@ -113,7 +123,7 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
     ["brreg-checked", 2, "Kontrollert", "Brreg", "live-or-fallback"],
     ["case-created", 3, "Opprettet", "Norvix WorkFlow Hub", "implemented"],
     ["document-created", 4, "Opprettet", "Norvix WorkFlow Hub", "implemented"],
-    ["sharepoint-synced", 5, "Synkronisert", "SharePoint", "live-external"],
+    ["sharepoint-synced", 5, "Synkronisert", "SharePoint simulator", "simulated-sharepoint"],
     ["erp-received", 6, "Synkronisert", "ERP demo receiver", "demo-receiver"],
     ["run-completed", 7, "Synkronisert", "Norvix WorkFlow Hub", "implemented"],
   ].map(([key, sequence, publicStage, provider, evidenceMode]) => ({
@@ -125,8 +135,16 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
     evidenceMode,
     attemptCount: 1,
     durationMs: key === "brreg-checked" ? durationMs : 10,
-    publicSummary: key === "brreg-checked" ? "Firmadata kontrollert." : "Steg fullført.",
-    publicEvidenceReference: key === "brreg-checked" ? mode : "RUN-STEP",
+    publicSummary: key === "brreg-checked"
+      ? "Firmadata kontrollert."
+      : key === "sharepoint-synced"
+        ? "Simulated SharePoint adapter — no Microsoft 365 tenant connected."
+        : "Steg fullført.",
+    publicEvidenceReference: key === "brreg-checked"
+      ? mode
+      : key === "sharepoint-synced"
+        ? "01SP-DEMO-ABCD"
+        : "RUN-STEP",
     publicErrorCode: null,
     publicErrorMessage: null,
   }));
@@ -144,6 +162,6 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
     publicErrorCode: null,
     publicErrorMessage: null,
     steps,
-    result: { caseNumber: "LIVE-2026-ABCD1234", brregMode: mode, sharePointFolderReference: null, sharePointFileReference: null, erpReceiptId: null, auditEventCount: 5 },
+    result: { caseNumber: "LIVE-2026-ABCD1234", brregMode: mode, sharePointFolderReference: "Customers/CASE-2026-ABCD", sharePointFileReference: "01SP-DEMO-ABCD", erpReceiptId: null, auditEventCount: 6 },
   };
 }

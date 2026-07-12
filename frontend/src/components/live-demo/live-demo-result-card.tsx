@@ -18,10 +18,14 @@ export function LiveDemoResultCard({ result, totalDurationMs }: { result: LiveDe
       <ul className="mt-5 grid gap-3 text-sm leading-6 text-[#e5edf9] sm:grid-cols-2">
         {result.brregMode === "live" ? <li>Brreg: Live kontroll</li> : null}
         {result.brregMode === "fallback" ? <li>Brreg: Fallback-snapshot</li> : null}
-        {result.brregMode ? <li>✓ Firmadata kontrollert ({result.brregMode})</li> : null}
         {result.caseNumber ? <li>✓ Sak {result.caseNumber} opprettet</li> : null}
         <li>✓ Fiktiv PDF opprettet og lagret</li>
-        {result.sharePointFileReference ? <li>✓ SharePoint-fil {result.sharePointFileReference}</li> : null}
+        {result.sharePointFileReference ? (
+          <li>
+            ✓ Simulated SharePoint adapter — no Microsoft 365 tenant connected
+            ({result.sharePointFileReference})
+          </li>
+        ) : null}
         {result.erpReceiptId ? <li>✓ ERP demo receiver: {result.erpReceiptId}</li> : null}
         {result.auditEventCount !== null ? <li>✓ {result.auditEventCount} hendelser lagret i loggen</li> : null}
       </ul>
