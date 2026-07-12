@@ -56,4 +56,25 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         stale.StatusCode.Should().Be(412);
         stale.ErrorCode.Should().Be("PRECONDITION_FAILED");
     }
+
+    [Fact]
+    public async Task Only_configured_site_is_allowed_and_operations_remain_tenant_scoped()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var firstTenant = Guid.NewGuid();
+        var secondTenant = Guid.NewGuid();
+
+        var allowed = await adapter.TestSiteAccessAsync(firstTenant, "site-demo-service", TestContext.Current.CancellationToken);
+        var denied = await adapter.TestSiteAccessAsync(firstTenant, "site-hr-internal", TestContext.Current.CancellationToken);
+        await adapter.TestSiteAccessAsync(secondTenant, "site-hr-internal", TestContext.Current.CancellationToken);
+
+        allowed.Succeeded.Should().BeTrue();
+        denied.Succeeded.Should().BeFalse();
+        denied.StatusCode.Should().Be(403);
+        denied.ErrorCode.Should().Be("accessDenied");
+        (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == firstTenant, TestContext.Current.CancellationToken)).Should().Be(2);
+        (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == secondTenant, TestContext.Current.CancellationToken)).Should().Be(1);
+    }
 }

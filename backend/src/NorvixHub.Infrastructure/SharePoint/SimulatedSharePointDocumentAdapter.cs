@@ -93,8 +93,20 @@ public sealed class SimulatedSharePointDocumentAdapter(
         await dbContext.SimulatedSharePointDocumentItems.AsNoTracking().Where(item => item.TenantId == tenantId && item.CaseId == caseId)
             .Select(item => new SharePointDocumentItem(item.SiteId, item.DriveId, item.ExternalItemId, item.ParentPath, item.Name, item.ETag, item.Version, 0, "Document", item.SyncStatus)).ToListAsync(cancellationToken);
 
-    public async Task<SharePointAccessResult> TestSiteAccessAsync(Guid tenantId, string siteId, CancellationToken cancellationToken) =>
-        await Task.FromResult(new SharePointAccessResult(siteId == options.Value.SimulatedSiteId, siteId == options.Value.SimulatedSiteId ? 200 : 403, siteId == options.Value.SimulatedSiteId ? null : "accessDenied", "Access check is implemented in S2.1c."));
+    public async Task<SharePointAccessResult> TestSiteAccessAsync(Guid tenantId, string siteId, CancellationToken cancellationToken)
+    {
+        var allowed = siteId == options.Value.SimulatedSiteId;
+        dbContext.SimulatedSharePointOperations.Add(new SimulatedSharePointOperation
+        {
+            TenantId = tenantId, Operation = "TestSiteAccess", HttpMethod = "GET", Target = "/sites/" + Sanitize(siteId),
+            StatusCode = allowed ? 200 : 403, Succeeded = allowed, DurationMilliseconds = 0,
+            ErrorCode = allowed ? null : "accessDenied", ErrorMessage = allowed ? null : "Access to this simulated site is denied."
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return allowed
+            ? new SharePointAccessResult(true, 200, null, "Write access to the simulated site is allowed.")
+            : new SharePointAccessResult(false, 403, "accessDenied", "Access to this simulated site is denied.");
+    }
 
     private Task RecordAsync(SharePointDocumentSyncRequest request, string operation, string method, string target, int status, bool succeeded, string? error, CancellationToken cancellationToken)
     {
