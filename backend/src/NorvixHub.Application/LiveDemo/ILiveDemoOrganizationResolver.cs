@@ -11,7 +11,8 @@ public sealed record LiveDemoOrganizationResolution(
     string Mode,
     LiveDemoOrganizationData Organization,
     long DurationMs,
-    string? SafeReason);
+    string? SafeReason,
+    string? InternalRawJson);
 
 public sealed record LiveDemoOrganizationData(
     string OrganizationNumber,

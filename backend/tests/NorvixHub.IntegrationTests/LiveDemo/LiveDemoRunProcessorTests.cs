@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NorvixHub.Application.Documents;
 using NorvixHub.Application.LiveDemo;
+using NorvixHub.Application.Organizations;
 using NorvixHub.Contracts.Auth;
 using NorvixHub.Contracts.LiveDemo;
 using NorvixHub.Domain.LiveDemo;
@@ -27,7 +29,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
     }
 
     [Fact]
-    public async Task Processor_completes_internal_steps_and_leaves_external_steps_pending()
+    public async Task Processor_completes_internal_and_brreg_steps_and_leaves_remaining_external_steps_pending()
     {
         using var factory = _factory.WithWebHostBuilder(builder =>
         {
@@ -68,15 +70,23 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         persistedRun.CaseId.Should().NotBeNull();
         persistedRun.DocumentId.Should().NotBeNull();
         persistedRun.DeliveryPackageId.Should().NotBeNull();
-        steps.Where(step => step.Key is "request-created" or "case-created" or "document-created" or "run-completed")
+        persistedRun.BrregMode.Should().Be("live");
+        steps.Where(step => step.Key is "request-created" or "brreg-checked" or "case-created" or "document-created" or "run-completed")
             .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Completed);
-        steps.Where(step => step.Key is "brreg-checked" or "sharepoint-synced" or "erp-received")
+        steps.Where(step => step.Key is "sharepoint-synced" or "erp-received")
             .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
         (await dbContext.AuditEvents.CountAsync(
             candidate => candidate.TenantId == session.DemoTenantId &&
                 candidate.EntityId == run.RunId.ToString() &&
                 candidate.Action == "LiveDemoStepCompleted",
-            TestContext.Current.CancellationToken)).Should().Be(4);
+            TestContext.Current.CancellationToken)).Should().Be(5);
+
+        var customer = await dbContext.Customers.SingleAsync(
+            candidate => candidate.Id == persistedRun.CustomerId,
+            TestContext.Current.CancellationToken);
+        customer.Name.Should().Be("Sordal Eiendom AS");
+        customer.OrganizationNumber.Should().Be("999888777");
+        customer.BrregDataJson.Should().Contain("Sordal Eiendom AS");
 
         var version = await dbContext.DocumentVersions.SingleAsync(
             candidate => candidate.DocumentId == persistedRun.DocumentId,
@@ -109,6 +119,50 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         var after = await GetArtifactCountsAsync(factory, run.RunId, session.DemoTenantId);
 
         after.Should().Be(before);
+    }
+
+    [Fact]
+    public async Task Processor_marks_brreg_fallback_clearly_without_exposing_internal_data()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Demo");
+            builder.ConfigureAppConfiguration(config =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["LiveDemo:Enabled"] = "true",
+                    ["LiveDemo:OrganizationNumber"] = "999888777",
+                    ["LiveDemo:BrregFallbackEnabled"] = "true"
+                });
+            });
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IBrregClient>();
+                services.AddScoped<IBrregClient, UnavailableBrregClient>();
+            });
+        });
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var run = await CreateRunAsync(client, session.Token);
+
+        await ProcessAsync(factory, run.RunId);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var persistedRun = await dbContext.LiveDemoRuns.SingleAsync(
+            candidate => candidate.Id == run.RunId,
+            TestContext.Current.CancellationToken);
+        persistedRun.BrregMode.Should().Be("fallback");
+        var brregStep = await dbContext.LiveDemoRunSteps.SingleAsync(
+            candidate => candidate.RunId == run.RunId && candidate.Key == "brreg-checked",
+            TestContext.Current.CancellationToken);
+        brregStep.PublicSummary.Should().Contain("fallback-snapshot");
+        brregStep.PublicSummary.Should().NotContain("upstream-secret");
+        var customer = await dbContext.Customers.SingleAsync(
+            candidate => candidate.Id == persistedRun.CustomerId,
+            TestContext.Current.CancellationToken);
+        customer.Name.Should().Be("Fiktiv Brreg demo snapshot AS");
     }
 
     [Fact]
@@ -203,6 +257,17 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         Guid? CaseId,
         Guid? DocumentId,
         Guid? DeliveryPackageId);
+
+    private sealed class UnavailableBrregClient : IBrregClient
+    {
+        public Task<IReadOnlyList<BrregOrganization>> SearchAsync(string query, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<BrregOrganization>>([]);
+
+        public Task<BrregOrganization?> GetByOrganizationNumberAsync(
+            string organizationNumber,
+            CancellationToken cancellationToken) =>
+            throw new HttpRequestException("upstream-secret");
+    }
 
     private static async Task<CreateDemoSessionResponse> CreateDemoSessionAsync(HttpClient client)
     {

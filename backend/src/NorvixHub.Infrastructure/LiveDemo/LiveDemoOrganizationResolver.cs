@@ -38,7 +38,8 @@ public sealed class LiveDemoOrganizationResolver(
                         organization.Municipality,
                         organization.SourceUpdatedAt),
                     stopwatch.ElapsedMilliseconds,
-                    null);
+                    null,
+                    organization.RawJson);
             }
             catch (LiveDemoOrganizationResolutionException)
             {
@@ -77,7 +78,8 @@ public sealed class LiveDemoOrganizationResolver(
                 configuration.BrregFallbackMunicipality,
                 configuration.BrregFallbackSourceUpdatedAt),
             durationMs,
-            "Brreg svarte ikke innenfor den avgrensede demoforespørselen.");
+            "Brreg svarte ikke innenfor den avgrensede demoforespørselen.",
+            null);
     }
 
     private static bool IsTransient(Exception exception, CancellationToken cancellationToken) =>

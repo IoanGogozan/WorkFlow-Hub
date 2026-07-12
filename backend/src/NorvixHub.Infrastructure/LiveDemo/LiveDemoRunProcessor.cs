@@ -16,11 +16,13 @@ public sealed class LiveDemoRunProcessor(
     NorvixHubDbContext dbContext,
     IAuditEventWriter auditEventWriter,
     IDemoPdfGenerator demoPdfGenerator,
-    IFileStorage fileStorage) : ILiveDemoRunProcessor
+    IFileStorage fileStorage,
+    ILiveDemoOrganizationResolver organizationResolver) : ILiveDemoRunProcessor
 {
     public async Task ProcessAsync(Guid runId, CancellationToken cancellationToken)
     {
         await ProcessRequestCreatedAsync(runId, cancellationToken);
+        await ProcessBrregCheckedAsync(runId, cancellationToken);
         await ProcessCaseCreatedAsync(runId, cancellationToken);
         await ProcessDocumentCreatedAsync(runId, cancellationToken);
         await ProcessRunCompletedAsync(runId, cancellationToken);
@@ -33,6 +35,52 @@ public sealed class LiveDemoRunProcessor(
             "Fiktiv henvendelse registrert.",
             "RUN-REQUEST",
             cancellationToken);
+
+    private async Task ProcessBrregCheckedAsync(Guid runId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var run = await dbContext.LiveDemoRuns.SingleOrDefaultAsync(candidate => candidate.Id == runId, cancellationToken)
+            ?? throw new InvalidOperationException("Live demo run was not found.");
+        if (run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
+        {
+            return;
+        }
+
+        var step = await dbContext.LiveDemoRunSteps.SingleAsync(
+            candidate => candidate.RunId == runId && candidate.Key == "brreg-checked",
+            cancellationToken);
+        if (step.Status == LiveDemoRunStepStatus.Completed)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        try
+        {
+            StartRunAndStep(run, step, now);
+            var resolution = await organizationResolver.ResolveAsync(run.OrganizationNumber, cancellationToken);
+            var customer = await GetOrCreateBrregCustomerAsync(run, resolution, now, cancellationToken);
+            run.SetInternalArtifacts(null, customer.Id, null, null, null, now);
+            run.SetBrregEvidence(resolution.Mode, resolution.Organization.SourceUpdatedAt, now);
+            var summary = resolution.Mode == "live"
+                ? $"Firmadata kontrollert mot Brreg for {resolution.Organization.Name}."
+                : "Brreg var utilgjengelig; et tydelig merket fallback-snapshot ble brukt.";
+            step.MarkCompleted(summary, resolution.Mode, now);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await WriteAuditAsync(run, "LiveDemoStepCompleted", "brreg-checked", cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (LiveDemoOrganizationResolutionException exception)
+        {
+            await MarkFailedAsync(run, step, "brreg-checked", exception, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await MarkFailedAsync(run, step, "brreg-checked", exception, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
 
     private Task ProcessCaseCreatedAsync(Guid runId, CancellationToken cancellationToken) =>
         ProcessInternalStepAsync(
@@ -190,33 +238,11 @@ public sealed class LiveDemoRunProcessor(
                 cancellationToken)
             : throw new InvalidOperationException("Live demo intake was not created.");
 
-        Customer? customer = null;
-        if (run.CustomerId is { } customerId)
-        {
-            customer = await dbContext.Customers.SingleAsync(
+        var customer = run.CustomerId is { } customerId
+            ? await dbContext.Customers.SingleAsync(
                 candidate => candidate.Id == customerId && candidate.TenantId == run.TenantId,
-                cancellationToken);
-        }
-        else
-        {
-            customer = await dbContext.Customers.SingleOrDefaultAsync(
-                candidate => candidate.TenantId == run.TenantId && candidate.OrganizationNumber == run.OrganizationNumber,
-                cancellationToken);
-            if (customer is null)
-            {
-                customer = new Customer
-                {
-                    TenantId = run.TenantId,
-                    CreatedBy = run.CreatedBy,
-                    Name = "Fiktiv live-demo kunde",
-                    OrganizationNumber = run.OrganizationNumber,
-                    BrregDataJson = "{\"source\":\"fictional-live-demo\"}",
-                    Source = "LiveDemo",
-                    SourceUpdatedAt = now
-                };
-                dbContext.Customers.Add(customer);
-            }
-        }
+                cancellationToken)
+            : throw new InvalidOperationException("Live demo Brreg customer was not created.");
 
         CaseWorkspace? caseWorkspace = null;
         if (run.CaseId is { } caseId)
@@ -254,6 +280,42 @@ public sealed class LiveDemoRunProcessor(
         }
 
         run.SetInternalArtifacts(intake.Id, customer.Id, caseWorkspace.Id, null, null, now);
+    }
+
+    private async Task<Customer> GetOrCreateBrregCustomerAsync(
+        LiveDemoRun run,
+        LiveDemoOrganizationResolution resolution,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var customer = await dbContext.Customers.SingleOrDefaultAsync(
+            candidate => candidate.TenantId == run.TenantId &&
+                candidate.OrganizationNumber == resolution.Organization.OrganizationNumber,
+            cancellationToken);
+        var internalData = resolution.InternalRawJson ??
+            $"{{\"source\":\"live-demo-fallback\",\"mode\":\"{resolution.Mode}\"}}";
+        if (customer is null)
+        {
+            customer = new Customer
+            {
+                TenantId = run.TenantId,
+                CreatedBy = run.CreatedBy,
+                Name = resolution.Organization.Name,
+                OrganizationNumber = resolution.Organization.OrganizationNumber,
+                BrregDataJson = internalData,
+                Source = $"LiveDemoBrreg:{resolution.Mode}",
+                SourceUpdatedAt = resolution.Organization.SourceUpdatedAt
+            };
+            dbContext.Customers.Add(customer);
+            return customer;
+        }
+
+        customer.Name = resolution.Organization.Name;
+        customer.BrregDataJson = internalData;
+        customer.Source = $"LiveDemoBrreg:{resolution.Mode}";
+        customer.SourceUpdatedAt = resolution.Organization.SourceUpdatedAt;
+        customer.MarkUpdated(run.CreatedBy, now);
+        return customer;
     }
 
     private async Task CreateDocumentAndDeliveryPackageAsync(
