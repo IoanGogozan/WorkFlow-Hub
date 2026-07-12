@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using NorvixHub.Application.Audit;
 using NorvixHub.Application.Documents;
@@ -117,7 +119,11 @@ public sealed class LiveDemoRunProcessor(
                 run.TenantId, run.CreatedBy, run.CaseId!.Value, "Fiktiv live-demo kunde", run.CustomerReference,
                 document.Id, version.Id, version.OriginalFilename, version.SizeBytes, "LiveDemoPdf", "Approved", null, null, run.Id), cancellationToken);
             if (!result.Succeeded || result.Item is null) throw new InvalidOperationException(result.PublicMessage);
-            run.SetSharePointEvidence(result.Item.DriveId, result.Item.ParentPath, result.Item.ExternalItemId, now);
+            run.SetSharePointEvidence(
+                CreateSafeReference(result.Item.DriveId),
+                CreateSafeReference(result.Item.ParentPath),
+                CreateSafeReference(result.Item.ExternalItemId),
+                now);
             step.MarkCompleted("Simulated SharePoint adapter — no Microsoft 365 tenant connected.", result.Item.ExternalItemId, now);
             await dbContext.SaveChangesAsync(cancellationToken);
             await WriteAuditAsync(run, "LiveDemoStepCompleted", "sharepoint-synced", cancellationToken);
@@ -435,6 +441,9 @@ public sealed class LiveDemoRunProcessor(
 
     private static string CreateCaseNumber(LiveDemoRun run) =>
         $"LIVE-{run.CreatedAt:yyyy}-{run.Id:N}"[..18].ToUpperInvariant();
+
+    private static string CreateSafeReference(string value) =>
+        "SP-" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)))[..12];
 
     private async Task MarkFailedAsync(
         LiveDemoRun run,

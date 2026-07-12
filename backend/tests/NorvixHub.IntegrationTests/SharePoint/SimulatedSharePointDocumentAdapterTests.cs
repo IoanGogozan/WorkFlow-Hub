@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using NorvixHub.Application.SharePoint;
 using NorvixHub.Application.Integrations;
+using NorvixHub.Domain.Documents;
 using NorvixHub.Domain.Integrations;
 using NorvixHub.Infrastructure.Persistence;
 using NorvixHub.IntegrationTests.Support;
@@ -25,9 +26,8 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
         var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
         var tenantId = Guid.NewGuid();
-        var request = new SharePointDocumentSyncRequest(
-            tenantId, Guid.NewGuid(), Guid.NewGuid(), "Fjord Pumpeteknikk AS", "CASE-2026-0014",
-            Guid.NewGuid(), Guid.NewGuid(), "service-request.pdf", 238144, "ServiceRequest", "Approved");
+        var request = await CreateRequestAsync(
+            scope, tenantId, Guid.NewGuid(), "service-request.pdf", "CASE-2026-0014");
 
         var first = await adapter.SynchronizeAsync(request, TestContext.Current.CancellationToken);
         var second = await adapter.SynchronizeAsync(request, TestContext.Current.CancellationToken);
@@ -38,6 +38,8 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         second.AlreadySynchronized.Should().BeTrue();
         (await dbContext.SimulatedSharePointDocumentItems.CountAsync(item => item.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(1);
         (await dbContext.SimulatedSharePointOperations.CountAsync(operation => operation.TenantId == tenantId, TestContext.Current.CancellationToken)).Should().Be(9);
+        (await dbContext.SimulatedSharePointOperations.Where(operation => operation.TenantId == tenantId)
+            .AllAsync(operation => operation.DurationMilliseconds > 0, TestContext.Current.CancellationToken)).Should().BeTrue();
     }
 
     [Fact]
@@ -46,11 +48,12 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         using var scope = _factory.Services.CreateScope();
         var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
         var tenantId = Guid.NewGuid();
-        var documentId = Guid.NewGuid();
-        var first = new SharePointDocumentSyncRequest(tenantId, null, Guid.NewGuid(), "Fjord Pumpeteknikk AS", "CASE-2026-0015", documentId, Guid.NewGuid(), "report.pdf", 100, "Report", "Approved");
+        var first = await CreateRequestAsync(scope, tenantId, Guid.NewGuid(), "report.pdf", "CASE-2026-0015");
         var created = await adapter.SynchronizeAsync(first, TestContext.Current.CancellationToken);
-        var updated = await adapter.SynchronizeAsync(first with { DocumentVersionId = Guid.NewGuid(), ExpectedETag = created.Item!.ETag }, TestContext.Current.CancellationToken);
-        var stale = await adapter.SynchronizeAsync(first with { DocumentVersionId = Guid.NewGuid(), ExpectedETag = created.Item!.ETag }, TestContext.Current.CancellationToken);
+        var secondVersion = await AddVersionAsync(scope, first);
+        var updated = await adapter.SynchronizeAsync(secondVersion with { ExpectedETag = created.Item!.ETag }, TestContext.Current.CancellationToken);
+        var thirdVersion = await AddVersionAsync(scope, first);
+        var stale = await adapter.SynchronizeAsync(thirdVersion with { ExpectedETag = created.Item!.ETag }, TestContext.Current.CancellationToken);
 
         updated.Succeeded.Should().BeTrue();
         updated.Item!.ExternalItemId.Should().Be(created.Item.ExternalItemId);
@@ -90,8 +93,8 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         var caseId = Guid.NewGuid();
         var firstTenant = Guid.NewGuid();
         var secondTenant = Guid.NewGuid();
-        await adapter.SynchronizeAsync(new SharePointDocumentSyncRequest(firstTenant, null, caseId, "Customer A", "CASE-A", Guid.NewGuid(), Guid.NewGuid(), "a.pdf", 1, "Report", "Approved"), TestContext.Current.CancellationToken);
-        await adapter.SynchronizeAsync(new SharePointDocumentSyncRequest(secondTenant, null, caseId, "Customer B", "CASE-B", Guid.NewGuid(), Guid.NewGuid(), "b.pdf", 1, "Report", "Approved"), TestContext.Current.CancellationToken);
+        await adapter.SynchronizeAsync(await CreateRequestAsync(scope, firstTenant, caseId, "a.pdf", "CASE-A"), TestContext.Current.CancellationToken);
+        await adapter.SynchronizeAsync(await CreateRequestAsync(scope, secondTenant, caseId, "b.pdf", "CASE-B"), TestContext.Current.CancellationToken);
 
         var documents = await adapter.ListCaseDocumentsAsync(firstTenant, caseId, TestContext.Current.CancellationToken);
 
@@ -126,9 +129,7 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
                 new Dictionary<string, string?> { ["SharePoint:SimulateThrottling"] = "true" })));
         using var scope = factory.Services.CreateScope();
         var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
-        var request = new SharePointDocumentSyncRequest(
-            Guid.NewGuid(), null, Guid.NewGuid(), "Fjord", "CASE-429", Guid.NewGuid(), Guid.NewGuid(),
-            "throttled.pdf", 10, "Report", "Approved");
+        var request = await CreateRequestAsync(scope, Guid.NewGuid(), Guid.NewGuid(), "throttled.pdf", "CASE-429");
 
         var first = await adapter.SynchronizeAsync(request, TestContext.Current.CancellationToken);
         var retry = await adapter.SynchronizeAsync(request, TestContext.Current.CancellationToken);
@@ -139,4 +140,77 @@ public sealed class SimulatedSharePointDocumentAdapterTests : IClassFixture<Norv
         retry.Succeeded.Should().BeTrue();
         retry.StatusCode.Should().Be(201);
     }
+
+    [Fact]
+    public async Task Document_version_from_another_tenant_is_rejected_without_creating_an_item()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var adapter = scope.ServiceProvider.GetRequiredService<ISharePointDocumentAdapterResolver>().GetCurrent();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var ownerTenant = Guid.NewGuid();
+        var attackingTenant = Guid.NewGuid();
+        var ownedRequest = await CreateRequestAsync(scope, ownerTenant, Guid.NewGuid(), "private.pdf", "CASE-PRIVATE");
+
+        var result = await adapter.SynchronizeAsync(
+            ownedRequest with { TenantId = attackingTenant },
+            TestContext.Current.CancellationToken);
+
+        result.Succeeded.Should().BeFalse();
+        result.StatusCode.Should().Be(404);
+        result.ErrorCode.Should().Be("DOCUMENT_NOT_FOUND");
+        (await dbContext.SimulatedSharePointDocumentItems.AnyAsync(
+            item => item.TenantId == attackingTenant,
+            TestContext.Current.CancellationToken)).Should().BeFalse();
+    }
+
+    private static async Task<SharePointDocumentSyncRequest> CreateRequestAsync(
+        IServiceScope scope,
+        Guid tenantId,
+        Guid caseId,
+        string filename,
+        string caseNumber)
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var document = new DocumentRecord { TenantId = tenantId, Title = filename };
+        var version = CreateVersion(tenantId, document.Id, filename, 1);
+        document.SetCurrentVersion(version.Id, null, DateTimeOffset.UtcNow);
+        dbContext.Documents.Add(document);
+        dbContext.DocumentVersions.Add(version);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return new SharePointDocumentSyncRequest(
+            tenantId, null, caseId, "Fjord Pumpeteknikk AS", caseNumber,
+            document.Id, version.Id, filename, version.SizeBytes, "Report", "Approved");
+    }
+
+    private static async Task<SharePointDocumentSyncRequest> AddVersionAsync(
+        IServiceScope scope,
+        SharePointDocumentSyncRequest request)
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var versionNumber = await dbContext.DocumentVersions.CountAsync(
+            version => version.TenantId == request.TenantId && version.DocumentId == request.DocumentId,
+            TestContext.Current.CancellationToken) + 1;
+        var version = CreateVersion(request.TenantId, request.DocumentId, request.Filename, versionNumber);
+        var document = await dbContext.Documents.SingleAsync(
+            item => item.TenantId == request.TenantId && item.Id == request.DocumentId,
+            TestContext.Current.CancellationToken);
+        document.SetCurrentVersion(version.Id, null, DateTimeOffset.UtcNow);
+        dbContext.DocumentVersions.Add(version);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return request with { DocumentVersionId = version.Id };
+    }
+
+    private static DocumentVersion CreateVersion(Guid tenantId, Guid documentId, string filename, int versionNumber) =>
+        new()
+        {
+            TenantId = tenantId,
+            DocumentId = documentId,
+            VersionNumber = versionNumber,
+            BlobContainer = "test",
+            BlobName = Guid.NewGuid().ToString("N"),
+            OriginalFilename = filename,
+            ContentType = "application/pdf",
+            SizeBytes = 100,
+            Sha256Hash = new string('a', 64)
+        };
 }

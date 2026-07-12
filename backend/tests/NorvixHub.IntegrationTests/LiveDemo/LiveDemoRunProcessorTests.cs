@@ -83,7 +83,12 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         var sharePointStep = steps.Single(step => step.Key == "sharepoint-synced");
         sharePointStep.EvidenceMode.Should().Be("simulated-sharepoint");
         sharePointStep.PublicSummary.Should().Contain("no Microsoft 365 tenant connected");
-        persistedRun.SharePointFileItemId.Should().StartWith("01SP-DEMO-");
+        persistedRun.SharePointDriveId.Should().NotBeNull();
+        persistedRun.SharePointFolderItemId.Should().NotBeNull().And.NotContain("/");
+        persistedRun.SharePointFileItemId.Should().NotBeNull();
+        persistedRun.SharePointDriveId!.Length.Should().BeLessThanOrEqualTo(16);
+        persistedRun.SharePointFolderItemId!.Length.Should().BeLessThanOrEqualTo(16);
+        persistedRun.SharePointFileItemId!.Length.Should().BeLessThanOrEqualTo(16);
 
         var customer = await dbContext.Customers.SingleAsync(
             candidate => candidate.Id == persistedRun.CustomerId,
