@@ -16,6 +16,8 @@ export function LiveDemoResultCard({ result, totalDurationMs }: { result: LiveDe
         Fullført på {duration}
       </h2>
       <ul className="mt-5 grid gap-3 text-sm leading-6 text-[#e5edf9] sm:grid-cols-2">
+        {result.brregMode === "live" ? <li>Brreg: Live kontroll</li> : null}
+        {result.brregMode === "fallback" ? <li>Brreg: Fallback-snapshot</li> : null}
         {result.brregMode ? <li>✓ Firmadata kontrollert ({result.brregMode})</li> : null}
         {result.caseNumber ? <li>✓ Sak {result.caseNumber} opprettet</li> : null}
         <li>✓ Fiktiv PDF opprettet og lagret</li>

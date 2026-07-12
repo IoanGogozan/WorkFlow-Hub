@@ -56,6 +56,7 @@ export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, re
 function createStages(steps: LiveDemoRunStep[]): LiveDemoStage[] {
   return publicStages.map((title) => {
     const stageSteps = steps.filter((step) => step.publicStage === title);
+    const brregStep = stageSteps.find((step) => step.key === "brreg-checked");
     const status = getStageStatus(stageSteps);
     const durationMs = stageSteps.reduce((total, step) => total + (step.durationMs ?? 0), 0);
     return {
@@ -65,8 +66,28 @@ function createStages(steps: LiveDemoRunStep[]): LiveDemoStage[] {
       provider: stageSteps.map((step) => step.provider).filter((value, index, values) => values.indexOf(value) === index).join(" + ") || "Venter på kjøring",
       summary: stageSteps.find((step) => step.publicErrorMessage)?.publicErrorMessage ?? stageSteps.find((step) => step.publicSummary)?.publicSummary ?? (status === "Venter" ? "Venter på neste sikre steg." : "Status oppdateres."),
       evidence: stageSteps.find((step) => step.publicEvidenceReference)?.publicEvidenceReference ?? "–",
+      brregEvidence: createBrregEvidence(brregStep),
     };
   });
+}
+
+function createBrregEvidence(step: LiveDemoRunStep | undefined): LiveDemoStage["brregEvidence"] {
+  if (step?.status !== "Completed") {
+    return undefined;
+  }
+
+  if (step.publicEvidenceReference === "live") {
+    const duration = step.durationMs === null
+      ? "fullført"
+      : `${(step.durationMs / 1000).toLocaleString("nb-NO", { maximumFractionDigits: 1 })} sek`;
+    return { mode: "live", text: `Live kontroll – ${duration}` };
+  }
+
+  if (step.publicEvidenceReference === "fallback") {
+    return { mode: "fallback", text: "Fallback-snapshot – live tjeneste var utilgjengelig" };
+  }
+
+  return undefined;
 }
 
 function getStageStatus(steps: LiveDemoRunStep[]): LiveDemoStage["status"] {
