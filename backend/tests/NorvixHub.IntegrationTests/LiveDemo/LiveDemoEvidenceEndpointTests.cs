@@ -49,6 +49,8 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
         evidence.SharePoint!.Mode.Should().Be("simulated");
         evidence.SharePoint.Operations.Should().NotBeEmpty();
         evidence.AuditEvents.Select(item => item.Timestamp).Should().BeInAscendingOrder();
+        evidence.AuditEvents.Should().Contain(item =>
+            item.Provider == "Brreg" && item.DurationMs.HasValue && item.Attempt == 1);
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();

@@ -72,6 +72,7 @@ try {
         $env:LiveDemo__OrganizationNumber = "999888777"
         $env:LiveDemo__WorkerPollMilliseconds = "100"
         $env:LiveDemo__RunRecoveryMinutes = "5"
+        $env:Storage__Local__RootPath = Join-Path $Root "storage/e2e-documents"
         # Keep the public E2E deterministic: no external Brreg call is allowed in CI.
         $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
         $env:LiveDemo__BrregFallbackEnabled = "true"
@@ -99,6 +100,7 @@ try {
         $env:LiveDemo__OrganizationNumber = "999888777"
         $env:LiveDemo__WorkerPollMilliseconds = "100"
         $env:LiveDemo__RunRecoveryMinutes = "5"
+        $env:Storage__Local__RootPath = Join-Path $Root "storage/e2e-documents"
         # Match the API process so the worker uses the labelled local fallback.
         $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
         $env:LiveDemo__BrregFallbackEnabled = "true"

@@ -162,6 +162,19 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
     publicErrorCode: null,
     publicErrorMessage: null,
     steps,
-    result: { caseNumber: "LIVE-2026-ABCD1234", brregMode: mode, sharePointFolderReference: "Customers/CASE-2026-ABCD", sharePointFileReference: "01SP-DEMO-ABCD", erpReceiptId: null, auditEventCount: 6 },
+    result: {
+      caseNumber: "LIVE-2026-ABCD1234",
+      brregMode: mode,
+      sharePointFolderReference: "Customers/CASE-2026-ABCD",
+      sharePointFileReference: "01SP-DEMO-ABCD",
+      erpReceiptId: null,
+      auditEventCount: 6,
+      evidenceHref: `/technical/live-runs/${runId}`,
+      caseHref: "/cases/case-id",
+      documentHref: "/documents/document-id",
+      documentDownloadHref: "/api/documents/document-id/download",
+      sharePointEvidenceHref: `/technical/live-runs/${runId}#sharepoint`,
+      auditHref: `/technical/live-runs/${runId}#audit`,
+    },
   };
 }

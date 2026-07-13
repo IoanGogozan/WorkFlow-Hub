@@ -119,6 +119,22 @@ The public demo is not the same as a real customer SaaS deployment. Before proce
 
 Record exact date and command output summaries here only after validation commands have been run in the current environment.
 
+2026-07-13 — Phase 2 detailed evidence page completion:
+
+- added `/technical/live-runs/{runId}` with authenticated loading, session
+  expiry handling, public-safe errors, and run-specific overview;
+- added request, Brreg live/fallback, exact case/document/PDF, local SharePoint
+  simulator, operation history, and chronological audit evidence;
+- protected PDF opening uses the demo bearer token; the E2E runner now gives
+  API and worker processes the same isolated document-storage root;
+- frontend lint and production build passed; the dynamic evidence route is
+  present in the production route manifest;
+- full Playwright public/technical suite passed: 8 tests, including the new
+  exact-run evidence journey, 0 failed;
+- full backend Release suite passed: 164 tests total (6 contract, 20 unit,
+  138 integration), 0 failed and 0 skipped;
+- `git diff --check` passed; no database migration is required.
+
 2026-07-13 — Phase 1 run-specific evidence API completion:
 
 - added public-safe evidence contracts and the tenant-scoped

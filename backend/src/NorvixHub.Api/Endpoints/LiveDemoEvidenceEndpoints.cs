@@ -65,11 +65,11 @@ public static class LiveDemoEvidenceEndpoints
                     candidate.TenantId == tenantId,
                 cancellationToken)
             : null;
-        var brregStep = await db.LiveDemoRunSteps.AsNoTracking().SingleOrDefaultAsync(
-            candidate => candidate.RunId == run.Id &&
-                candidate.TenantId == tenantId &&
-                candidate.Key == "brreg-checked",
-            cancellationToken);
+        var runSteps = await db.LiveDemoRunSteps.AsNoTracking()
+            .Where(candidate => candidate.RunId == run.Id && candidate.TenantId == tenantId)
+            .OrderBy(candidate => candidate.Sequence)
+            .ToListAsync(cancellationToken);
+        var brregStep = runSteps.SingleOrDefault(candidate => candidate.Key == "brreg-checked");
 
         var sharePointItem = run.DocumentId is { } synchronizedDocumentId
             ? await db.SimulatedSharePointDocumentItems.AsNoTracking().SingleOrDefaultAsync(
@@ -97,7 +97,7 @@ public static class LiveDemoEvidenceEndpoints
 
         return Results.Ok(CreateResponse(
             run, intake, customer, caseItem, document, version, brregStep,
-            sharePointItem, sharePointOperations, auditEvents, sharePointOptions.Value));
+            sharePointItem, sharePointOperations, auditEvents, runSteps, sharePointOptions.Value));
     }
 
     private static LiveDemoEvidenceResponse CreateResponse(
@@ -111,6 +111,7 @@ public static class LiveDemoEvidenceEndpoints
         Domain.SharePoint.SimulatedSharePointDocumentItem? sharePointItem,
         IReadOnlyList<Domain.SharePoint.SimulatedSharePointOperation> sharePointOperations,
         IReadOnlyList<Domain.Audit.AuditEvent> auditEvents,
+        IReadOnlyList<LiveDemoRunStep> runSteps,
         SharePointOptions sharePointOptions)
     {
         var caseHref = caseItem is null ? null : $"/cases/{caseItem.Id}";
@@ -146,9 +147,7 @@ public static class LiveDemoEvidenceEndpoints
                 ? null
                 : new LiveDemoEvidenceErpResponse(
                     "demo-receiver", "Received", Shorten(run.ErpReceiptId), null, 1, null, null),
-            auditEvents.Select(audit => new LiveDemoEvidenceAuditEventResponse(
-                audit.CreatedAt, audit.Action, audit.Action, audit.EntityType,
-                "Recorded", Shorten(audit.CorrelationId ?? run.CorrelationId)!)).ToList(),
+            auditEvents.Select(audit => CreateAuditEvent(audit, run, runSteps)).ToList(),
             new LiveDemoEvidenceLinksResponse(
                 caseHref, documentHref, downloadHref, deliveryHref,
                 "/technical/sharepoint", "/integrations"));
@@ -213,6 +212,45 @@ public static class LiveDemoEvidenceEndpoints
             ParseMetadata(item.MetadataJson),
             mappedOperations,
             "/technical/sharepoint");
+    }
+
+    private static LiveDemoEvidenceAuditEventResponse CreateAuditEvent(
+        Domain.Audit.AuditEvent audit,
+        LiveDemoRun run,
+        IReadOnlyList<LiveDemoRunStep> steps)
+    {
+        var stepKey = ReadStringProperty(audit.AfterJson, "stepKey");
+        var step = stepKey is null ? null : steps.SingleOrDefault(candidate => candidate.Key == stepKey);
+        return new LiveDemoEvidenceAuditEventResponse(
+            audit.CreatedAt,
+            audit.Action,
+            step?.PublicStage ?? audit.Action,
+            audit.EntityType,
+            step?.Status.ToString() ?? "Recorded",
+            Shorten(audit.CorrelationId ?? run.CorrelationId)!,
+            step?.Provider,
+            step?.DurationMs,
+            step?.AttemptCount);
+    }
+
+    private static string? ReadStringProperty(string? json, string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.TryGetProperty(propertyName, out var property)
+                ? property.GetString()
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static IReadOnlyDictionary<string, string> ParseMetadata(string json)

@@ -75,6 +75,27 @@ export async function apiForm<T>(
   return response.json() as Promise<T>;
 }
 
+export async function apiBlob(path: string, signal?: AbortSignal): Promise<Blob> {
+  const response = await fetch(path, {
+    headers: {
+      Accept: "application/pdf, application/octet-stream",
+      "Cache-Control": "no-store",
+      Pragma: "no-cache",
+      ...authHeaders(),
+    },
+    cache: "no-store",
+    signal,
+  });
+
+  if (!response.ok) {
+    const message = await getErrorMessage(response);
+    handleAuthFailure(response.status, message);
+    throw new Error(message);
+  }
+
+  return response.blob();
+}
+
 function authHeaders(): Record<string, string> {
   const token = getDemoSessionToken();
   if (token) {

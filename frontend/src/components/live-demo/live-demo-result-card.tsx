@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CLIENT_DEMO_CONTACT_URL } from "@/lib/site-config";
 import type { LiveDemoRunResult } from "@/lib/live-demo";
 
@@ -29,12 +30,20 @@ export function LiveDemoResultCard({ result, totalDurationMs }: { result: LiveDe
         {result.erpReceiptId ? <li>✓ ERP demo receiver: {result.erpReceiptId}</li> : null}
         {result.auditEventCount !== null ? <li>✓ {result.auditEventCount} hendelser lagret i loggen</li> : null}
       </ul>
-      <a
-        className="mt-7 inline-flex rounded-md bg-white px-5 py-3 text-sm font-semibold text-[#172033] hover:bg-[#eef2f7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-        href={CLIENT_DEMO_CONTACT_URL}
-      >
-        Beskriv prosessen deres
-      </a>
+      <div className="mt-7 flex flex-wrap gap-3">
+        <Link
+          className="inline-flex rounded-md bg-white px-5 py-3 text-sm font-semibold text-[#172033] hover:bg-[#eef2f7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+          href={result.evidenceHref}
+        >
+          Se hva som faktisk ble opprettet
+        </Link>
+        <a
+          className="inline-flex rounded-md border border-[#9fc2ff] px-5 py-3 text-sm font-semibold text-white hover:bg-[#26334a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+          href={CLIENT_DEMO_CONTACT_URL}
+        >
+          Beskriv prosessen deres
+        </a>
+      </div>
     </section>
   );
 }

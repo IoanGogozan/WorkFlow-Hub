@@ -6,4 +6,7 @@ public sealed record LiveDemoEvidenceAuditEventResponse(
     string OperationLabel,
     string EntityType,
     string Result,
-    string CorrelationId);
+    string CorrelationId,
+    string? Provider,
+    long? DurationMs,
+    int? Attempt);

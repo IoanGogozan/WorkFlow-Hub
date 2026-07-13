@@ -22,6 +22,12 @@ export type LiveDemoRunResult = {
   sharePointFileReference: string | null;
   erpReceiptId: string | null;
   auditEventCount: number | null;
+  evidenceHref: string;
+  caseHref: string | null;
+  documentHref: string | null;
+  documentDownloadHref: string | null;
+  sharePointEvidenceHref: string | null;
+  auditHref: string;
 };
 
 export type LiveDemoRun = {

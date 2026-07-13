@@ -79,7 +79,7 @@ public sealed class LiveDemoEvidenceContractTests
             null,
             [new LiveDemoEvidenceAuditEventResponse(
                 timestamp, "LiveDemoRunCompleted", "Kjøring fullført", "LiveDemoRun",
-                "Completed", "corr-0142")],
+                "Completed", "corr-0142", "Norvix WorkFlow Hub", 20, 1)],
             new LiveDemoEvidenceLinksResponse(
                 "/cases/case-id", $"/documents/{documentId}",
                 $"/documents/{documentId}/download", "/delivery-packages/package-id",
