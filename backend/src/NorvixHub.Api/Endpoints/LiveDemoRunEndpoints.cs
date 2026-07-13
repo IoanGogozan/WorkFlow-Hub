@@ -301,7 +301,13 @@ public static class LiveDemoRunEndpoints
             ShortenExternalReference(run.SharePointFolderItemId),
             ShortenExternalReference(run.SharePointFileItemId),
             ShortenExternalReference(run.ErpReceiptId),
-            auditEventCount);
+            auditEventCount,
+            $"/technical/live-runs/{run.Id}",
+            run.CaseId is { } resultCaseId ? $"/cases/{resultCaseId}" : null,
+            run.DocumentId is { } resultDocumentId ? $"/documents/{resultDocumentId}" : null,
+            run.DocumentId is { } downloadDocumentId ? $"/api/documents/{downloadDocumentId}/download" : null,
+            run.SharePointFileItemId is not null ? $"/technical/live-runs/{run.Id}#sharepoint" : null,
+            $"/technical/live-runs/{run.Id}#audit");
     }
 
     private static string? ShortenExternalReference(string? value) =>

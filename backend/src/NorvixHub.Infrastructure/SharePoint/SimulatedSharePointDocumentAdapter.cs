@@ -164,7 +164,7 @@ public sealed class SimulatedSharePointDocumentAdapter(
         string? error,
         long startedTimestamp)
     {
-        dbContext.SimulatedSharePointOperations.Add(new SimulatedSharePointOperation { TenantId = request.TenantId, CreatedBy = request.ActorId, DocumentId = request.DocumentId, DocumentVersionId = request.DocumentVersionId, Operation = operation, HttpMethod = method, Target = target, StatusCode = status, Succeeded = succeeded, DurationMilliseconds = ElapsedMilliseconds(startedTimestamp), ErrorCode = error });
+        dbContext.SimulatedSharePointOperations.Add(new SimulatedSharePointOperation { TenantId = request.TenantId, CreatedBy = request.ActorId, LiveDemoRunId = request.LiveDemoRunId, DocumentId = request.DocumentId, DocumentVersionId = request.DocumentVersionId, Operation = operation, HttpMethod = method, Target = target, StatusCode = status, Succeeded = succeeded, DurationMilliseconds = ElapsedMilliseconds(startedTimestamp), ErrorCode = error });
         return Task.CompletedTask;
     }
 

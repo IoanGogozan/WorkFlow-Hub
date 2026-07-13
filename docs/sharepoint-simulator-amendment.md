@@ -1,11 +1,13 @@
-# SharePoint Simulator Amendment
+﻿# SharePoint Simulator Amendment
 
-Status: implemented temporary direction. The local simulator is active by
-default; Microsoft Graph remains intentionally inactive and unconfigured.
+> **Status: IMPLEMENTED REFERENCE — not a standalone active plan.**
+> Its SharePoint simulation boundary is incorporated into the active
+> [Verifiable Integration Demo](verifiable-integration-demo.md). Keep this
+> document as detailed implementation history and reference.
 
-This amendment replaces the live SharePoint prerequisite in the Live
-Integration Demo V2 plan while no Microsoft 365 tenant is available. It does
-not represent a live Microsoft Graph or SharePoint Online connection.
+This reference records the implemented decision to use a local simulator while
+no Microsoft 365 tenant is available. It does not represent a live Microsoft
+Graph or SharePoint Online connection.
 
 ## Honest product boundary
 

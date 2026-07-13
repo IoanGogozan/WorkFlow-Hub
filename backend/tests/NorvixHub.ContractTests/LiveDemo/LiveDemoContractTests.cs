@@ -66,11 +66,19 @@ public sealed class LiveDemoContractTests
             "folder-0142",
             "file-0142",
             "ERP-RECEIPT-0142",
-            7);
+            7,
+            "/technical/live-runs/run-id",
+            "/cases/case-id",
+            "/documents/document-id",
+            "/api/documents/document-id/download",
+            "/technical/live-runs/run-id#sharepoint",
+            "/technical/live-runs/run-id#audit");
         var capabilities = new LiveDemoCapabilitiesResponse(true, true, false, false, true);
 
         result.CaseNumber.Should().Be("LIVE-2026-0142");
         result.SharePointFolderReference.Should().Be("folder-0142");
+        result.EvidenceHref.Should().Be("/technical/live-runs/run-id");
+        result.DocumentDownloadHref.Should().EndWith("/download");
         capabilities.SharePointEnabled.Should().BeFalse();
         capabilities.ErpReceiverEnabled.Should().BeFalse();
     }

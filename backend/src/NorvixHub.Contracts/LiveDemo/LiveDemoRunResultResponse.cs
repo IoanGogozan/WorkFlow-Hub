@@ -6,4 +6,10 @@ public sealed record LiveDemoRunResultResponse(
     string? SharePointFolderReference,
     string? SharePointFileReference,
     string? ErpReceiptId,
-    int? AuditEventCount);
+    int? AuditEventCount,
+    string EvidenceHref,
+    string? CaseHref,
+    string? DocumentHref,
+    string? DocumentDownloadHref,
+    string? SharePointEvidenceHref,
+    string AuditHref);
