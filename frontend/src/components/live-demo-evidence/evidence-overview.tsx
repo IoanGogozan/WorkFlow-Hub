@@ -37,7 +37,7 @@ export function EvidenceOverview({ run }: EvidenceOverviewProps) {
         </div>
         <Link
           className="inline-flex w-fit shrink-0 rounded-md border border-[#bfdbfe] bg-[#eff6ff] px-4 py-2 text-sm font-semibold text-[#1d4ed8] hover:bg-[#dbeafe] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"
-          href="/live-preview"
+          href="/"
         >
           Tilbake til live-demo
         </Link>

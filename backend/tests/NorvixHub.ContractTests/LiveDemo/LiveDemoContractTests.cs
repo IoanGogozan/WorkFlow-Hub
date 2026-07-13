@@ -62,6 +62,7 @@ public sealed class LiveDemoContractTests
     {
         var result = new LiveDemoRunResultResponse(
             "LIVE-2026-0142",
+            "live-demo.pdf",
             "fallback",
             "folder-0142",
             "file-0142",
@@ -76,6 +77,7 @@ public sealed class LiveDemoContractTests
         var capabilities = new LiveDemoCapabilitiesResponse(true, true, false, false, true);
 
         result.CaseNumber.Should().Be("LIVE-2026-0142");
+        result.DocumentFileName.Should().Be("live-demo.pdf");
         result.SharePointFolderReference.Should().Be("folder-0142");
         result.EvidenceHref.Should().Be("/technical/live-runs/run-id");
         result.DocumentDownloadHref.Should().EndWith("/download");

@@ -1,5 +1,5 @@
-import { AutomationDemoPage } from "@/components/automation-demo-page";
+import { LiveDemoPreviewPage } from "@/components/live-demo/live-demo-preview-page";
 
 export default function HomePage() {
-  return <AutomationDemoPage />;
+  return <LiveDemoPreviewPage />;
 }

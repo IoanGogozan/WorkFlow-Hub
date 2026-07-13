@@ -1,4 +1,3 @@
-import { LiveDemoDetails } from "@/components/live-demo/live-demo-details";
 import {
   LiveDemoStageCard,
   type LiveDemoStage,
@@ -19,6 +18,7 @@ const publicStages = ["Mottatt", "Kontrollert", "Opprettet", "Synkronisert"];
 
 export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, retry, run }: LiveDemoRunPanelProps) {
   const stages = createStages(run?.steps ?? []);
+  const brregDurationMs = run?.steps.find((step) => step.key === "brreg-checked")?.durationMs ?? null;
   return (
     <section aria-labelledby="live-preview-run-heading" id="live-preview-run">
       <div className="rounded-xl border border-[#dce1e8] bg-[#fdfefe] p-5 sm:p-8">
@@ -43,12 +43,17 @@ export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, re
             <LiveDemoStageCard key={stage.title} stage={stage} />
           ))}
         </ol>
-        {run?.status === "Completed" && run.result ? <LiveDemoResultCard result={run.result} totalDurationMs={run.totalDurationMs} /> : null}
+        {run?.status === "Completed" && run.result ? (
+          <LiveDemoResultCard
+            brregDurationMs={brregDurationMs}
+            result={run.result}
+            totalDurationMs={run.totalDurationMs}
+          />
+        ) : null}
         {run?.canRetry ? (
           <button className="mt-6 rounded-md border border-[#315ea8] px-5 py-3 text-sm font-semibold text-[#315ea8] hover:bg-[#e8f0ff] disabled:cursor-not-allowed disabled:opacity-60" disabled={isStarting || isActive} onClick={retry} type="button">Prøv igjen</button>
         ) : null}
       </div>
-      <LiveDemoDetails />
     </section>
   );
 }

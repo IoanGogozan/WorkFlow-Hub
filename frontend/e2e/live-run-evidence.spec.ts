@@ -3,12 +3,16 @@ import { expect, test } from "@playwright/test";
 test("visitor can verify the exact artifacts created by a live run", async ({ page }) => {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
-  await page.goto("/live-preview");
+  await expect(page).toHaveURL(/\/$/);
 
   await page.getByRole("button", { name: "Kjør live demo" }).click();
   await expect(page.getByRole("heading", { name: /Fullført på/ })).toBeVisible({ timeout: 30_000 });
 
-  const caseResult = page.locator("li").filter({ hasText: "Sak LIVE-" }).first();
+  const caseResult = page
+    .getByRole("article")
+    .filter({ hasText: "Sak" })
+    .filter({ hasText: "LIVE-" })
+    .first();
   const caseNumber = (await caseResult.textContent())?.match(/LIVE-[0-9]{4}-[A-F0-9]+/)?.[0];
   expect(caseNumber).toBeTruthy();
 

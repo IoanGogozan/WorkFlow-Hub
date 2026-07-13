@@ -161,8 +161,9 @@ function DemoPageShell({
               ))}
             </ul>
             <p className="mt-5 border-t border-[#d8dee8] pt-4 text-xs leading-5 text-[#64748b]">
-              Demoen spiller av en ferdig, fiktiv arbeidsflyt. Den sender ikke
-              data til eksterne kunde-, dokument- eller økonomisystemer.
+              Demoen oppretter en ny fiktiv kjøring i et isolert arbeidsområde.
+              Brreg kan kontrolleres offentlig; ingen kunde-, Microsoft- eller
+              økonomisystemer kobles til.
             </p>
           </aside>
         </div>

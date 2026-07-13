@@ -294,9 +294,18 @@ public static class LiveDemoRunEndpoints
             .CountAsync(
                 candidate => candidate.TenantId == tenantId && candidate.EntityId == run.Id.ToString(),
                 cancellationToken);
+        var documentFileName = run.DocumentId is { } documentId
+            ? await dbContext.DocumentVersions
+                .AsNoTracking()
+                .Where(candidate => candidate.TenantId == tenantId && candidate.DocumentId == documentId)
+                .OrderByDescending(candidate => candidate.VersionNumber)
+                .Select(candidate => candidate.OriginalFilename)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
 
         return new LiveDemoRunResultResponse(
             caseNumber,
+            documentFileName,
             run.BrregMode,
             ShortenExternalReference(run.SharePointFolderItemId),
             ShortenExternalReference(run.SharePointFileItemId),

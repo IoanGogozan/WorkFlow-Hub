@@ -17,6 +17,7 @@ export type LiveDemoRunStep = {
 
 export type LiveDemoRunResult = {
   caseNumber: string | null;
+  documentFileName: string | null;
   brregMode: string | null;
   sharePointFolderReference: string | null;
   sharePointFileReference: string | null;

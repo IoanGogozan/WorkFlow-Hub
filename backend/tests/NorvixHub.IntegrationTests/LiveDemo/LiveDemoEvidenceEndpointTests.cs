@@ -109,6 +109,7 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
         run.Result!.EvidenceHref.Should().Be($"/technical/live-runs/{created.RunId}");
         run.Result.CaseHref.Should().Be($"/cases/{persisted.CaseId}");
         run.Result.DocumentHref.Should().Be($"/documents/{persisted.DocumentId}");
+        run.Result.DocumentFileName.Should().EndWith(".pdf");
         run.Result.DocumentDownloadHref.Should().Be($"/api/documents/{persisted.DocumentId}/download");
         run.Result.SharePointEvidenceHref.Should().Be($"/technical/live-runs/{created.RunId}#sharepoint");
         run.Result.AuditHref.Should().Be($"/technical/live-runs/{created.RunId}#audit");
