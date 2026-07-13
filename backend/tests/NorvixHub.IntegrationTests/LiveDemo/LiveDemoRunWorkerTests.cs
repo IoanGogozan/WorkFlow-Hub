@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using NorvixHub.Application.LiveDemo;
 using NorvixHub.Contracts.Auth;
 using NorvixHub.Contracts.LiveDemo;
 using NorvixHub.Domain.LiveDemo;
@@ -62,6 +64,56 @@ public sealed class LiveDemoRunWorkerTests : IClassFixture<NorvixHubApiFactory>
             TestContext.Current.CancellationToken)).Status.Should().Be(LiveDemoRunStatus.Completed);
     }
 
+    [Fact]
+    public async Task New_worker_instance_resumes_ERP_retry_after_controlled_failure()
+    {
+        var erpClient = new RestartErpDemoClient();
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Demo");
+            builder.ConfigureAppConfiguration(config =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["LiveDemo:Enabled"] = "true",
+                    ["LiveDemo:OrganizationNumber"] = "999888777",
+                    ["LiveDemo:WorkerPollMilliseconds"] = "100",
+                    ["LiveDemo:RunRecoveryMinutes"] = "5",
+                    ["ErpDemo:Enabled"] = "true"
+                });
+            });
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IErpDemoClient>();
+                services.AddSingleton<IErpDemoClient>(erpClient);
+            });
+        });
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var run = await CreateRunAsync(client, session.Token, simulateErpFailureOnce: true);
+        var firstWorker = CreateWorker(factory);
+
+        await firstWorker.RunOnceAsync(TestContext.Current.CancellationToken);
+        await RetryRunAsync(client, run.RunId, session.Token);
+        var restartedWorker = CreateWorker(factory);
+        await restartedWorker.RunOnceAsync(TestContext.Current.CancellationToken);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var persistedRun = await dbContext.LiveDemoRuns.SingleAsync(
+            candidate => candidate.Id == run.RunId,
+            TestContext.Current.CancellationToken);
+        persistedRun.Status.Should().Be(LiveDemoRunStatus.Completed);
+        persistedRun.ErpReceiptId.Should().Be("ERP-DEMO-WORKER01");
+        erpClient.Requests.Should().HaveCount(2);
+    }
+
+    private static LiveDemoRunWorker CreateWorker(
+        Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory) => new(
+        factory.Services.GetRequiredService<IServiceScopeFactory>(),
+        factory.Services.GetRequiredService<IOptions<LiveDemoOptions>>(),
+        NullLogger<LiveDemoRunWorker>.Instance);
+
     private static async Task<CreateDemoSessionResponse> CreateDemoSessionAsync(HttpClient client)
     {
         using var response = await client.PostAsync("/api/demo-sessions", null, TestContext.Current.CancellationToken);
@@ -71,15 +123,42 @@ public sealed class LiveDemoRunWorkerTests : IClassFixture<NorvixHubApiFactory>
     }
 
     private static async Task<CreateLiveDemoRunResponse> CreateRunAsync(HttpClient client, string token)
+        => await CreateRunAsync(client, token, simulateErpFailureOnce: false);
+
+    private static async Task<CreateLiveDemoRunResponse> CreateRunAsync(
+        HttpClient client,
+        string token,
+        bool simulateErpFailureOnce)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/live-demo-runs")
         {
-            Content = JsonContent.Create(new CreateLiveDemoRunRequest())
+            Content = JsonContent.Create(new CreateLiveDemoRunRequest(simulateErpFailureOnce))
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.Accepted);
         return (await response.Content.ReadFromJsonAsync<CreateLiveDemoRunResponse>(
             TestContext.Current.CancellationToken))!;
+    }
+
+    private static async Task RetryRunAsync(HttpClient client, Guid runId, string token)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/live-demo-runs/{runId}/retry");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+    }
+
+    private sealed class RestartErpDemoClient : IErpDemoClient
+    {
+        public List<ErpDemoRequest> Requests { get; } = [];
+
+        public Task<ErpDemoResult> SendAsync(ErpDemoRequest request, CancellationToken cancellationToken)
+        {
+            Requests.Add(request);
+            return Task.FromResult(Requests.Count == 1
+                ? new ErpDemoResult(ErpDemoResultStatus.Unavailable)
+                : new ErpDemoResult(ErpDemoResultStatus.Received, "ERP-DEMO-WORKER01", false, DateTime.UtcNow));
+        }
     }
 }

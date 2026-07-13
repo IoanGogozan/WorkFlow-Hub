@@ -70,6 +70,7 @@ public static class LiveDemoEvidenceEndpoints
             .OrderBy(candidate => candidate.Sequence)
             .ToListAsync(cancellationToken);
         var brregStep = runSteps.SingleOrDefault(candidate => candidate.Key == "brreg-checked");
+        var erpStep = runSteps.SingleOrDefault(candidate => candidate.Key == "erp-received");
 
         var sharePointItem = run.DocumentId is { } synchronizedDocumentId
             ? await db.SimulatedSharePointDocumentItems.AsNoTracking().SingleOrDefaultAsync(
@@ -96,7 +97,7 @@ public static class LiveDemoEvidenceEndpoints
             .ToListAsync(cancellationToken);
 
         return Results.Ok(CreateResponse(
-            run, intake, customer, caseItem, document, version, brregStep,
+            run, intake, customer, caseItem, document, version, brregStep, erpStep,
             sharePointItem, sharePointOperations, auditEvents, runSteps, sharePointOptions.Value));
     }
 
@@ -108,6 +109,7 @@ public static class LiveDemoEvidenceEndpoints
         Domain.Documents.DocumentRecord? document,
         Domain.Documents.DocumentVersion? version,
         LiveDemoRunStep? brregStep,
+        LiveDemoRunStep? erpStep,
         Domain.SharePoint.SimulatedSharePointDocumentItem? sharePointItem,
         IReadOnlyList<Domain.SharePoint.SimulatedSharePointOperation> sharePointOperations,
         IReadOnlyList<Domain.Audit.AuditEvent> auditEvents,
@@ -143,14 +145,51 @@ public static class LiveDemoEvidenceEndpoints
                     version.ContentType, version.VersionNumber, Shorten(version.Sha256Hash),
                     document.CreatedAt, documentHref!, downloadHref!),
             CreateSharePoint(run, sharePointItem, sharePointOperations, sharePointOptions),
-            run.ErpReceiptId is null
-                ? null
-                : new LiveDemoEvidenceErpResponse(
-                    "demo-receiver", "Received", Shorten(run.ErpReceiptId), null, 1, null, null),
+            CreateErp(run, erpStep, auditEvents),
             auditEvents.Select(audit => CreateAuditEvent(audit, run, runSteps)).ToList(),
             new LiveDemoEvidenceLinksResponse(
                 caseHref, documentHref, downloadHref, deliveryHref,
                 "/technical/sharepoint", "/integrations"));
+    }
+
+    private static LiveDemoEvidenceErpResponse? CreateErp(
+        LiveDemoRun run,
+        LiveDemoRunStep? step,
+        IReadOnlyList<Domain.Audit.AuditEvent> auditEvents)
+    {
+        if (step is null || (step.AttemptCount == 0 && run.ErpReceiptId is null))
+        {
+            return null;
+        }
+
+        var erpEvents = auditEvents
+            .Where(audit =>
+                (audit.Action is "LiveDemoStepFailed" or "LiveDemoStepCompleted") &&
+                string.Equals(ReadStringProperty(audit.AfterJson, "stepKey"), "erp-received", StringComparison.Ordinal))
+            .OrderBy(audit => audit.CreatedAt)
+            .ToList();
+        var history = erpEvents.Select((audit, index) =>
+        {
+            var succeeded = audit.Action == "LiveDemoStepCompleted";
+            return new LiveDemoEvidenceErpAttemptResponse(
+                audit.CreatedAt,
+                index + 1,
+                succeeded ? "Received" : "Failed",
+                succeeded ? step.DurationMs : null,
+                succeeded
+                    ? "Meldingen ble mottatt uten duplikater."
+                    : "Første forsøk feilet kontrollert; samme melding kan prøves på nytt.");
+        }).ToList();
+
+        return new LiveDemoEvidenceErpResponse(
+            "self-hosted",
+            run.ErpReceiptId is not null ? "Received" : step.Status.ToString(),
+            run.ErpReceiptId,
+            Shorten($"live-demo-{run.Id:N}"),
+            step.AttemptCount,
+            step.DurationMs,
+            step.PublicErrorMessage,
+            history);
     }
 
     private static LiveDemoEvidenceBrregResponse? CreateBrreg(

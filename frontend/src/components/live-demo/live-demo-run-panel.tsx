@@ -19,6 +19,7 @@ const publicStages = ["Mottatt", "Kontrollert", "Opprettet", "Synkronisert"];
 export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, retry, run }: LiveDemoRunPanelProps) {
   const stages = createStages(run?.steps ?? []);
   const brregDurationMs = run?.steps.find((step) => step.key === "brreg-checked")?.durationMs ?? null;
+  const erpStep = run?.steps.find((step) => step.key === "erp-received");
   return (
     <section aria-labelledby="live-preview-run-heading" id="live-preview-run">
       <div className="rounded-xl border border-[#dce1e8] bg-[#fdfefe] p-5 sm:p-8">
@@ -46,6 +47,8 @@ export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, re
         {run?.status === "Completed" && run.result ? (
           <LiveDemoResultCard
             brregDurationMs={brregDurationMs}
+            erpAttemptCount={erpStep?.attemptCount ?? 0}
+            erpDurationMs={erpStep?.durationMs ?? null}
             result={run.result}
             totalDurationMs={run.totalDurationMs}
           />

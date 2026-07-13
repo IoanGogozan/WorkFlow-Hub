@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NorvixHub.Application.Audit;
 using NorvixHub.Application.Documents;
 using NorvixHub.Application.LiveDemo;
@@ -21,7 +22,9 @@ public sealed class LiveDemoRunProcessor(
     IDemoPdfGenerator demoPdfGenerator,
     IFileStorage fileStorage,
     ILiveDemoOrganizationResolver organizationResolver,
-    ISharePointDocumentAdapterResolver sharePointAdapterResolver) : ILiveDemoRunProcessor
+    ISharePointDocumentAdapterResolver sharePointAdapterResolver,
+    IErpDemoClient erpDemoClient,
+    IOptions<ErpDemoOptions> erpDemoOptions) : ILiveDemoRunProcessor
 {
     public async Task ProcessAsync(Guid runId, CancellationToken cancellationToken)
     {
@@ -30,6 +33,10 @@ public sealed class LiveDemoRunProcessor(
         await ProcessCaseCreatedAsync(runId, cancellationToken);
         await ProcessDocumentCreatedAsync(runId, cancellationToken);
         await ProcessSharePointSyncedAsync(runId, cancellationToken);
+        if (erpDemoOptions.Value.Enabled)
+        {
+            await ProcessErpReceivedAsync(runId, cancellationToken);
+        }
         await ProcessRunCompletedAsync(runId, cancellationToken);
     }
 
@@ -162,6 +169,63 @@ public sealed class LiveDemoRunProcessor(
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             await MarkFailedAsync(run, step, "run-completed", exception, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
+
+    private async Task ProcessErpReceivedAsync(Guid runId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
+        var step = await dbContext.LiveDemoRunSteps.SingleAsync(
+            candidate => candidate.RunId == runId && candidate.Key == "erp-received",
+            cancellationToken);
+        if (step.Status == LiveDemoRunStepStatus.Completed ||
+            run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        try
+        {
+            StartRunAndStep(run, step, now);
+            var caseNumber = await dbContext.Cases
+                .Where(candidate => candidate.Id == run.CaseId && candidate.TenantId == run.TenantId)
+                .Select(candidate => candidate.CaseNumber)
+                .SingleAsync(cancellationToken);
+            var documentReference = await dbContext.DocumentVersions
+                .Where(candidate => candidate.DocumentId == run.DocumentId && candidate.TenantId == run.TenantId)
+                .OrderByDescending(candidate => candidate.VersionNumber)
+                .Select(candidate => candidate.OriginalFilename)
+                .FirstAsync(cancellationToken);
+            var result = await erpDemoClient.SendAsync(
+                new ErpDemoRequest(
+                    run.Id,
+                    $"FICTIONAL-{run.CustomerReference}",
+                    caseNumber,
+                    documentReference,
+                    run.SimulateErpFailureOnce),
+                cancellationToken);
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.ReceiptId))
+            {
+                throw new ErpDemoProcessingException(result.Status);
+            }
+
+            run.SetErpReceipt(result.ReceiptId, DateTimeOffset.UtcNow);
+            step.MarkCompleted(
+                result.Duplicate
+                    ? "ERP-meldingen var allerede mottatt; samme kvittering ble brukt."
+                    : "ERP-meldingen ble mottatt av Norvix ERP demo receiver.",
+                result.ReceiptId,
+                DateTimeOffset.UtcNow);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await WriteAuditAsync(run, "LiveDemoStepCompleted", "erp-received", cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await MarkFailedAsync(run, step, "erp-received", exception, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
     }
@@ -491,4 +555,7 @@ public sealed class LiveDemoRunProcessor(
                 null,
                 run.CorrelationId),
             cancellationToken);
+
+    private sealed class ErpDemoProcessingException(ErpDemoResultStatus status)
+        : Exception($"ERP demo receiver returned {status}.");
 }

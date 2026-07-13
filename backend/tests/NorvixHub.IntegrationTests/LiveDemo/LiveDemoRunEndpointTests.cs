@@ -257,10 +257,9 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         run!.Result.Should().NotBeNull();
         run.Result!.SharePointFolderReference.Should().Be("folder-r…n-full");
         run.Result.SharePointFileReference.Should().Be("file-ref…n-full");
-        run.Result.ErpReceiptId.Should().Be("erp-rece…n-full");
+        run.Result.ErpReceiptId.Should().Be(fullReceiptId);
         body.Should().NotContain(fullFolderId);
         body.Should().NotContain(fullFileId);
-        body.Should().NotContain(fullReceiptId);
         body.Should().NotContain("999888777");
         body.Should().NotContain("correlationId");
     }
@@ -283,7 +282,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         enabled.BrregLiveEnabled.Should().BeTrue();
         enabled.SharePointEnabled.Should().BeFalse();
         enabled.ErpReceiverEnabled.Should().BeFalse();
-        enabled.FailureDemoEnabled.Should().BeTrue();
+        enabled.FailureDemoEnabled.Should().BeFalse();
 
         using var disabledFactory = CreateFactory(enabled: false);
         using var disabledClient = disabledFactory.CreateClient();

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NorvixHub.Application.LiveDemo;
 using NorvixHub.Contracts.Auth;
 using NorvixHub.Contracts.LiveDemo;
@@ -162,6 +163,37 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
         body.Should().NotContain("responseSummaryJson");
     }
 
+    [Fact]
+    public async Task LiveDemoEvidence_returns_self_hosted_ERP_receipt_attempts_and_retry_history()
+    {
+        var erpClient = new EvidenceErpDemoClient();
+        using var factory = CreateErpFactory(erpClient);
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var created = await CreateRunAsync(client, session.Token, simulateErpFailureOnce: true);
+        await ProcessAsync(factory, created.RunId);
+        await RetryRunAsync(client, created.RunId, session.Token);
+        await ProcessAsync(factory, created.RunId);
+
+        using var response = await GetEvidenceAsync(client, session.Token, created.RunId);
+        var evidence = await response.Content.ReadFromJsonAsync<LiveDemoEvidenceResponse>(
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        evidence!.Erp.Should().NotBeNull();
+        evidence.Erp!.Mode.Should().Be("self-hosted");
+        evidence.Erp.Status.Should().Be("Received");
+        evidence.Erp.ExternalReceiptId.Should().Be("ERP-DEMO-EVIDENCE01");
+        evidence.Erp.IdempotencyKey.Should().StartWith("live-dem").And.Contain("…");
+        evidence.Erp.Attempts.Should().Be(2);
+        evidence.Erp.LastDurationMs.Should().NotBeNull();
+        evidence.Erp.History.Select(item => item.Status).Should().Equal("Failed", "Received");
+        evidence.Erp.History.Select(item => item.Attempt).Should().Equal(1, 2);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.Should().NotContain("X-Norvix-Signature");
+        body.Should().NotContain("SigningSecret");
+    }
+
     private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateFactory() =>
         _factory.WithWebHostBuilder(builder =>
         {
@@ -174,6 +206,25 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
                 }));
         });
 
+    private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateErpFactory(
+        EvidenceErpDemoClient erpClient) =>
+        _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Demo");
+            builder.ConfigureAppConfiguration(configuration =>
+                configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["LiveDemo:Enabled"] = "true",
+                    ["LiveDemo:OrganizationNumber"] = "999888777",
+                    ["ErpDemo:Enabled"] = "true"
+                }));
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IErpDemoClient>();
+                services.AddSingleton<IErpDemoClient>(erpClient);
+            });
+        });
+
     private static async Task<CreateDemoSessionResponse> CreateDemoSessionAsync(HttpClient client)
     {
         using var response = await client.PostAsync(
@@ -184,10 +235,16 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
     }
 
     private static async Task<CreateLiveDemoRunResponse> CreateRunAsync(HttpClient client, string token)
+        => await CreateRunAsync(client, token, simulateErpFailureOnce: false);
+
+    private static async Task<CreateLiveDemoRunResponse> CreateRunAsync(
+        HttpClient client,
+        string token,
+        bool simulateErpFailureOnce)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/live-demo-runs")
         {
-            Content = JsonContent.Create(new CreateLiveDemoRunRequest())
+            Content = JsonContent.Create(new CreateLiveDemoRunRequest(simulateErpFailureOnce))
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
@@ -214,5 +271,30 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
             HttpMethod.Get, $"/api/live-demo-runs/{runId}/evidence");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client.SendAsync(request, TestContext.Current.CancellationToken);
+    }
+
+    private static async Task RetryRunAsync(HttpClient client, Guid runId, string token)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/live-demo-runs/{runId}/retry");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+    }
+
+    private sealed class EvidenceErpDemoClient : IErpDemoClient
+    {
+        private int attempts;
+
+        public Task<ErpDemoResult> SendAsync(ErpDemoRequest request, CancellationToken cancellationToken)
+        {
+            attempts++;
+            return Task.FromResult(attempts == 1
+                ? new ErpDemoResult(ErpDemoResultStatus.Unavailable)
+                : new ErpDemoResult(
+                    ErpDemoResultStatus.Received,
+                    "ERP-DEMO-EVIDENCE01",
+                    false,
+                    DateTime.UtcNow));
+        }
     }
 }

@@ -7,4 +7,5 @@ public sealed record LiveDemoEvidenceErpResponse(
     string? IdempotencyKey,
     int Attempts,
     long? LastDurationMs,
-    string? SafeError);
+    string? SafeError,
+    IReadOnlyList<LiveDemoEvidenceErpAttemptResponse> History);

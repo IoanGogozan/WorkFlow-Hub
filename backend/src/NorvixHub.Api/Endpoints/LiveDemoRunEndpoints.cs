@@ -182,7 +182,8 @@ public static class LiveDemoRunEndpoints
 
     private static IResult GetLiveDemoCapabilities(
         ITenantContext tenantContext,
-        IOptions<LiveDemoOptions> liveDemoOptions)
+        IOptions<LiveDemoOptions> liveDemoOptions,
+        IOptions<ErpDemoOptions> erpDemoOptions)
     {
         if (tenantContext.TenantId is not { })
         {
@@ -191,12 +192,13 @@ public static class LiveDemoRunEndpoints
 
         var options = liveDemoOptions.Value;
         var enabled = options.Enabled && !string.IsNullOrWhiteSpace(options.OrganizationNumber);
+        var erpEnabled = enabled && erpDemoOptions.Value.Enabled;
         return Results.Ok(new LiveDemoCapabilitiesResponse(
             enabled,
             enabled,
             false,
-            false,
-            enabled));
+            erpEnabled,
+            erpEnabled));
     }
 
     private static async Task<IResult> RetryLiveDemoRun(
@@ -309,7 +311,7 @@ public static class LiveDemoRunEndpoints
             run.BrregMode,
             ShortenExternalReference(run.SharePointFolderItemId),
             ShortenExternalReference(run.SharePointFileItemId),
-            ShortenExternalReference(run.ErpReceiptId),
+            run.ErpReceiptId,
             auditEventCount,
             $"/technical/live-runs/{run.Id}",
             run.CaseId is { } resultCaseId ? $"/cases/{resultCaseId}" : null,

@@ -85,6 +85,15 @@ export type LiveDemoEvidenceErp = {
   attempts: number;
   lastDurationMs: number | null;
   safeError: string | null;
+  history: LiveDemoEvidenceErpAttempt[];
+};
+
+export type LiveDemoEvidenceErpAttempt = {
+  timestamp: string;
+  attempt: number;
+  status: string;
+  durationMs: number | null;
+  message: string;
 };
 
 export type LiveDemoEvidenceAuditEvent = {

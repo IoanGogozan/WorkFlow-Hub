@@ -25,7 +25,8 @@ public sealed class LiveDemoEvidenceContractTests
         root.GetProperty("case").GetProperty("caseHref").GetString().Should().Be("/cases/case-id");
         root.GetProperty("document").GetProperty("downloadHref").GetString().Should().Contain("/download");
         root.GetProperty("sharePoint").GetProperty("operations").GetArrayLength().Should().Be(1);
-        root.GetProperty("erp").ValueKind.Should().Be(JsonValueKind.Null);
+        root.GetProperty("erp").GetProperty("mode").GetString().Should().Be("self-hosted");
+        root.GetProperty("erp").GetProperty("history").GetArrayLength().Should().Be(2);
         root.GetProperty("auditEvents").GetArrayLength().Should().Be(1);
         root.GetProperty("links").GetProperty("integrationDashboardHref").GetString().Should().Be("/integrations");
     }
@@ -76,7 +77,16 @@ public sealed class LiveDemoEvidenceContractTests
                 [new LiveDemoEvidenceSharePointOperationResponse(
                     timestamp, "PUT", "/content", 201, "Created", 18, 1, "created")],
                 "/technical/sharepoint"),
-            null,
+            new LiveDemoEvidenceErpResponse(
+                "self-hosted", "Received", "ERP-DEMO-0142", "live-dem…00142", 2, 45, null,
+                [
+                    new LiveDemoEvidenceErpAttemptResponse(
+                        timestamp.AddSeconds(1), 1, "Failed", 20,
+                        "Første forsøk feilet kontrollert."),
+                    new LiveDemoEvidenceErpAttemptResponse(
+                        timestamp.AddSeconds(2), 2, "Received", 45,
+                        "Meldingen ble mottatt uten duplikater.")
+                ]),
             [new LiveDemoEvidenceAuditEventResponse(
                 timestamp, "LiveDemoRunCompleted", "Kjøring fullført", "LiveDemoRun",
                 "Completed", "corr-0142", "Norvix WorkFlow Hub", 20, 1)],

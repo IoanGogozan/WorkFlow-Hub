@@ -40,6 +40,15 @@ test("labels SharePoint synchronization as simulated", async ({ page }) => {
   await expect(page.getByText(/SharePoint connected/i)).toHaveCount(0);
 });
 
+test("shows a verifiable ERP receipt when the receiver completed", async ({ page }) => {
+  await showMockedBrregRun(page, "live", 800, "ERP-DEMO-ABCD1234");
+
+  const erpCard = page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" });
+  await expect(erpCard.getByText("Melding mottatt", { exact: true })).toBeVisible();
+  await expect(erpCard.getByText("Kvittering: ERP-DEMO-ABCD1234", { exact: true })).toBeVisible();
+  await expect(erpCard.getByText(/Forsøk: 1/)).toBeVisible();
+});
+
 test("redirects an expired demo session to a new demo start", async ({ page }) => {
   await page.addInitScript(() => {
     window.sessionStorage.setItem("norvix.demoSessionToken", "expired-e2e-token");
@@ -127,6 +136,7 @@ async function showMockedBrregRun(
   page: import("@playwright/test").Page,
   mode: "live" | "fallback",
   durationMs: number,
+  erpReceiptId: string | null = null,
 ) {
   const runId = "11111111-1111-4111-8111-111111111111";
   await page.addInitScript(() => {
@@ -144,7 +154,7 @@ async function showMockedBrregRun(
     await route.continue();
   });
   await page.route(`**/api/live-demo-runs/${runId}`, async (route) => {
-    await route.fulfill({ json: createCompletedRun(runId, mode, durationMs) });
+    await route.fulfill({ json: createCompletedRun(runId, mode, durationMs, erpReceiptId) });
   });
 
   await page.goto("/live-preview");
@@ -152,7 +162,12 @@ async function showMockedBrregRun(
   await expect(page.getByRole("heading", { name: /Fullført på/ })).toBeVisible();
 }
 
-function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs: number) {
+function createCompletedRun(
+  runId: string,
+  mode: "live" | "fallback",
+  durationMs: number,
+  erpReceiptId: string | null,
+) {
   const steps = [
     ["request-created", 1, "Mottatt", "Norvix WorkFlow Hub", "implemented"],
     ["brreg-checked", 2, "Kontrollert", "Brreg", "live-or-fallback"],
@@ -203,7 +218,7 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
       brregMode: mode,
       sharePointFolderReference: "Customers/CASE-2026-ABCD",
       sharePointFileReference: "01SP-DEMO-ABCD",
-      erpReceiptId: null,
+      erpReceiptId,
       auditEventCount: 6,
       evidenceHref: `/technical/live-runs/${runId}`,
       caseHref: "/cases/case-id",

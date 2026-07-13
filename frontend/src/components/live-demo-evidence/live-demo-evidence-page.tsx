@@ -8,6 +8,7 @@ import { CaseEvidenceCard } from "@/components/live-demo-evidence/case-evidence-
 import { DocumentEvidenceCard } from "@/components/live-demo-evidence/document-evidence-card";
 import { ErrorState } from "@/components/error-state";
 import { EvidenceOverview } from "@/components/live-demo-evidence/evidence-overview";
+import { ErpReceiverEvidence } from "@/components/live-demo-evidence/erp-receiver-evidence";
 import { RequestEvidenceCard } from "@/components/live-demo-evidence/request-evidence-card";
 import { SharePointSimulatorEvidence } from "@/components/live-demo-evidence/sharepoint-simulator-evidence";
 import { LoadingState } from "@/components/loading-state";
@@ -72,33 +73,16 @@ export function LiveDemoEvidencePage({ runId }: LiveDemoEvidencePageProps) {
                 <SharePointSimulatorEvidence evidence={evidence.sharePoint} />
               </div>
               <div className="mt-8">
-                <AuditEvidenceTimeline events={evidence.auditEvents} />
+                <ErpReceiverEvidence evidence={evidence.erp} />
               </div>
               <div className="mt-8">
-                <EvidenceSummary evidence={evidence} />
+                <AuditEvidenceTimeline events={evidence.auditEvents} />
               </div>
             </>
           ) : null}
         </div>
       </div>
     </AppShell>
-  );
-}
-
-function EvidenceSummary({ evidence }: { evidence: LiveDemoEvidence }) {
-  const items = [
-    ["ERP", evidence.erp?.status ?? "Ikke tilgjengelig ennå"],
-  ];
-
-  return (
-    <section aria-label="Oppsummering av kjøringsbevis" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map(([label, value]) => (
-        <article className="rounded-lg border border-[#d8deea] bg-white p-5" key={label}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">{label}</p>
-          <p className="mt-2 break-words text-sm font-semibold text-[#162033]">{value}</p>
-        </article>
-      ))}
-    </section>
   );
 }
 

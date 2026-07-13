@@ -10,12 +10,16 @@ type LiveDemoResultCardProps = {
   result: LiveDemoRunResult;
   totalDurationMs: number | null;
   brregDurationMs: number | null;
+  erpAttemptCount: number;
+  erpDurationMs: number | null;
 };
 
 export function LiveDemoResultCard({
   result,
   totalDurationMs,
   brregDurationMs,
+  erpAttemptCount,
+  erpDurationMs,
 }: LiveDemoResultCardProps) {
   const [openingPdf, setOpeningPdf] = useState(false);
   const [pdfError, setPdfError] = useState(false);
@@ -83,8 +87,16 @@ export function LiveDemoResultCard({
           ) : null}
         </ResultItem>
 
-        <ResultItem title="ERP receiver">
-          <ResultValue value={result.erpReceiptId ?? "Ikke tilgjengelig ennå"} mono={Boolean(result.erpReceiptId)} />
+        <ResultItem title="Norvix ERP demo receiver">
+          <ResultValue value={result.erpReceiptId ? "Melding mottatt" : "Ikke tilgjengelig ennå"} />
+          {result.erpReceiptId ? (
+            <>
+              <p className="mt-2 break-words font-mono text-xs text-[#dbeafe]">Kvittering: {result.erpReceiptId}</p>
+              <p className="mt-1 text-xs text-[#b8c7dc]">
+                Forsøk: {erpAttemptCount} · {formatDuration(erpDurationMs, "Varighet ikke tilgjengelig")}
+              </p>
+            </>
+          ) : null}
         </ResultItem>
 
         <ResultItem title="Hendelseslogg">

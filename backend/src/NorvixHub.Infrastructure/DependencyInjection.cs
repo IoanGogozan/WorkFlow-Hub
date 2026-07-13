@@ -34,6 +34,11 @@ public static class DependencyInjection
             configuration.GetSection("DemoSessionCleanup").Bind(options));
         services.Configure<LiveDemoOptions>(options =>
             configuration.GetSection("LiveDemo").Bind(options));
+        services.Configure<ErpDemoOptions>(options =>
+            configuration.GetSection("ErpDemo").Bind(options));
+        services.AddHttpClient<IErpDemoClient, ErpDemoClient>()
+            .RedactLoggedHeaders(headerName =>
+                string.Equals(headerName, "X-Norvix-Signature", StringComparison.OrdinalIgnoreCase));
         services.Configure<SharePointOptions>(options =>
             configuration.GetSection("SharePoint").Bind(options));
         services.AddScoped<SimulatedSharePointDocumentAdapter>();
