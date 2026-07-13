@@ -1,0 +1,14 @@
+{
+  "organisasjonsnummer": "999888777",
+  "navn": "Sordal Eiendom AS",
+  "organisasjonsform": {
+    "kode": "AS"
+  },
+  "forretningsadresse": {
+    "adresse": ["Markens gate 1"],
+    "postnummer": "4610",
+    "poststed": "Kristiansand",
+    "kommune": "Kristiansand"
+  },
+  "erSlettet": false
+}

@@ -1,7 +1,13 @@
 import { ManualProcessPanel } from "@/components/manual-process-panel";
 import { TimeSavingsCalculator } from "@/components/time-savings-calculator";
+import type { LiveDemoCapabilities } from "@/lib/live-demo";
 
-export function LiveDemoDetails() {
+type LiveDemoDetailsProps = {
+  capabilities: LiveDemoCapabilities | null;
+};
+
+export function LiveDemoDetails({ capabilities }: LiveDemoDetailsProps) {
+  const realDescription = createRealDescription(capabilities);
   return (
     <section aria-label="Mer om live-demoen" className="mt-6 space-y-3">
       <Detail title="Hva ble automatisert?">
@@ -25,13 +31,15 @@ export function LiveDemoDetails() {
       <Detail title="Hva er ekte og hva er simulert?">
         <dl className="grid gap-4 leading-6 sm:grid-cols-2">
           <Explanation
-            description="Saksdata, PDF, hendelseslogg og kjøringsspesifikke bevis opprettes i Norvix sitt selvhostede demomiljø. Brreg bruker live offentlig oppslag når tjenesten svarer, ellers merket fallback."
+            description={realDescription}
             term="Ekte kjøring"
           />
-          <Explanation
-            description="SharePoint vises med en lokal simulator uten Microsoft 365-tilkobling. ERP-mottakeren er ikke tilgjengelig før en kvittering kan vises og verifiseres."
-            term="Simulert eller utilgjengelig"
-          />
+          {capabilities?.sharePointEnabled ? (
+            <Explanation
+              description="SharePoint vises med en lokal simulator uten Microsoft 365-tilkobling."
+              term="Simulert integrasjon"
+            />
+          ) : null}
         </dl>
       </Detail>
 
@@ -45,6 +53,19 @@ export function LiveDemoDetails() {
       </Detail>
     </section>
   );
+}
+
+function createRealDescription(capabilities: LiveDemoCapabilities | null) {
+  const statements = [
+    "Saksdata, PDF, hendelseslogg og kjøringsspesifikke bevis opprettes i Norvix sitt selvhostede demomiljø.",
+  ];
+  if (capabilities?.brregLiveEnabled) {
+    statements.push("Brreg bruker live offentlig oppslag når tjenesten svarer, ellers tydelig merket fallback.");
+  }
+  if (capabilities?.erpReceiverEnabled) {
+    statements.push("ERP-meldingen signeres og sendes til en separat selvhostet demo receiver som returnerer en verifiserbar kvittering.");
+  }
+  return statements.join(" ");
 }
 
 function Detail({

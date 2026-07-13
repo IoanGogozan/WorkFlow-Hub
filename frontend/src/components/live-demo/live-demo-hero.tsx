@@ -1,14 +1,17 @@
 "use client";
 
 import { CLIENT_DEMO_CONTACT_URL } from "@/lib/site-config";
+import type { LiveDemoCapabilities } from "@/lib/live-demo";
 
 type LiveDemoHeroProps = {
+  capabilities: LiveDemoCapabilities | null;
   disabled: boolean;
   isStarting: boolean;
   onStart: () => void;
 };
 
-export function LiveDemoHero({ disabled, isStarting, onStart }: LiveDemoHeroProps) {
+export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: LiveDemoHeroProps) {
+  const trustLines = capabilities ? createTrustLines(capabilities) : [];
   return (
     <section className="max-w-4xl pb-10 pt-4 sm:pb-14 sm:pt-10">
       <p className="text-sm font-semibold text-[#315ea8]">
@@ -39,14 +42,22 @@ export function LiveDemoHero({ disabled, isStarting, onStart }: LiveDemoHeroProp
         </a>
       </div>
 
-      <div className="mt-6 max-w-3xl rounded-lg border border-[#dce1e8] bg-white px-4 py-3 text-sm leading-6 text-[#526075]">
-        <p>
-          Brreg kan kontrolleres live. SharePoint vises i en funksjonell lokal simulator.
-        </p>
-        <p className="mt-1 font-medium text-[#854d0e]">
-          ERP demo receiver er ikke tilgjengelig i denne versjonen ennå.
-        </p>
-      </div>
+      {trustLines.length > 0 ? (
+        <div
+          aria-label="Aktive demo-integrasjoner"
+          className="mt-6 max-w-3xl rounded-lg border border-[#dce1e8] bg-white px-4 py-3 text-sm leading-6 text-[#526075]"
+        >
+          {trustLines.map((line) => <p key={line}>{line}</p>)}
+        </div>
+      ) : null}
     </section>
   );
+}
+
+function createTrustLines(capabilities: LiveDemoCapabilities) {
+  return [
+    capabilities.brregLiveEnabled ? "Brreg: live ved tilgjengelig tjeneste" : null,
+    capabilities.sharePointEnabled ? "SharePoint: lokal simulator" : null,
+    capabilities.erpReceiverEnabled ? "ERP: separat selvhostet demo receiver" : null,
+  ].filter((line): line is string => line !== null);
 }

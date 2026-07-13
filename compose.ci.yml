@@ -1,0 +1,42 @@
+services:
+  frontend:
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  api:
+    environment:
+      Deployment__EnforceHttps: "false"
+      AllowedHosts: "*"
+      LiveDemo__Enabled: "true"
+      LiveDemo__OrganizationNumber: "999888777"
+      LiveDemo__WorkerPollMilliseconds: "100"
+      Brreg__BaseUrl: http://brreg-fake/enhetsregisteret/api/
+      LiveDemo__BrregFallbackEnabled: "false"
+    depends_on:
+      brreg-fake:
+        condition: service_healthy
+
+  worker:
+    environment:
+      LiveDemo__Enabled: "true"
+      LiveDemo__OrganizationNumber: "999888777"
+      LiveDemo__WorkerPollMilliseconds: "100"
+      Brreg__BaseUrl: http://brreg-fake/enhetsregisteret/api/
+      LiveDemo__BrregFallbackEnabled: "false"
+      SharePoint__Mode: Simulated
+    depends_on:
+      brreg-fake:
+        condition: service_healthy
+
+  brreg-fake:
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    volumes:
+      - ./infra/ci/brreg:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/enhetsregisteret/api/enheter/999888777"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - internal

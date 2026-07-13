@@ -109,8 +109,16 @@ docker compose -f /srv/proxy/compose.yml exec -T caddy \
 
 ```bash
 bash scripts/smoke-home-server.sh https://workflow.norvix.no
+bash scripts/smoke-verifiable-demo.sh https://workflow.norvix.no
 docker compose --env-file .env -f compose.home-server.yml ps
 docker compose --env-file .env -f compose.home-server.yml logs --tail=100 api worker frontend erp-receiver
+```
+
+After the normal smoke passes, optionally verify controlled ERP retry and
+idempotency. This creates another fictional demo run:
+
+```bash
+bash scripts/smoke-verifiable-demo.sh https://workflow.norvix.no --fail-once
 ```
 
 Also complete one browser session from `/demo`, including timeline replay,

@@ -49,6 +49,75 @@ test("shows a verifiable ERP receipt when the receiver completed", async ({ page
   await expect(erpCard.getByText(/Forsøk: 1/)).toBeVisible();
 });
 
+test("derives public integration claims from enabled capabilities", async ({ page }) => {
+  await showCapabilityCopy(page, {
+    enabled: true,
+    brregLiveEnabled: true,
+    sharePointEnabled: true,
+    erpReceiverEnabled: true,
+    failureDemoEnabled: true,
+  });
+
+  await expect(page.getByText("Brreg: live ved tilgjengelig tjeneste", { exact: true })).toBeVisible();
+  await expect(page.getByText("SharePoint: lokal simulator", { exact: true })).toBeVisible();
+  await expect(page.getByText("ERP: separat selvhostet demo receiver", { exact: true })).toBeVisible();
+});
+
+test("hides ERP claims when the receiver capability is disabled", async ({ page }) => {
+  await showCapabilityCopy(page, {
+    enabled: true,
+    brregLiveEnabled: true,
+    sharePointEnabled: true,
+    erpReceiverEnabled: false,
+    failureDemoEnabled: false,
+  });
+
+  await expect(page.getByText(/^ERP:/)).toHaveCount(0);
+  await expect(page.getByText(/ERP-mottakeren er ikke tilgjengelig/)).toHaveCount(0);
+});
+
+test("moves focus and announces status after start and retry", async ({ page }) => {
+  const runId = "22222222-2222-4222-8222-222222222222";
+  let retried = false;
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("norvix.demoSessionToken", "focus-e2e-token");
+    window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
+  });
+  await page.route("**/api/live-demo-capabilities", (route) => route.fulfill({
+    json: { enabled: true, brregLiveEnabled: true, sharePointEnabled: true, erpReceiverEnabled: true, failureDemoEnabled: true },
+  }));
+  await page.route("**/api/live-demo-runs", (route) => route.fulfill({ status: 202, json: { runId } }));
+  await page.route(`**/api/live-demo-runs/${runId}/retry`, async (route) => {
+    retried = true;
+    await route.fulfill({ status: 202, json: { runId } });
+  });
+  await page.route(`**/api/live-demo-runs/${runId}`, async (route) => {
+    const completed = createCompletedRun(runId, "live", 25, "ERP-DEMO-FOCUS01");
+    await route.fulfill({
+      json: retried
+        ? { ...completed, retryCount: 1 }
+        : {
+            ...completed,
+            status: "Failed",
+            currentStepKey: "erp-received",
+            completedAt: null,
+            canRetry: true,
+            result: null,
+          },
+    });
+  });
+
+  await page.goto("/");
+  const runHeading = page.getByRole("heading", { name: "Én ny henvendelse, fire tydelige steg" });
+  await page.getByRole("button", { name: "Kjør live demo" }).click();
+  await expect(runHeading).toBeFocused();
+  await expect(page.getByRole("status")).toContainText("feilet kontrollert");
+
+  await page.getByRole("button", { name: "Prøv igjen" }).click();
+  await expect(runHeading).toBeFocused();
+  await expect(page.getByRole("status")).toContainText("fullført");
+});
+
 test("redirects an expired demo session to a new demo start", async ({ page }) => {
   await page.addInitScript(() => {
     window.sessionStorage.setItem("norvix.demoSessionToken", "expired-e2e-token");
@@ -72,14 +141,13 @@ async function startAndCompleteRun(page: import("@playwright/test").Page) {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await page.goto("/live-preview");
-  await expect(page).toHaveURL(/\/$/);
 
   await expect(
     page.getByRole("heading", {
       name: "Fra henvendelse til sak, dokument og systemoppdatering",
     }),
   ).toBeVisible();
+  await expect(page.getByText("Brreg: live ved tilgjengelig tjeneste", { exact: true })).toBeVisible();
   const createResponse = page.waitForResponse((response) =>
     response.request().method() === "POST" &&
     response.url().endsWith("/api/live-demo-runs") &&
@@ -103,8 +171,9 @@ async function startAndCompleteRun(page: import("@playwright/test").Page) {
   const caseNumber = caseText?.match(/LIVE-[0-9]{4}-[A-F0-9]+/)?.[0];
   expect(caseNumber).toBeTruthy();
 
-  await expect(page.getByText("Venter", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/ERP demo receiver:/)).toHaveCount(0);
+  await expect(page.getByText("Fullført", { exact: true }).first()).toBeVisible();
+  const erpResult = page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" });
+  await expect(erpResult.getByText(/^Kvittering: ERP-DEMO-/)).toBeVisible();
 
   const manualProcess = page
     .locator("details")
@@ -160,6 +229,26 @@ async function showMockedBrregRun(
   await page.goto("/live-preview");
   await page.getByRole("button", { name: "Kjør live demo" }).click();
   await expect(page.getByRole("heading", { name: /Fullført på/ })).toBeVisible();
+}
+
+async function showCapabilityCopy(
+  page: import("@playwright/test").Page,
+  capabilities: {
+    enabled: boolean;
+    brregLiveEnabled: boolean;
+    sharePointEnabled: boolean;
+    erpReceiverEnabled: boolean;
+    failureDemoEnabled: boolean;
+  },
+) {
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("norvix.demoSessionToken", "capability-e2e-token");
+    window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
+  });
+  await page.route("**/api/live-demo-capabilities", async (route) => {
+    await route.fulfill({ json: capabilities });
+  });
+  await page.goto("/");
 }
 
 function createCompletedRun(

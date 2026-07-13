@@ -15,8 +15,19 @@ export function SharePointOperationTable({ operations }: SharePointOperationTabl
   }
 
   return (
-    <div className="mt-4 overflow-x-auto rounded-lg border border-[#e2e8f0]">
+    <>
+      <p className="mt-4 text-xs text-[#64748b] sm:hidden" id="sharepoint-table-scroll-hint">
+        Tabellen kan rulles vannrett.
+      </p>
+      <div
+        aria-describedby="sharepoint-table-scroll-hint"
+        aria-label="SharePoint simulatoroperasjoner"
+        className="mt-2 overflow-x-auto rounded-lg border border-[#e2e8f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8] sm:mt-4"
+        role="region"
+        tabIndex={0}
+      >
       <table className="w-full min-w-[760px] text-left text-sm">
+        <caption className="sr-only">Operasjoner utført av den lokale SharePoint-simulatoren</caption>
         <thead className="bg-[#f8fafc] text-xs uppercase tracking-wide text-[#64748b]">
           <tr>
             <th className="p-3 font-semibold">Tid</th>
@@ -46,6 +57,7 @@ export function SharePointOperationTable({ operations }: SharePointOperationTabl
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }

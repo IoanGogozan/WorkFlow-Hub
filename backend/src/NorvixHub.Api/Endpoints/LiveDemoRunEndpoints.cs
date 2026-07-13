@@ -9,6 +9,7 @@ using NorvixHub.Domain.Demo;
 using NorvixHub.Domain.LiveDemo;
 using NorvixHub.Infrastructure.LiveDemo;
 using NorvixHub.Infrastructure.Persistence;
+using NorvixHub.Infrastructure.SharePoint;
 
 namespace NorvixHub.Api.Endpoints;
 
@@ -183,7 +184,8 @@ public static class LiveDemoRunEndpoints
     private static IResult GetLiveDemoCapabilities(
         ITenantContext tenantContext,
         IOptions<LiveDemoOptions> liveDemoOptions,
-        IOptions<ErpDemoOptions> erpDemoOptions)
+        IOptions<ErpDemoOptions> erpDemoOptions,
+        IOptions<SharePointOptions> sharePointOptions)
     {
         if (tenantContext.TenantId is not { })
         {
@@ -193,10 +195,14 @@ public static class LiveDemoRunEndpoints
         var options = liveDemoOptions.Value;
         var enabled = options.Enabled && !string.IsNullOrWhiteSpace(options.OrganizationNumber);
         var erpEnabled = enabled && erpDemoOptions.Value.Enabled;
+        var sharePointSimulatorEnabled = enabled && string.Equals(
+            sharePointOptions.Value.Mode,
+            "Simulated",
+            StringComparison.OrdinalIgnoreCase);
         return Results.Ok(new LiveDemoCapabilitiesResponse(
             enabled,
             enabled,
-            false,
+            sharePointSimulatorEnabled,
             erpEnabled,
             erpEnabled));
     }

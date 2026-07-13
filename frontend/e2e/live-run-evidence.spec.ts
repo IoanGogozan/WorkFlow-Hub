@@ -47,9 +47,28 @@ test("visitor can verify the exact artifacts created by a live run", async ({ pa
   await expect(sharePoint.getByRole("heading", { name: "Lokal SharePoint-simulator" })).toBeVisible();
   await expect(sharePoint.getByText("Ingen Microsoft 365-konto er tilkoblet.")).toBeVisible();
   expect(await sharePoint.getByRole("row").count()).toBeGreaterThan(1);
+  await page.setViewportSize({ width: 375, height: 900 });
+  const operationRegion = sharePoint.getByRole("region", { name: "SharePoint simulatoroperasjoner" });
+  await expect(operationRegion).toBeVisible();
+  expect(await operationRegion.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+  await operationRegion.focus();
+  await expect(operationRegion).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+
+  const erp = page.locator("#erp");
+  await expect(erp.getByRole("heading", { name: "Norvix ERP demo receiver" })).toBeVisible();
+  await expect(erp.getByText("Melding mottatt", { exact: true })).toBeVisible();
+  await expect(erp.getByText(/^ERP-DEMO-/)).toBeVisible();
+  await expect(erp.getByText("1", { exact: true })).toBeVisible();
 
   const audit = page.locator("#audit");
   await expect(audit.getByRole("heading", { name: "Hendelseslogg" })).toBeVisible();
   await expect(audit.getByRole("listitem").first()).toBeVisible();
   await expect(page.getByText(/Microsoft (live|tilkoblet live)/i)).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const transitionDuration = await page.locator("body").evaluate(
+    (element) => getComputedStyle(element).transitionDuration,
+  );
+  expect(Number.parseFloat(transitionDuration)).toBeLessThanOrEqual(0.00001);
 });
