@@ -141,10 +141,17 @@ Prerequisites:
 Start local dependencies:
 
 ```bash
+cp .env.example .env
+# Set ERP_DEMO_SIGNING_SECRET in .env to a generated random value.
 docker compose up -d
 ```
 
 PostgreSQL is exposed on host port `55432` to avoid collisions with other local projects.
+The fictional ERP receiver is exposed only on `127.0.0.1:5510` so the API and
+worker processes running on the host can call it. Its SQLite database is stored
+in the named `erp-receiver-data` volume; the receiver is attached to the
+internal service network plus a dedicated bridge required for the
+loopback-only host port.
 
 Start the full local app with one command from the repository root:
 

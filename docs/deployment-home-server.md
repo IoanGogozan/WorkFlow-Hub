@@ -7,10 +7,12 @@ This runbook deploys the fictional WorkFlow Hub demo to
 
 - Only Caddy publishes host ports 80 and 443.
 - The frontend joins the external Docker network `proxy`.
-- API, worker, and PostgreSQL share an internal-only network. The API also joins
+- API, worker, ERP demo receiver, and PostgreSQL share an internal-only network. The API also joins
   `proxy` so Caddy can route only `/api/*` and `/health*` to it; it publishes no
   host port.
-- PostgreSQL and demo documents use named Docker volumes.
+- The ERP receiver publishes no host port and is reachable only by its internal
+  service name from the worker.
+- PostgreSQL, demo documents, and ERP receipts use named Docker volumes.
 - Real secrets live only in `/srv/projects/workflow-hub/.env`.
 - The deployment is demo-only and must not receive real customer data.
 
@@ -53,11 +55,16 @@ chmod 600 .env
 nano .env
 ```
 
-Generate the PostgreSQL password with a local tool such as:
+Generate separate PostgreSQL and ERP HMAC secrets with a local tool such as:
 
 ```bash
 openssl rand -base64 36
+openssl rand -hex 32
 ```
+
+Set the generated values as `POSTGRES_PASSWORD` and
+`ERP_DEMO_SIGNING_SECRET` in `.env`. Do not commit that file or reuse either
+secret elsewhere.
 
 Validate and start:
 
@@ -103,7 +110,7 @@ docker compose -f /srv/proxy/compose.yml exec -T caddy \
 ```bash
 bash scripts/smoke-home-server.sh https://workflow.norvix.no
 docker compose --env-file .env -f compose.home-server.yml ps
-docker compose --env-file .env -f compose.home-server.yml logs --tail=100 api worker frontend
+docker compose --env-file .env -f compose.home-server.yml logs --tail=100 api worker frontend erp-receiver
 ```
 
 Also complete one browser session from `/demo`, including timeline replay,
@@ -111,9 +118,10 @@ calculator, technical evidence, privacy, and terms.
 
 ## Backup
 
-`scripts/backup-home-server.sh` creates a PostgreSQL custom-format dump and a
-compressed copy of the document volume. It prevents overlapping executions and
-keeps the most recent 14 days of backups.
+`scripts/backup-home-server.sh` creates a PostgreSQL custom-format dump and
+compressed copies of the document and ERP receiver volumes. It briefly stops
+the ERP receiver for a consistent SQLite archive, prevents overlapping
+executions, and keeps the most recent 14 days of backups.
 
 For a server-wide backup location, run it with a user permitted to write under
 `/srv/backups/workflow-hub`:
@@ -132,6 +140,10 @@ BACKUP_ROOT=/srv/projects/workflow-hub/backups bash scripts/backup-home-server.s
 Schedule the same command daily with the deployment user's crontab. Backups on
 the same server do not protect against disk loss; copy the backup root to an
 external destination before treating the deployment as production-grade.
+
+Follow `scripts/restore-home-server.md` to restore one matching timestamp in
+the required database, document, and ERP receiver order. Never use
+`docker compose down -v` as part of backup, restore, or application rollback.
 
 ## Rollback
 

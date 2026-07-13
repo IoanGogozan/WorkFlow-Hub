@@ -50,6 +50,7 @@ services:
       Deployment__ForwardedHeadersEnabled: "true"
       Deployment__EnforceHttps: "true"
       Deployment__AllowUnknownProxies: "true"
+      ErpDemo__Enabled: "true"
       AllowedHosts: ${WORKFLOW_HUB_HOST};localhost;127.0.0.1
     expose:
       - "8080"
@@ -92,11 +93,38 @@ services:
       SharePoint__MicrosoftClientSecret: ${MICROSOFT_CLIENT_SECRET:-}
       SharePoint__MicrosoftSiteId: ${SHAREPOINT_SITE_ID:-}
       SharePoint__MicrosoftDriveId: ${SHAREPOINT_DRIVE_ID:-}
+      ErpDemo__Enabled: "true"
+      ErpDemo__BaseUrl: http://erp-receiver:8080/
+      ErpDemo__SigningSecret: ${ERP_DEMO_SIGNING_SECRET}
     depends_on:
       api:
         condition: service_healthy
+      erp-receiver:
+        condition: service_healthy
     volumes:
       - document_data:/data/documents
+    networks:
+      - internal
+
+  erp-receiver:
+    build:
+      context: .
+      dockerfile: backend/src/NorvixHub.ErpDemoReceiver/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Demo
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__ErpDemoReceiver: Data Source=/data/erp-demo-receiver.db
+      ErpDemoReceiver__SigningSecret: ${ERP_DEMO_SIGNING_SECRET}
+      ErpDemoReceiver__EnableFailOnce: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - erp_receiver_data:/data
     networks:
       - internal
 
@@ -126,3 +154,4 @@ networks:
 volumes:
   postgres_data:
   document_data:
+  erp_receiver_data:

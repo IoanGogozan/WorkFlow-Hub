@@ -34,6 +34,38 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  erp-receiver:
+    build:
+      context: .
+      dockerfile: backend/src/NorvixHub.ErpDemoReceiver/Dockerfile
+    container_name: norvixhub-erp-receiver
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__ErpDemoReceiver: Data Source=/data/erp-demo-receiver.db
+      ErpDemoReceiver__SigningSecret: ${ERP_DEMO_SIGNING_SECRET:?Set ERP_DEMO_SIGNING_SECRET in the ignored .env file}
+      ErpDemoReceiver__EnableFailOnce: "true"
+    ports:
+      - "127.0.0.1:5510:8080"
+    volumes:
+      - erp-receiver-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - internal
+      - local-access
+
+networks:
+  internal:
+    internal: true
+  local-access:
+
 volumes:
   postgres-data:
   azurite-data:
+  erp-receiver-data:
