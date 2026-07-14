@@ -77,6 +77,13 @@ export function LiveDemoResultCard({
           ) : null}
         </ResultItem>
 
+        <ResultItem title="Leveringspakke">
+          <ResultValue value={result.deliveryPackageHref ? "Opprettet" : "Ikke opprettet"} />
+          {result.deliveryPackageHref ? (
+            <ResultLink href={result.deliveryPackageHref} label="Åpne leveringspakken" />
+          ) : null}
+        </ResultItem>
+
         <ResultItem title="SharePoint">
           <div className="flex flex-wrap items-center gap-2">
             <ResultValue value={result.sharePointFileReference ? "Synkronisert" : "Ikke synkronisert"} />
@@ -87,7 +94,7 @@ export function LiveDemoResultCard({
           ) : null}
         </ResultItem>
 
-        <ResultItem title="Norvix ERP demo receiver">
+        {result.erpReceiptId ? <ResultItem title="Norvix ERP demo receiver">
           <ResultValue value={result.erpReceiptId ? "Melding mottatt" : "Ikke tilgjengelig ennå"} />
           {result.erpReceiptId ? (
             <>
@@ -97,7 +104,7 @@ export function LiveDemoResultCard({
               </p>
             </>
           ) : null}
-        </ResultItem>
+        </ResultItem> : null}
 
         <ResultItem title="Hendelseslogg">
           <ResultValue value={`${result.auditEventCount ?? 0} hendelser`} />

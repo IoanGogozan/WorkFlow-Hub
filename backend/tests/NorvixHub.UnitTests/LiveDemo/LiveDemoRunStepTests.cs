@@ -49,6 +49,22 @@ public sealed class LiveDemoRunStepTests
         complete.Should().Throw<InvalidOperationException>().WithMessage("Only a running live demo step can complete.");
     }
 
+    [Fact]
+    public void Pending_step_can_be_skipped_as_a_terminal_step()
+    {
+        var step = CreateStep();
+        var now = DateTimeOffset.UtcNow;
+
+        step.MarkSkipped("Capability is disabled.", now);
+
+        step.Status.Should().Be(LiveDemoRunStepStatus.Skipped);
+        step.CompletedAt.Should().Be(now);
+        step.DurationMs.Should().Be(0);
+        step.AttemptCount.Should().Be(0);
+        var start = () => step.MarkRunning(now);
+        start.Should().Throw<InvalidOperationException>();
+    }
+
     private static LiveDemoRunStep CreateStep() => new()
     {
         TenantId = Guid.NewGuid(),

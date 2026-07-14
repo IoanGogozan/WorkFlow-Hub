@@ -96,7 +96,7 @@ test("visitor understands and replays the client-facing automation story", async
   await expect(page).toHaveURL(/\/$/);
   await expect(
     page.getByRole("heading", {
-      name: "Fra henvendelse til sak, dokument og systemoppdatering",
+      name: "Fra henvendelse til sak, dokument og systemsynkronisering",
     }),
   ).toBeVisible();
 });

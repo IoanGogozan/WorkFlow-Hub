@@ -106,11 +106,16 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-      - name: Verify normal run and evidence page in browser
+      - name: Verify live demo and evidence in browser
         working-directory: frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
-        run: npx playwright test e2e/live-run-evidence.spec.ts --project=chromium
+        run: >-
+          npx playwright test
+          e2e/live-preview.spec.ts
+          e2e/live-run-evidence.spec.ts
+          e2e/sharepoint-technical.spec.ts
+          --project=chromium
       - name: Verify normal, fail-retry, and tenant-isolation contracts
         run: >-
           dotnet test backend/tests/NorvixHub.IntegrationTests/NorvixHub.IntegrationTests.csproj

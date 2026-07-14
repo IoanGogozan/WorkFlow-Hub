@@ -34,7 +34,7 @@ export function LiveDemoDetails({ capabilities }: LiveDemoDetailsProps) {
             description={realDescription}
             term="Ekte kjøring"
           />
-          {capabilities?.sharePointEnabled ? (
+          {capabilities?.sharePointSimulatorEnabled ? (
             <Explanation
               description="SharePoint vises med en lokal simulator uten Microsoft 365-tilkobling."
               term="Simulert integrasjon"

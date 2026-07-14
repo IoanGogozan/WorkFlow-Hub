@@ -29,6 +29,96 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
     }
 
     [Fact]
+    public async Task Processor_refuses_to_complete_when_an_active_step_is_pending()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Demo");
+            builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["LiveDemo:Enabled"] = "true",
+                    ["LiveDemo:OrganizationNumber"] = "999888777"
+                }));
+        });
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var created = await CreateRunAsync(client, session.Token);
+
+        using (var setupScope = factory.Services.CreateScope())
+        {
+            var dbContext = setupScope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+            var persistedRun = await dbContext.LiveDemoRuns.SingleAsync(
+                candidate => candidate.Id == created.RunId,
+                TestContext.Current.CancellationToken);
+            dbContext.LiveDemoRunSteps.Add(new LiveDemoRunStep
+            {
+                TenantId = session.DemoTenantId,
+                CreatedBy = persistedRun.CreatedBy,
+                RunId = created.RunId,
+                Key = "future-active-step",
+                Sequence = 8,
+                PublicStage = "Synkronisert",
+                Provider = "Future adapter",
+                EvidenceMode = "implemented"
+            });
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        using (var processingScope = factory.Services.CreateScope())
+        {
+            var processor = processingScope.ServiceProvider.GetRequiredService<ILiveDemoRunProcessor>();
+            await processor.ProcessAsync(created.RunId, TestContext.Current.CancellationToken);
+        }
+
+        using var verificationScope = factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var run = await verificationDb.LiveDemoRuns.SingleAsync(
+            candidate => candidate.Id == created.RunId,
+            TestContext.Current.CancellationToken);
+        var completionStep = await verificationDb.LiveDemoRunSteps.SingleAsync(
+            candidate => candidate.RunId == created.RunId && candidate.Key == "run-completed",
+            TestContext.Current.CancellationToken);
+
+        run.Status.Should().Be(LiveDemoRunStatus.Failed);
+        completionStep.Status.Should().Be(LiveDemoRunStepStatus.Failed);
+    }
+
+    [Fact]
+    public async Task Processor_calls_Brreg_resolver_without_an_open_database_transaction()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Demo");
+            builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["LiveDemo:Enabled"] = "true",
+                    ["LiveDemo:OrganizationNumber"] = "999888777"
+                }));
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<ILiveDemoOrganizationResolver>();
+                services.AddScoped<TransactionObservingOrganizationResolver>();
+                services.AddScoped<ILiveDemoOrganizationResolver>(provider =>
+                    provider.GetRequiredService<TransactionObservingOrganizationResolver>());
+            });
+        });
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var created = await CreateRunAsync(client, session.Token);
+
+        using var processingScope = factory.Services.CreateScope();
+        var processor = processingScope.ServiceProvider.GetRequiredService<ILiveDemoRunProcessor>();
+        await processor.ProcessAsync(created.RunId, TestContext.Current.CancellationToken);
+        var resolver = processingScope.ServiceProvider
+            .GetRequiredService<TransactionObservingOrganizationResolver>();
+
+        resolver.WasCalled.Should().BeTrue();
+        resolver.ObservedOpenTransaction.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Processor_completes_internal_brreg_and_simulated_sharepoint_steps()
     {
         using var factory = _factory.WithWebHostBuilder(builder =>
@@ -74,7 +164,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         steps.Where(step => step.Key is "request-created" or "brreg-checked" or "case-created" or "document-created" or "sharepoint-synced" or "run-completed")
             .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Completed);
         steps.Where(step => step.Key is "erp-received")
-            .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
+            .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Skipped);
         (await dbContext.AuditEvents.CountAsync(
             candidate => candidate.TenantId == session.DemoTenantId &&
                 candidate.EntityId == run.RunId.ToString() &&
@@ -82,7 +172,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
             TestContext.Current.CancellationToken)).Should().Be(6);
         var sharePointStep = steps.Single(step => step.Key == "sharepoint-synced");
         sharePointStep.EvidenceMode.Should().Be("simulated-sharepoint");
-        sharePointStep.PublicSummary.Should().Contain("no Microsoft 365 tenant connected");
+        sharePointStep.PublicSummary.Should().Contain("ingen Microsoft 365-konto er tilkoblet");
         persistedRun.SharePointDriveId.Should().NotBeNull();
         persistedRun.SharePointFolderItemId.Should().NotBeNull().And.NotContain("/");
         persistedRun.SharePointFileItemId.Should().NotBeNull();
@@ -205,7 +295,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
             TestContext.Current.CancellationToken)).TenantId.Should().Be(secondSession.DemoTenantId);
     }
 
-    [Fact]
+    [Fact(Skip = "ERP receiver is not an active live-demo capability yet.")]
     public async Task Processor_sends_fictional_ERP_payload_and_persists_receipt_evidence()
     {
         var erpClient = new FakeErpDemoClient(new ErpDemoResult(
@@ -249,7 +339,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         auditPayloads.Should().OnlyContain(payload => !payload.Contains("X-Norvix", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(Skip = "ERP failure/retry is disabled until the receiver becomes an active capability.")]
     public async Task ERP_failure_and_retry_resume_without_duplicate_artifacts_or_client_calls()
     {
         var erpClient = new FakeErpDemoClient(
@@ -413,6 +503,32 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
             string organizationNumber,
             CancellationToken cancellationToken) =>
             throw new HttpRequestException("upstream-secret");
+    }
+
+    private sealed class TransactionObservingOrganizationResolver(NorvixHubDbContext dbContext)
+        : ILiveDemoOrganizationResolver
+    {
+        public bool WasCalled { get; private set; }
+        public bool ObservedOpenTransaction { get; private set; }
+
+        public Task<LiveDemoOrganizationResolution> ResolveAsync(
+            string organizationNumber,
+            CancellationToken cancellationToken)
+        {
+            WasCalled = true;
+            ObservedOpenTransaction = dbContext.Database.CurrentTransaction is not null;
+            return Task.FromResult(new LiveDemoOrganizationResolution(
+                "live",
+                new LiveDemoOrganizationData(
+                    organizationNumber,
+                    "Transaction Test AS",
+                    "AS",
+                    "Oslo",
+                    DateTimeOffset.UtcNow),
+                1,
+                null,
+                "{}"));
+        }
     }
 
     private static async Task<CreateDemoSessionResponse> CreateDemoSessionAsync(HttpClient client)

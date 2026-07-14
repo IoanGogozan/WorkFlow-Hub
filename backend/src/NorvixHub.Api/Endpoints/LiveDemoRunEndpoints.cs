@@ -85,7 +85,7 @@ public static class LiveDemoRunEndpoints
 
         var run = CreatePresetRun(tenantId, userId, session.Id, options.OrganizationNumber, request, now);
         dbContext.LiveDemoRuns.Add(run);
-        dbContext.LiveDemoRunSteps.AddRange(CreatePendingSteps(tenantId, userId, run.Id));
+        dbContext.LiveDemoRunSteps.AddRange(CreateInitialSteps(tenantId, userId, run.Id, now));
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Accepted(
@@ -184,7 +184,6 @@ public static class LiveDemoRunEndpoints
     private static IResult GetLiveDemoCapabilities(
         ITenantContext tenantContext,
         IOptions<LiveDemoOptions> liveDemoOptions,
-        IOptions<ErpDemoOptions> erpDemoOptions,
         IOptions<SharePointOptions> sharePointOptions)
     {
         if (tenantContext.TenantId is not { })
@@ -194,7 +193,6 @@ public static class LiveDemoRunEndpoints
 
         var options = liveDemoOptions.Value;
         var enabled = options.Enabled && !string.IsNullOrWhiteSpace(options.OrganizationNumber);
-        var erpEnabled = enabled && erpDemoOptions.Value.Enabled;
         var sharePointSimulatorEnabled = enabled && string.Equals(
             sharePointOptions.Value.Mode,
             "Simulated",
@@ -203,8 +201,8 @@ public static class LiveDemoRunEndpoints
             enabled,
             enabled,
             sharePointSimulatorEnabled,
-            erpEnabled,
-            erpEnabled));
+            false,
+            false));
     }
 
     private static async Task<IResult> RetryLiveDemoRun(
@@ -323,6 +321,7 @@ public static class LiveDemoRunEndpoints
             run.CaseId is { } resultCaseId ? $"/cases/{resultCaseId}" : null,
             run.DocumentId is { } resultDocumentId ? $"/documents/{resultDocumentId}" : null,
             run.DocumentId is { } downloadDocumentId ? $"/api/documents/{downloadDocumentId}/download" : null,
+            run.DeliveryPackageId is { } deliveryPackageId ? $"/delivery-packages/{deliveryPackageId}" : null,
             run.SharePointFileItemId is not null ? $"/technical/live-runs/{run.Id}#sharepoint" : null,
             $"/technical/live-runs/{run.Id}#audit");
     }
@@ -332,10 +331,14 @@ public static class LiveDemoRunEndpoints
             ? value
             : $"{value[..8]}…{value[^6..]}";
 
-    private static IReadOnlyList<LiveDemoRunStep> CreatePendingSteps(Guid tenantId, Guid userId, Guid runId)
+    private static IReadOnlyList<LiveDemoRunStep> CreateInitialSteps(
+        Guid tenantId,
+        Guid userId,
+        Guid runId,
+        DateTimeOffset now)
     {
-        return
-        [
+        var steps = new List<LiveDemoRunStep>
+        {
             CreateStep("request-created", 1, "Mottatt", "Norvix WorkFlow Hub", "implemented"),
             CreateStep("brreg-checked", 2, "Kontrollert", "Brreg", "live-or-fallback"),
             CreateStep("case-created", 3, "Opprettet", "Norvix WorkFlow Hub", "implemented"),
@@ -343,7 +346,11 @@ public static class LiveDemoRunEndpoints
             CreateStep("sharepoint-synced", 5, "Synkronisert", "SharePoint simulator", "simulated-sharepoint"),
             CreateStep("erp-received", 6, "Synkronisert", "ERP demo receiver", "demo-receiver"),
             CreateStep("run-completed", 7, "Synkronisert", "Norvix WorkFlow Hub", "implemented")
-        ];
+        };
+        steps.Single(step => step.Key == "erp-received").MarkSkipped(
+            "ERP demo receiver er ikke aktivert for denne kjøringen.",
+            now);
+        return steps;
 
         LiveDemoRunStep CreateStep(
             string key,

@@ -34,7 +34,7 @@ public sealed class FullVerifiableIntegrationTests : IClassFixture<NorvixHubApiF
         this.apiFactory = apiFactory;
     }
 
-    [Fact]
+    [Fact(Skip = "ERP receiver is disabled as a public live-demo capability.")]
     public async Task Normal_run_reaches_real_receiver_and_exposes_matching_openable_evidence()
     {
         var receiverDatabase = Path.Combine(Path.GetTempPath(), $"norvixhub-erp-e2e-{Guid.NewGuid():N}.db");
@@ -118,7 +118,7 @@ public sealed class FullVerifiableIntegrationTests : IClassFixture<NorvixHubApiF
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ERP failure/retry is disabled until the receiver capability is active.")]
     public async Task Fail_once_retry_preserves_artifacts_and_creates_one_idempotent_receipt()
     {
         var receiverDatabase = Path.Combine(Path.GetTempPath(), $"norvixhub-erp-retry-e2e-{Guid.NewGuid():N}.db");

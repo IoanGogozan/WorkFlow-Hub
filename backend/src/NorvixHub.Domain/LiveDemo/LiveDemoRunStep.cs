@@ -42,6 +42,19 @@ public sealed class LiveDemoRunStep : TenantScopedEntity
         MarkUpdated(null, now);
     }
 
+    public void MarkSkipped(string publicSummary, DateTimeOffset now)
+    {
+        EnsureStatus(LiveDemoRunStepStatus.Pending, "Only a pending live demo step can be skipped.");
+        Status = LiveDemoRunStepStatus.Skipped;
+        CompletedAt = now;
+        DurationMs = 0;
+        PublicSummary = publicSummary;
+        PublicEvidenceReference = null;
+        PublicErrorCode = null;
+        PublicErrorMessage = null;
+        MarkUpdated(null, now);
+    }
+
     public void MarkFailed(string publicErrorCode, string publicErrorMessage, DateTimeOffset now)
     {
         EnsureStatus(LiveDemoRunStepStatus.Running, "Only a running live demo step can fail.");

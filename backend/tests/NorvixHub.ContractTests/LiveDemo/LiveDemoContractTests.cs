@@ -72,16 +72,18 @@ public sealed class LiveDemoContractTests
             "/cases/case-id",
             "/documents/document-id",
             "/api/documents/document-id/download",
+            "/delivery-packages/package-id",
             "/technical/live-runs/run-id#sharepoint",
             "/technical/live-runs/run-id#audit");
-        var capabilities = new LiveDemoCapabilitiesResponse(true, true, false, false, true);
+        var capabilities = new LiveDemoCapabilitiesResponse(true, true, false, false, false);
 
         result.CaseNumber.Should().Be("LIVE-2026-0142");
         result.DocumentFileName.Should().Be("live-demo.pdf");
         result.SharePointFolderReference.Should().Be("folder-0142");
         result.EvidenceHref.Should().Be("/technical/live-runs/run-id");
         result.DocumentDownloadHref.Should().EndWith("/download");
-        capabilities.SharePointEnabled.Should().BeFalse();
+        result.DeliveryPackageHref.Should().Be("/delivery-packages/package-id");
+        capabilities.SharePointSimulatorEnabled.Should().BeFalse();
         capabilities.ErpReceiverEnabled.Should().BeFalse();
     }
 }

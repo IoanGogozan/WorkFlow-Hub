@@ -56,7 +56,10 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         steps.Select(step => step.Key).Should().Equal(
             "request-created", "brreg-checked", "case-created", "document-created",
             "sharepoint-synced", "erp-received", "run-completed");
-        steps.Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
+        steps.Where(step => step.Key != "erp-received")
+            .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
+        steps.Single(step => step.Key == "erp-received").Status
+            .Should().Be(LiveDemoRunStepStatus.Skipped);
     }
 
     [Fact]
@@ -280,9 +283,9 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         enabledResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         enabled.Enabled.Should().BeTrue();
         enabled.BrregLiveEnabled.Should().BeTrue();
-        enabled.SharePointEnabled.Should().BeTrue();
-        enabled.ErpReceiverEnabled.Should().BeTrue();
-        enabled.FailureDemoEnabled.Should().BeTrue();
+        enabled.SharePointSimulatorEnabled.Should().BeTrue();
+        enabled.ErpReceiverEnabled.Should().BeFalse();
+        enabled.FailureDemoEnabled.Should().BeFalse();
 
         using var disabledFactory = CreateFactory(enabled: false);
         using var disabledClient = disabledFactory.CreateClient();
@@ -296,7 +299,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
 
         disabled.Enabled.Should().BeFalse();
         disabled.BrregLiveEnabled.Should().BeFalse();
-        disabled.SharePointEnabled.Should().BeFalse();
+        disabled.SharePointSimulatorEnabled.Should().BeFalse();
         disabled.ErpReceiverEnabled.Should().BeFalse();
         disabled.FailureDemoEnabled.Should().BeFalse();
     }

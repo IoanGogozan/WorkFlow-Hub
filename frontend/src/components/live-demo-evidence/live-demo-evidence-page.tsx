@@ -72,9 +72,11 @@ export function LiveDemoEvidencePage({ runId }: LiveDemoEvidencePageProps) {
               <div className="mt-8">
                 <SharePointSimulatorEvidence evidence={evidence.sharePoint} />
               </div>
-              <div className="mt-8">
-                <ErpReceiverEvidence evidence={evidence.erp} />
-              </div>
+              {evidence.erp ? (
+                <div className="mt-8">
+                  <ErpReceiverEvidence evidence={evidence.erp} />
+                </div>
+              ) : null}
               <div className="mt-8">
                 <AuditEvidenceTimeline events={evidence.auditEvents} />
               </div>

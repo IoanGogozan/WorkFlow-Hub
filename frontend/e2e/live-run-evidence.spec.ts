@@ -16,6 +16,24 @@ test("visitor can verify the exact artifacts created by a live run", async ({ pa
   const caseNumber = (await caseResult.textContent())?.match(/LIVE-[0-9]{4}-[A-F0-9]+/)?.[0];
   expect(caseNumber).toBeTruthy();
 
+  await expect(page.getByRole("link", { name: "Se simulatorbevis" })).toHaveAttribute(
+    "href",
+    /\/technical\/live-runs\/[0-9a-f-]+#sharepoint$/i,
+  );
+  await expect(page.getByRole("link", { name: "Se hendelseslogg" })).toHaveAttribute(
+    "href",
+    /\/technical\/live-runs\/[0-9a-f-]+#audit$/i,
+  );
+
+  const deliveryLink = page.getByRole("link", { name: "Åpne leveringspakken" });
+  await expect(deliveryLink).toHaveAttribute("href", /^\/delivery-packages\/[0-9a-f-]+$/i);
+  const deliveryHref = await deliveryLink.getAttribute("href");
+  const deliveryStatus = await page.evaluate(async (href) => {
+    const response = await fetch(href!);
+    return response.status;
+  }, deliveryHref);
+  expect(deliveryStatus).toBe(200);
+
   await page.getByRole("link", { name: "Se hva som faktisk ble opprettet" }).click();
   await expect(page).toHaveURL(/\/technical\/live-runs\/[0-9a-f-]+$/i);
   await expect(page.getByRole("heading", { name: "Verifiserbar dokumentasjon for én kjøring" })).toBeVisible();
@@ -36,6 +54,9 @@ test("visitor can verify the exact artifacts created by a live run", async ({ pa
     "href",
     /^\/documents\/[0-9a-f-]+$/i,
   );
+  await documentCard.getByRole("link", { name: "Åpne dokumentdetaljer" }).click();
+  await expect(page).toHaveURL(/\/documents\/[0-9a-f-]+$/i);
+  await page.goBack();
   const pdfResponse = page.waitForResponse((response) =>
     response.url().includes("/api/documents/") &&
     response.url().endsWith("/download"),
@@ -55,11 +76,8 @@ test("visitor can verify the exact artifacts created by a live run", async ({ pa
   await expect(operationRegion).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 
-  const erp = page.locator("#erp");
-  await expect(erp.getByRole("heading", { name: "Norvix ERP demo receiver" })).toBeVisible();
-  await expect(erp.getByText("Melding mottatt", { exact: true })).toBeVisible();
-  await expect(erp.getByText(/^ERP-DEMO-/)).toBeVisible();
-  await expect(erp.getByText("1", { exact: true })).toBeVisible();
+  await expect(page.locator("#erp")).toHaveCount(0);
+  await expect(page.getByText(/ERP-mottakeren|failure demo/i)).toHaveCount(0);
 
   const audit = page.locator("#audit");
   await expect(audit.getByRole("heading", { name: "Hendelseslogg" })).toBeVisible();

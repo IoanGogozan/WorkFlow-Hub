@@ -64,7 +64,7 @@ public sealed class LiveDemoRunWorkerTests : IClassFixture<NorvixHubApiFactory>
             TestContext.Current.CancellationToken)).Status.Should().Be(LiveDemoRunStatus.Completed);
     }
 
-    [Fact]
+    [Fact(Skip = "ERP retry is disabled until the receiver capability is active.")]
     public async Task New_worker_instance_resumes_ERP_retry_after_controlled_failure()
     {
         var erpClient = new RestartErpDemoClient();

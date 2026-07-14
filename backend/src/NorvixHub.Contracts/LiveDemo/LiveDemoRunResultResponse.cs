@@ -12,5 +12,6 @@ public sealed record LiveDemoRunResultResponse(
     string? CaseHref,
     string? DocumentHref,
     string? DocumentDownloadHref,
+    string? DeliveryPackageHref,
     string? SharePointEvidenceHref,
     string AuditHref);

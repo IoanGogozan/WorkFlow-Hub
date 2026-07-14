@@ -18,7 +18,7 @@ export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: Li
         Live integrasjon med fiktive data
       </p>
       <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-[#172033] sm:text-5xl">
-        Fra henvendelse til sak, dokument og systemoppdatering
+        Fra henvendelse til sak, dokument og systemsynkronisering
       </h1>
       <p className="mt-5 max-w-3xl text-base leading-7 text-[#526075] sm:text-lg">
         Se en ny kjøring bli kontrollert, opprettet og synkronisert i Norvix
@@ -42,6 +42,11 @@ export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: Li
         </a>
       </div>
 
+      <p className="mt-4 max-w-3xl text-sm leading-6 text-[#526075]">
+        Brreg kontrolleres live når tjenesten er tilgjengelig. Dokumentflyten
+        vises i en lokal SharePoint-simulator.
+      </p>
+
       {trustLines.length > 0 ? (
         <div
           aria-label="Aktive demo-integrasjoner"
@@ -57,7 +62,7 @@ export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: Li
 function createTrustLines(capabilities: LiveDemoCapabilities) {
   return [
     capabilities.brregLiveEnabled ? "Brreg: live ved tilgjengelig tjeneste" : null,
-    capabilities.sharePointEnabled ? "SharePoint: lokal simulator" : null,
+    capabilities.sharePointSimulatorEnabled ? "SharePoint: lokal simulator" : null,
     capabilities.erpReceiverEnabled ? "ERP: separat selvhostet demo receiver" : null,
   ].filter((line): line is string => line !== null);
 }

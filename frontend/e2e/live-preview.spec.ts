@@ -53,7 +53,7 @@ test("derives public integration claims from enabled capabilities", async ({ pag
   await showCapabilityCopy(page, {
     enabled: true,
     brregLiveEnabled: true,
-    sharePointEnabled: true,
+    sharePointSimulatorEnabled: true,
     erpReceiverEnabled: true,
     failureDemoEnabled: true,
   });
@@ -67,7 +67,7 @@ test("hides ERP claims when the receiver capability is disabled", async ({ page 
   await showCapabilityCopy(page, {
     enabled: true,
     brregLiveEnabled: true,
-    sharePointEnabled: true,
+    sharePointSimulatorEnabled: true,
     erpReceiverEnabled: false,
     failureDemoEnabled: false,
   });
@@ -84,7 +84,7 @@ test("moves focus and announces status after start and retry", async ({ page }) 
     window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
   });
   await page.route("**/api/live-demo-capabilities", (route) => route.fulfill({
-    json: { enabled: true, brregLiveEnabled: true, sharePointEnabled: true, erpReceiverEnabled: true, failureDemoEnabled: true },
+    json: { enabled: true, brregLiveEnabled: true, sharePointSimulatorEnabled: true, erpReceiverEnabled: true, failureDemoEnabled: true },
   }));
   await page.route("**/api/live-demo-runs", (route) => route.fulfill({ status: 202, json: { runId } }));
   await page.route(`**/api/live-demo-runs/${runId}/retry`, async (route) => {
@@ -144,7 +144,7 @@ async function startAndCompleteRun(page: import("@playwright/test").Page) {
 
   await expect(
     page.getByRole("heading", {
-      name: "Fra henvendelse til sak, dokument og systemoppdatering",
+      name: "Fra henvendelse til sak, dokument og systemsynkronisering",
     }),
   ).toBeVisible();
   await expect(page.getByText("Brreg: live ved tilgjengelig tjeneste", { exact: true })).toBeVisible();
@@ -172,8 +172,8 @@ async function startAndCompleteRun(page: import("@playwright/test").Page) {
   expect(caseNumber).toBeTruthy();
 
   await expect(page.getByText("Fullført", { exact: true }).first()).toBeVisible();
-  const erpResult = page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" });
-  await expect(erpResult.getByText(/^Kvittering: ERP-DEMO-/)).toBeVisible();
+  await expect(page.getByText("Venter", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" })).toHaveCount(0);
 
   const manualProcess = page
     .locator("details")
@@ -213,7 +213,7 @@ async function showMockedBrregRun(
     window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
   });
   await page.route("**/api/live-demo-capabilities", async (route) => {
-    await route.fulfill({ json: { enabled: true, brregLiveEnabled: true, sharePointEnabled: false, erpReceiverEnabled: false, failureDemoEnabled: false } });
+    await route.fulfill({ json: { enabled: true, brregLiveEnabled: true, sharePointSimulatorEnabled: false, erpReceiverEnabled: false, failureDemoEnabled: false } });
   });
   await page.route("**/api/live-demo-runs", async (route) => {
     if (route.request().method() === "POST") {
@@ -236,7 +236,7 @@ async function showCapabilityCopy(
   capabilities: {
     enabled: boolean;
     brregLiveEnabled: boolean;
-    sharePointEnabled: boolean;
+    sharePointSimulatorEnabled: boolean;
     erpReceiverEnabled: boolean;
     failureDemoEnabled: boolean;
   },
@@ -270,7 +270,7 @@ function createCompletedRun(
     sequence,
     publicStage,
     provider,
-    status: "Completed",
+    status: key === "erp-received" && !erpReceiptId ? "Skipped" : "Completed",
     evidenceMode,
     attemptCount: 1,
     durationMs: key === "brreg-checked" ? durationMs : 10,
@@ -313,6 +313,7 @@ function createCompletedRun(
       caseHref: "/cases/case-id",
       documentHref: "/documents/document-id",
       documentDownloadHref: "/api/documents/document-id/download",
+      deliveryPackageHref: "/delivery-packages/package-id",
       sharePointEvidenceHref: `/technical/live-runs/${runId}#sharepoint`,
       auditHref: `/technical/live-runs/${runId}#audit`,
     },

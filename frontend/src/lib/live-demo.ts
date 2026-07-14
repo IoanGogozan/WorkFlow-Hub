@@ -27,6 +27,7 @@ export type LiveDemoRunResult = {
   caseHref: string | null;
   documentHref: string | null;
   documentDownloadHref: string | null;
+  deliveryPackageHref: string | null;
   sharePointEvidenceHref: string | null;
   auditHref: string;
 };
@@ -50,7 +51,7 @@ export type LiveDemoRun = {
 export type LiveDemoCapabilities = {
   enabled: boolean;
   brregLiveEnabled: boolean;
-  sharePointEnabled: boolean;
+  sharePointSimulatorEnabled: boolean;
   erpReceiverEnabled: boolean;
   failureDemoEnabled: boolean;
 };
