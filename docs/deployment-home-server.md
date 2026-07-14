@@ -43,10 +43,31 @@ Target: current home public IPv4 address
 
 Only router ports 80 and 443 should forward to `192.168.50.23`.
 
-## First Deployment
+## Deployment prerequisites
 
-Copy the repository to `/srv/projects/workflow-hub`, then create the private
-environment file:
+Before updating an existing deployment:
+
+- obtain explicit owner approval for the exact Git commit;
+- confirm that the commit passed CI and contains fictional/demo-safe data only;
+- record the currently deployed commit as `PREVIOUS_GOOD_REVISION`;
+- require a clean server worktree; and
+- create a current backup before changing code or containers.
+
+```bash
+cd /srv/projects/workflow-hub
+export PREVIOUS_GOOD_REVISION="$(git rev-parse HEAD)"
+git status --short
+BACKUP_ROOT=/srv/backups/workflow-hub bash scripts/backup-home-server.sh
+```
+
+Stop if `git status --short` prints any output or if the backup fails. Keep the
+recorded revision and the three matching, timestamped backup files until the
+new deployment has been accepted.
+
+## Private environment
+
+For the first deployment, copy the repository to `/srv/projects/workflow-hub`,
+then create the private environment file:
 
 ```bash
 cd /srv/projects/workflow-hub
@@ -55,7 +76,16 @@ chmod 600 .env
 nano .env
 ```
 
-Generate separate PostgreSQL and ERP HMAC secrets with a local tool such as:
+The current `.env` additions are:
+
+```dotenv
+ERP_DEMO_SIGNING_SECRET=<64 hexadecimal characters>
+SHAREPOINT_MODE=Simulated
+SHAREPOINT_SIMULATE_THROTTLING=false
+```
+
+Keep the Microsoft/SharePoint Online values empty. Generate separate PostgreSQL
+and ERP HMAC secrets on the server:
 
 ```bash
 openssl rand -base64 36
@@ -66,13 +96,75 @@ Set the generated values as `POSTGRES_PASSWORD` and
 `ERP_DEMO_SIGNING_SECRET` in `.env`. Do not commit that file or reuse either
 secret elsewhere.
 
-Validate and start:
+For an existing deployment, add missing keys manually instead of overwriting
+`.env`. Restrict the file after editing and verify required values without
+printing them:
+
+```bash
+chmod 600 .env
+test -n "$(sed -n 's/^POSTGRES_PASSWORD=//p' .env)"
+test "$(sed -n 's/^ERP_DEMO_SIGNING_SECRET=//p' .env | wc -c)" -eq 65
+```
+
+Never run `cat .env`, paste its contents into a report, or enable shell tracing
+while handling secrets.
+
+## Persistent volumes
+
+Compose retains three named volumes across rebuilds and application rollbacks:
+
+- `workflow-hub_postgres_data` for PostgreSQL;
+- `workflow-hub_document_data` for generated documents; and
+- `workflow-hub_erp_receiver_data` for the ERP receiver SQLite database at
+  `/data/erp-demo-receiver.db`.
+
+The SQLite volume is part of the backup and restore set. Never run
+`docker compose down -v`, and do not delete or recreate these volumes during a
+deployment or rollback.
+
+## Pull, validate, build, migrate, and start
+
+Set the approved immutable commit, fetch it, and verify the clean checkout:
+
+```bash
+cd /srv/projects/workflow-hub
+export DEPLOY_REVISION=REPLACE_WITH_APPROVED_COMMIT_SHA
+git fetch --prune origin
+git checkout --detach "$DEPLOY_REVISION"
+test "$(git rev-parse HEAD)" = "$(git rev-parse "$DEPLOY_REVISION")"
+test -z "$(git status --porcelain)"
+```
+
+Validate Compose and build all application images before changing running
+containers:
 
 ```bash
 docker compose --env-file .env -f compose.home-server.yml config --quiet
-docker compose --env-file .env -f compose.home-server.yml up -d --build
+docker compose --env-file .env -f compose.home-server.yml build --pull
+```
+
+The API applies committed EF Core migrations on startup through
+`Database__ApplyMigrationsOnStartup=true`. Start PostgreSQL first, then the API
+and wait for its migration/readiness gate before starting the remaining
+services:
+
+```bash
+docker compose --env-file .env -f compose.home-server.yml up -d db
+docker compose --env-file .env -f compose.home-server.yml up -d api
+for attempt in $(seq 1 24); do
+  if docker compose --env-file .env -f compose.home-server.yml exec -T api \
+    bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nX-Forwarded-Proto: https\r\nConnection: close\r\n\r\n" >&3; grep -q "200 OK" <&3'; then
+    break
+  fi
+  test "$attempt" -lt 24 || exit 1
+  sleep 5
+done
+docker compose --env-file .env -f compose.home-server.yml up -d
 docker compose --env-file .env -f compose.home-server.yml ps
 ```
+
+If API readiness does not pass promptly, inspect its logs and roll back. Do not
+start repeated migration attempts blindly.
 
 ## Caddy
 
@@ -105,9 +197,11 @@ docker compose -f /srv/proxy/compose.yml exec -T caddy \
   caddy reload --config /etc/caddy/Caddyfile
 ```
 
-## Verification
+## Health and smoke verification
 
 ```bash
+curl --fail --silent --show-error https://workflow.norvix.no/health >/dev/null
+curl --fail --silent --show-error https://workflow.norvix.no/health/ready >/dev/null
 bash scripts/smoke-home-server.sh https://workflow.norvix.no
 bash scripts/smoke-verifiable-demo.sh https://workflow.norvix.no
 docker compose --env-file .env -f compose.home-server.yml ps
@@ -123,6 +217,10 @@ bash scripts/smoke-verifiable-demo.sh https://workflow.norvix.no --fail-once
 
 Also complete one browser session from `/demo`, including timeline replay,
 calculator, technical evidence, privacy, and terms.
+
+Record `git rev-parse HEAD` as the deployed revision only after both smoke modes
+and the browser check pass. Reports may contain commit IDs and check outcomes,
+but never `.env` values, bearer tokens, HMAC signatures, or secrets.
 
 ## Backup
 
@@ -155,11 +253,21 @@ the required database, document, and ERP receiver order. Never use
 
 ## Rollback
 
-Redeploy a previously validated Git revision, keeping `.env` and named volumes:
+Rollback is an application redeploy, not a data restore. Use the previously
+recorded, validated revision while keeping `.env` and all named volumes:
 
 ```bash
-git checkout PREVIOUS_GOOD_REVISION
-docker compose --env-file .env -f compose.home-server.yml up -d --build
+cd /srv/projects/workflow-hub
+git checkout --detach "$PREVIOUS_GOOD_REVISION"
+docker compose --env-file .env -f compose.home-server.yml config --quiet
+docker compose --env-file .env -f compose.home-server.yml build
+docker compose --env-file .env -f compose.home-server.yml up -d
+bash scripts/smoke-home-server.sh https://workflow.norvix.no
+bash scripts/smoke-verifiable-demo.sh https://workflow.norvix.no
 ```
 
-Do not remove or recreate volumes during an application rollback.
+Do not remove or recreate volumes during an application rollback. If a database
+migration is not backward-compatible with the previous application revision,
+stop the services and follow `scripts/restore-home-server.md` using the three
+matching pre-deployment backup files. A data restore is destructive and must be
+explicitly approved; never improvise a reverse migration.
