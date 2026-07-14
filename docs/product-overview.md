@@ -1,4 +1,4 @@
-# Product Overview
+﻿# Product Overview
 
 ## Product Direction
 
@@ -13,7 +13,7 @@ commercial multi-company SaaS. The broader application remains available as
 technical evidence behind one simple service-request story.
 
 The approved direction and staged implementation plan are maintained in
-[Client-Facing Integration Demo](client-facing-integration-demo.md).
+[Verifiable Integration Demo](verifiable-integration-demo.md).
 
 ## Target Visitor
 

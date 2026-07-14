@@ -1,4 +1,3 @@
-import { LiveDemoDetails } from "@/components/live-demo/live-demo-details";
 import {
   LiveDemoStageCard,
   type LiveDemoStage,
@@ -13,12 +12,15 @@ type LiveDemoRunPanelProps = {
   isStarting: boolean;
   retry: () => void;
   run: LiveDemoRun | null;
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
 };
 
 const publicStages = ["Mottatt", "Kontrollert", "Opprettet", "Synkronisert"];
 
-export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, retry, run }: LiveDemoRunPanelProps) {
+export function LiveDemoRunPanel({ capabilities, error, headingRef, isActive, isStarting, retry, run }: LiveDemoRunPanelProps) {
   const stages = createStages(run?.steps ?? []);
+  const brregDurationMs = run?.steps.find((step) => step.key === "brreg-checked")?.durationMs ?? null;
+  const erpStep = run?.steps.find((step) => step.key === "erp-received");
   return (
     <section aria-labelledby="live-preview-run-heading" id="live-preview-run">
       <div className="rounded-xl border border-[#dce1e8] bg-[#fdfefe] p-5 sm:p-8">
@@ -26,9 +28,14 @@ export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, re
         <h2
           className="mt-2 text-2xl font-semibold tracking-tight text-[#172033] sm:text-3xl"
           id="live-preview-run-heading"
+          ref={headingRef}
+          tabIndex={-1}
         >
           Én ny henvendelse, fire tydelige steg
         </h2>
+        <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
+          {screenReaderStatus(run, isStarting)}
+        </p>
         <p className="mt-3 max-w-2xl text-base leading-7 text-[#526075]">
           Følg status, varighet og offentlig-safe bevis mens den fiktive
           henvendelsen behandles.
@@ -43,14 +50,30 @@ export function LiveDemoRunPanel({ capabilities, error, isActive, isStarting, re
             <LiveDemoStageCard key={stage.title} stage={stage} />
           ))}
         </ol>
-        {run?.status === "Completed" && run.result ? <LiveDemoResultCard result={run.result} totalDurationMs={run.totalDurationMs} /> : null}
+        {run?.status === "Completed" && run.result ? (
+          <LiveDemoResultCard
+            brregDurationMs={brregDurationMs}
+            erpAttemptCount={erpStep?.attemptCount ?? 0}
+            erpDurationMs={erpStep?.durationMs ?? null}
+            result={run.result}
+            totalDurationMs={run.totalDurationMs}
+          />
+        ) : null}
         {run?.canRetry ? (
           <button className="mt-6 rounded-md border border-[#315ea8] px-5 py-3 text-sm font-semibold text-[#315ea8] hover:bg-[#e8f0ff] disabled:cursor-not-allowed disabled:opacity-60" disabled={isStarting || isActive} onClick={retry} type="button">Prøv igjen</button>
         ) : null}
       </div>
-      <LiveDemoDetails />
     </section>
   );
+}
+
+function screenReaderStatus(run: LiveDemoRun | null, isStarting: boolean) {
+  if (isStarting) return "Live-demoen starter.";
+  if (!run) return "Live-demoen er klar til å starte.";
+  if (run.status === "Completed") return "Live-demoen er fullført. Resultater og bevis er tilgjengelige.";
+  if (run.status === "Failed" && run.canRetry) return "Live-demoen feilet kontrollert. Prøv igjen er tilgjengelig.";
+  if (run.status === "Failed") return "Live-demoen feilet.";
+  return `Live-demoen kjører. Aktivt steg: ${run.currentStepKey ?? "venter"}.`;
 }
 
 function createStages(steps: LiveDemoRunStep[]): LiveDemoStage[] {

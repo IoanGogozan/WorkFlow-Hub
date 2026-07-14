@@ -9,7 +9,7 @@ The current repo includes PowerShell scripts for the first manual provisioning p
 - `scripts/provision-demo-azure.ps1` creates the Azure resources and writes `.env.demo.local`;
 - `scripts/configure-github-demo-environment.ps1` reads `.env.demo.local` and populates the GitHub `demo` environment.
 
-## No-Cost Readiness Mode
+## Pre-Deployment Readiness Mode
 
 When an Azure subscription is not available, do not run the provisioning script or the deploy workflow. The repository can still be kept deployment-ready without creating billable resources:
 

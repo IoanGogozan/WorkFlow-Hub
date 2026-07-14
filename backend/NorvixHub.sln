@@ -14,11 +14,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.Worker", "src\Nor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.Contracts", "src\NorvixHub.Contracts\NorvixHub.Contracts.csproj", "{A6666666-6666-4666-8666-666666666666}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.ErpDemoReceiver", "src\NorvixHub.ErpDemoReceiver\NorvixHub.ErpDemoReceiver.csproj", "{ABBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.UnitTests", "tests\NorvixHub.UnitTests\NorvixHub.UnitTests.csproj", "{A7777777-7777-4777-8777-777777777777}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.IntegrationTests", "tests\NorvixHub.IntegrationTests\NorvixHub.IntegrationTests.csproj", "{A8888888-8888-4888-8888-888888888888}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.ContractTests", "tests\NorvixHub.ContractTests\NorvixHub.ContractTests.csproj", "{A9999999-9999-4999-8999-999999999999}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NorvixHub.ErpDemoReceiver.Tests", "tests\NorvixHub.ErpDemoReceiver.Tests\NorvixHub.ErpDemoReceiver.Tests.csproj", "{ACCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC}"
 EndProject
 Global
   GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +54,10 @@ Global
     {A6666666-6666-4666-8666-666666666666}.Debug|Any CPU.Build.0 = Debug|Any CPU
     {A6666666-6666-4666-8666-666666666666}.Release|Any CPU.ActiveCfg = Release|Any CPU
     {A6666666-6666-4666-8666-666666666666}.Release|Any CPU.Build.0 = Release|Any CPU
+    {ABBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {ABBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {ABBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {ABBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB}.Release|Any CPU.Build.0 = Release|Any CPU
     {A7777777-7777-4777-8777-777777777777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
     {A7777777-7777-4777-8777-777777777777}.Debug|Any CPU.Build.0 = Debug|Any CPU
     {A7777777-7777-4777-8777-777777777777}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -62,6 +70,9 @@ Global
     {A9999999-9999-4999-8999-999999999999}.Debug|Any CPU.Build.0 = Debug|Any CPU
     {A9999999-9999-4999-8999-999999999999}.Release|Any CPU.ActiveCfg = Release|Any CPU
     {A9999999-9999-4999-8999-999999999999}.Release|Any CPU.Build.0 = Release|Any CPU
+    {ACCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {ACCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {ACCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {ACCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC}.Release|Any CPU.Build.0 = Release|Any CPU
   EndGlobalSection
 EndGlobal
-

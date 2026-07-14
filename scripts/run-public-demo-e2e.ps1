@@ -45,12 +45,21 @@ function Stop-ListenersOnPort {
 
 $backendUrl = "http://localhost:$BackendPort"
 $frontendUrl = "http://localhost:$FrontendPort"
+$secretBytes = New-Object byte[] 32
+$secretGenerator = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
+$secretGenerator.GetBytes($secretBytes)
+$secretGenerator.Dispose()
+$erpSigningSecret = ([BitConverter]::ToString($secretBytes)).Replace('-', '')
+$env:ERP_DEMO_SIGNING_SECRET = $erpSigningSecret
 
 Stop-ListenersOnPort -Port $FrontendPort
 Stop-ListenersOnPort -Port $BackendPort
 
 Write-Host "Starting local dependencies..."
 docker compose up -d
+if ($LASTEXITCODE -ne 0) {
+    throw "Docker Compose failed to start local dependencies."
+}
 
 Write-Host "Installing Playwright Chromium if needed..."
 npm --prefix frontend exec playwright install chromium
@@ -60,7 +69,7 @@ $succeeded = $false
 
 try {
     $jobs += Start-Job -Name "NorvixHub.Api.Demo" -ScriptBlock {
-        param([string] $Root, [int] $Port)
+        param([string] $Root, [int] $Port, [string] $ErpSigningSecret)
 
         Set-Location $Root
         $env:ASPNETCORE_ENVIRONMENT = "Demo"
@@ -72,12 +81,16 @@ try {
         $env:LiveDemo__OrganizationNumber = "999888777"
         $env:LiveDemo__WorkerPollMilliseconds = "100"
         $env:LiveDemo__RunRecoveryMinutes = "5"
+        $env:ErpDemo__Enabled = "true"
+        $env:ErpDemo__BaseUrl = "http://localhost:5510/"
+        $env:ErpDemo__SigningSecret = $ErpSigningSecret
+        $env:Storage__Local__RootPath = Join-Path $Root "storage/e2e-documents"
         # Keep the public E2E deterministic: no external Brreg call is allowed in CI.
         $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
         $env:LiveDemo__BrregFallbackEnabled = "true"
         $env:MSBUILDDISABLENODEREUSE = "1"
         dotnet run --project backend/src/NorvixHub.Api -nr:false
-    } -ArgumentList $root.Path, $BackendPort
+    } -ArgumentList $root.Path, $BackendPort, $erpSigningSecret
 
     $jobs += Start-Job -Name "NorvixHub.Frontend.E2E" -ScriptBlock {
         param([string] $FrontendRoot, [string] $ApiBaseUrl, [int] $Port)
@@ -90,7 +103,7 @@ try {
     Wait-HttpOk -Url "$backendUrl/health/ready" -TimeoutSeconds 120
 
     $jobs += Start-Job -Name "NorvixHub.Worker.LiveDemo" -ScriptBlock {
-        param([string] $Root)
+        param([string] $Root, [string] $ErpSigningSecret)
 
         Set-Location $Root
         $env:DOTNET_ENVIRONMENT = "Demo"
@@ -99,12 +112,16 @@ try {
         $env:LiveDemo__OrganizationNumber = "999888777"
         $env:LiveDemo__WorkerPollMilliseconds = "100"
         $env:LiveDemo__RunRecoveryMinutes = "5"
+        $env:ErpDemo__Enabled = "true"
+        $env:ErpDemo__BaseUrl = "http://localhost:5510/"
+        $env:ErpDemo__SigningSecret = $ErpSigningSecret
+        $env:Storage__Local__RootPath = Join-Path $Root "storage/e2e-documents"
         # Match the API process so the worker uses the labelled local fallback.
         $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
         $env:LiveDemo__BrregFallbackEnabled = "true"
         $env:MSBUILDDISABLENODEREUSE = "1"
         dotnet run --project backend/src/NorvixHub.Worker -nr:false
-    } -ArgumentList $root.Path
+    } -ArgumentList $root.Path, $erpSigningSecret
 
     Wait-HttpOk -Url "$frontendUrl/demo" -TimeoutSeconds 120
     Wait-HttpOk -Url "$frontendUrl/intakes/new" -TimeoutSeconds 120
@@ -131,4 +148,6 @@ finally {
 
     Stop-ListenersOnPort -Port $FrontendPort
     Stop-ListenersOnPort -Port $BackendPort
+    Remove-Item Env:ERP_DEMO_SIGNING_SECRET -ErrorAction SilentlyContinue
+    $erpSigningSecret = $null
 }

@@ -10,6 +10,7 @@ test("visitor understands and replays the client-facing automation story", async
   await expect(page.getByText("Ingen ekte kundesystemer kontaktes")).toBeVisible();
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
   await expect(page).toHaveURL(/\/$/);
+  await page.goto("/technical/legacy-story");
 
   await expect(
     page.getByRole("heading", {
@@ -93,4 +94,9 @@ test("visitor understands and replays the client-facing automation story", async
 
   await page.goto("/automation");
   await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Fra henvendelse til sak, dokument og systemsynkronisering",
+    }),
+  ).toBeVisible();
 });

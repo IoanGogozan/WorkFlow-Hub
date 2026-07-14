@@ -14,14 +14,18 @@ test("shows live Brreg evidence with the measured duration", async ({ page }) =>
 
   await expect(page.getByText("Brreg", { exact: true }).last()).toBeVisible();
   await expect(page.getByText("Live kontroll – 0,8 sek")).toBeVisible();
-  await expect(page.getByText("Brreg: Live kontroll")).toBeVisible();
+  const brregCard = page.getByRole("article").filter({ hasText: "Brreg" }).last();
+  await expect(brregCard.getByText("Live", { exact: true })).toBeVisible();
+  await expect(brregCard.getByText("800 ms", { exact: true })).toBeVisible();
 });
 
 test("shows fallback Brreg evidence without presenting it as live", async ({ page }) => {
   await showMockedBrregRun(page, "fallback", 800);
 
   await expect(page.getByText("Fallback-snapshot – live tjeneste var utilgjengelig")).toBeVisible();
-  await expect(page.getByText("Brreg: Fallback-snapshot")).toBeVisible();
+  const brregCard = page.getByRole("article").filter({ hasText: "Brreg" }).last();
+  await expect(brregCard.getByText("Fallback", { exact: true })).toBeVisible();
+  await expect(brregCard.getByText("800 ms", { exact: true })).toBeVisible();
   await expect(page.getByText("Live kontroll – 0,8 sek")).toHaveCount(0);
 });
 
@@ -29,23 +33,121 @@ test("labels SharePoint synchronization as simulated", async ({ page }) => {
   await showMockedBrregRun(page, "live", 800);
 
   const resultCard = page.locator("section[aria-labelledby='live-demo-result-heading']");
-  await expect(
-    resultCard.getByText(/Simulated SharePoint adapter — no Microsoft 365 tenant connected/),
-  ).toBeVisible();
+  const sharePointCard = resultCard.getByRole("article").filter({ hasText: "SharePoint" });
+  await expect(sharePointCard.getByText("Synkronisert", { exact: true })).toBeVisible();
+  await expect(sharePointCard.getByText("Simulator", { exact: true })).toBeVisible();
+  await expect(sharePointCard.getByRole("link", { name: "Se simulatorbevis" })).toBeVisible();
   await expect(page.getByText(/SharePoint connected/i)).toHaveCount(0);
+});
+
+test("shows a verifiable ERP receipt when the receiver completed", async ({ page }) => {
+  await showMockedBrregRun(page, "live", 800, "ERP-DEMO-ABCD1234");
+
+  const erpCard = page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" });
+  await expect(erpCard.getByText("Melding mottatt", { exact: true })).toBeVisible();
+  await expect(erpCard.getByText("Kvittering: ERP-DEMO-ABCD1234", { exact: true })).toBeVisible();
+  await expect(erpCard.getByText(/Forsøk: 1/)).toBeVisible();
+});
+
+test("derives public integration claims from enabled capabilities", async ({ page }) => {
+  await showCapabilityCopy(page, {
+    enabled: true,
+    brregLiveEnabled: true,
+    sharePointSimulatorEnabled: true,
+    erpReceiverEnabled: true,
+    failureDemoEnabled: true,
+  });
+
+  await expect(page.getByText("Brreg: live ved tilgjengelig tjeneste", { exact: true })).toBeVisible();
+  await expect(page.getByText("SharePoint: lokal simulator", { exact: true })).toBeVisible();
+  await expect(page.getByText("ERP: separat selvhostet demo receiver", { exact: true })).toBeVisible();
+});
+
+test("hides ERP claims when the receiver capability is disabled", async ({ page }) => {
+  await showCapabilityCopy(page, {
+    enabled: true,
+    brregLiveEnabled: true,
+    sharePointSimulatorEnabled: true,
+    erpReceiverEnabled: false,
+    failureDemoEnabled: false,
+  });
+
+  await expect(page.getByText(/^ERP:/)).toHaveCount(0);
+  await expect(page.getByText(/ERP-mottakeren er ikke tilgjengelig/)).toHaveCount(0);
+});
+
+test("moves focus and announces status after start and retry", async ({ page }) => {
+  const runId = "22222222-2222-4222-8222-222222222222";
+  let retried = false;
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("norvix.demoSessionToken", "focus-e2e-token");
+    window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
+  });
+  await page.route("**/api/live-demo-capabilities", (route) => route.fulfill({
+    json: { enabled: true, brregLiveEnabled: true, sharePointSimulatorEnabled: true, erpReceiverEnabled: true, failureDemoEnabled: true },
+  }));
+  await page.route("**/api/live-demo-runs", (route) => route.fulfill({ status: 202, json: { runId } }));
+  await page.route(`**/api/live-demo-runs/${runId}/retry`, async (route) => {
+    retried = true;
+    await route.fulfill({ status: 202, json: { runId } });
+  });
+  await page.route(`**/api/live-demo-runs/${runId}`, async (route) => {
+    const completed = createCompletedRun(runId, "live", 25, "ERP-DEMO-FOCUS01");
+    await route.fulfill({
+      json: retried
+        ? { ...completed, retryCount: 1 }
+        : {
+            ...completed,
+            status: "Failed",
+            currentStepKey: "erp-received",
+            completedAt: null,
+            canRetry: true,
+            result: null,
+          },
+    });
+  });
+
+  await page.goto("/");
+  const runHeading = page.getByRole("heading", { name: "Én ny henvendelse, fire tydelige steg" });
+  await page.getByRole("button", { name: "Kjør live demo" }).click();
+  await expect(runHeading).toBeFocused();
+  await expect(page.getByRole("status")).toContainText("feilet kontrollert");
+
+  await page.getByRole("button", { name: "Prøv igjen" }).click();
+  await expect(runHeading).toBeFocused();
+  await expect(page.getByRole("status")).toContainText("fullført");
+});
+
+test("redirects an expired demo session to a new demo start", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("norvix.demoSessionToken", "expired-e2e-token");
+    window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2020-01-01T00:00:00.000Z");
+  });
+  await page.route("**/api/live-demo-capabilities", async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Demo session expired" }),
+    });
+  });
+
+  await page.goto("/");
+
+  await expect(page).toHaveURL(/\/demo\?reason=expired$/);
+  await expect(page.getByText("Demoen er utløpt. Start en ny for å fortsette.")).toBeVisible();
 });
 
 async function startAndCompleteRun(page: import("@playwright/test").Page) {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await page.goto("/live-preview");
 
   await expect(
     page.getByRole("heading", {
-      name: "Fra henvendelse til sak og SharePoint – på sekunder",
+      name: "Fra henvendelse til sak, dokument og systemsynkronisering",
     }),
   ).toBeVisible();
+  await expect(page.getByText("Brreg: live ved tilgjengelig tjeneste", { exact: true })).toBeVisible();
   const createResponse = page.waitForResponse((response) =>
     response.request().method() === "POST" &&
     response.url().endsWith("/api/live-demo-runs") &&
@@ -61,24 +163,35 @@ async function startAndCompleteRun(page: import("@playwright/test").Page) {
   const resultHeading = page.getByRole("heading", { name: /Fullført på/ });
   await expect(resultHeading).toBeVisible({ timeout: 20_000 });
   const caseText = await page
-    .locator("li")
-    .filter({ hasText: "Sak LIVE-" })
+    .getByRole("article")
+    .filter({ hasText: "Sak" })
+    .filter({ hasText: "LIVE-" })
     .first()
     .textContent();
   const caseNumber = caseText?.match(/LIVE-[0-9]{4}-[A-F0-9]+/)?.[0];
   expect(caseNumber).toBeTruthy();
 
-  await expect(page.getByText("Venter", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/ERP demo receiver:/)).toHaveCount(0);
+  await expect(page.getByText("Fullført", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Venter", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" })).toHaveCount(0);
 
   const manualProcess = page
     .locator("details")
-    .filter({ hasText: "Slik ser den manuelle prosessen ofte ut" });
+    .filter({ hasText: "Hva ble automatisert?" });
   await expect(manualProcess).not.toHaveAttribute("open", "");
-  const manualSummary = manualProcess.getByText("Slik ser den manuelle prosessen ofte ut");
+  const manualSummary = manualProcess.getByText("Hva ble automatisert?");
   await manualSummary.focus();
   await page.keyboard.press("Enter");
   await expect(manualProcess).toHaveAttribute("open", "");
+
+  for (const title of [
+    "Hvordan beregnes mulig tidsbesparelse?",
+    "Hva er ekte og hva er simulert?",
+    "Tekniske detaljer",
+  ]) {
+    await expect(page.locator("details").filter({ hasText: title })).not.toHaveAttribute("open", "");
+  }
+  await expect(page.getByRole("link", { name: "Beskriv prosessen deres" }).first()).toBeVisible();
 
   for (const width of [375, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -92,6 +205,7 @@ async function showMockedBrregRun(
   page: import("@playwright/test").Page,
   mode: "live" | "fallback",
   durationMs: number,
+  erpReceiptId: string | null = null,
 ) {
   const runId = "11111111-1111-4111-8111-111111111111";
   await page.addInitScript(() => {
@@ -99,7 +213,7 @@ async function showMockedBrregRun(
     window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
   });
   await page.route("**/api/live-demo-capabilities", async (route) => {
-    await route.fulfill({ json: { enabled: true, brregLiveEnabled: true, sharePointEnabled: false, erpReceiverEnabled: false, failureDemoEnabled: false } });
+    await route.fulfill({ json: { enabled: true, brregLiveEnabled: true, sharePointSimulatorEnabled: false, erpReceiverEnabled: false, failureDemoEnabled: false } });
   });
   await page.route("**/api/live-demo-runs", async (route) => {
     if (route.request().method() === "POST") {
@@ -109,7 +223,7 @@ async function showMockedBrregRun(
     await route.continue();
   });
   await page.route(`**/api/live-demo-runs/${runId}`, async (route) => {
-    await route.fulfill({ json: createCompletedRun(runId, mode, durationMs) });
+    await route.fulfill({ json: createCompletedRun(runId, mode, durationMs, erpReceiptId) });
   });
 
   await page.goto("/live-preview");
@@ -117,7 +231,32 @@ async function showMockedBrregRun(
   await expect(page.getByRole("heading", { name: /Fullført på/ })).toBeVisible();
 }
 
-function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs: number) {
+async function showCapabilityCopy(
+  page: import("@playwright/test").Page,
+  capabilities: {
+    enabled: boolean;
+    brregLiveEnabled: boolean;
+    sharePointSimulatorEnabled: boolean;
+    erpReceiverEnabled: boolean;
+    failureDemoEnabled: boolean;
+  },
+) {
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("norvix.demoSessionToken", "capability-e2e-token");
+    window.sessionStorage.setItem("norvix.demoSessionExpiresAt", "2099-01-01T00:00:00.000Z");
+  });
+  await page.route("**/api/live-demo-capabilities", async (route) => {
+    await route.fulfill({ json: capabilities });
+  });
+  await page.goto("/");
+}
+
+function createCompletedRun(
+  runId: string,
+  mode: "live" | "fallback",
+  durationMs: number,
+  erpReceiptId: string | null,
+) {
   const steps = [
     ["request-created", 1, "Mottatt", "Norvix WorkFlow Hub", "implemented"],
     ["brreg-checked", 2, "Kontrollert", "Brreg", "live-or-fallback"],
@@ -131,7 +270,7 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
     sequence,
     publicStage,
     provider,
-    status: "Completed",
+    status: key === "erp-received" && !erpReceiptId ? "Skipped" : "Completed",
     evidenceMode,
     attemptCount: 1,
     durationMs: key === "brreg-checked" ? durationMs : 10,
@@ -162,6 +301,21 @@ function createCompletedRun(runId: string, mode: "live" | "fallback", durationMs
     publicErrorCode: null,
     publicErrorMessage: null,
     steps,
-    result: { caseNumber: "LIVE-2026-ABCD1234", brregMode: mode, sharePointFolderReference: "Customers/CASE-2026-ABCD", sharePointFileReference: "01SP-DEMO-ABCD", erpReceiptId: null, auditEventCount: 6 },
+    result: {
+      caseNumber: "LIVE-2026-ABCD1234",
+      documentFileName: "live-demo-ABCD1234.pdf",
+      brregMode: mode,
+      sharePointFolderReference: "Customers/CASE-2026-ABCD",
+      sharePointFileReference: "01SP-DEMO-ABCD",
+      erpReceiptId,
+      auditEventCount: 6,
+      evidenceHref: `/technical/live-runs/${runId}`,
+      caseHref: "/cases/case-id",
+      documentHref: "/documents/document-id",
+      documentDownloadHref: "/api/documents/document-id/download",
+      deliveryPackageHref: "/delivery-packages/package-id",
+      sharePointEvidenceHref: `/technical/live-runs/${runId}#sharepoint`,
+      auditHref: `/technical/live-runs/${runId}#audit`,
+    },
   };
 }

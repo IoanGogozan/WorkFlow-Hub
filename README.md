@@ -1,4 +1,4 @@
-# Norvix WorkFlow Hub
+﻿# Norvix WorkFlow Hub
 
 Norvix WorkFlow Hub presents **Automatisert serviceflyt**, a client-facing
 integration example for Norwegian technical service companies. Start at
@@ -39,7 +39,7 @@ The application is intended to support one complete operational flow:
 Norvix WorkFlow Hub currently has a working local product flow backed by ASP.NET Core APIs, PostgreSQL persistence, tenant-scoped data access, audit events, a Next.js frontend, document workflow, delivery links, analytics, and automated backend coverage.
 
 The active target is the staged
-[Real Live Integration Demo V2](docs/live-integration-demo-v2.md). Each visitor
+[Verifiable Integration Demo](docs/verifiable-integration-demo.md). Each visitor
 receives an isolated temporary workspace with fictional data and can start a
 new worker-backed run. Brreg is live-or-labelled-fallback, internal artifacts
 are persisted, and SharePoint behavior uses the explicitly local simulator.
@@ -141,10 +141,17 @@ Prerequisites:
 Start local dependencies:
 
 ```bash
+cp .env.example .env
+# Set ERP_DEMO_SIGNING_SECRET in .env to a generated random value.
 docker compose up -d
 ```
 
 PostgreSQL is exposed on host port `55432` to avoid collisions with other local projects.
+The fictional ERP receiver is exposed only on `127.0.0.1:5510` so the API and
+worker processes running on the host can call it. Its SQLite database is stored
+in the named `erp-receiver-data` volume; the receiver is attached to the
+internal service network plus a dedicated bridge required for the
+loopback-only host port.
 
 Start the full local app with one command from the repository root:
 
@@ -214,9 +221,9 @@ X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
 
 ## Documentation Index
 
-- [Real Live Integration Demo V2 — Active Implementation Plan](docs/live-integration-demo-v2.md)
-- [SharePoint Simulator — Implemented Amendment](docs/sharepoint-simulator-amendment.md)
-- [Client-Facing Integration Demo — Historical Implemented Direction](docs/client-facing-integration-demo.md)
+- [Plan Registry — start here for plan status](docs/plans.md)
+- [Verifiable Integration Demo — Active Implementation Plan](docs/verifiable-integration-demo.md)
+- [SharePoint Simulator — Implemented Reference](docs/sharepoint-simulator-amendment.md)
 - [Product Overview](docs/product-overview.md)
 - [Current Implementation Status](docs/current-implementation-status.md)
 - [Requirements](docs/requirements.md)

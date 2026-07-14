@@ -56,7 +56,10 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         steps.Select(step => step.Key).Should().Equal(
             "request-created", "brreg-checked", "case-created", "document-created",
             "sharepoint-synced", "erp-received", "run-completed");
-        steps.Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
+        steps.Where(step => step.Key != "erp-received")
+            .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
+        steps.Single(step => step.Key == "erp-received").Status
+            .Should().Be(LiveDemoRunStepStatus.Skipped);
     }
 
     [Fact]
@@ -257,10 +260,9 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         run!.Result.Should().NotBeNull();
         run.Result!.SharePointFolderReference.Should().Be("folder-r…n-full");
         run.Result.SharePointFileReference.Should().Be("file-ref…n-full");
-        run.Result.ErpReceiptId.Should().Be("erp-rece…n-full");
+        run.Result.ErpReceiptId.Should().Be(fullReceiptId);
         body.Should().NotContain(fullFolderId);
         body.Should().NotContain(fullFileId);
-        body.Should().NotContain(fullReceiptId);
         body.Should().NotContain("999888777");
         body.Should().NotContain("correlationId");
     }
@@ -268,7 +270,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
     [Fact]
     public async Task Capabilities_map_only_safe_boolean_values()
     {
-        using var enabledFactory = CreateFactory(enabled: true);
+        using var enabledFactory = CreateFactory(enabled: true, erpEnabled: true);
         using var enabledClient = enabledFactory.CreateClient();
         var enabledSession = await CreateDemoSessionAsync(enabledClient);
         using var enabledResponse = await SendGetAsync(
@@ -281,9 +283,9 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         enabledResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         enabled.Enabled.Should().BeTrue();
         enabled.BrregLiveEnabled.Should().BeTrue();
-        enabled.SharePointEnabled.Should().BeFalse();
+        enabled.SharePointSimulatorEnabled.Should().BeTrue();
         enabled.ErpReceiverEnabled.Should().BeFalse();
-        enabled.FailureDemoEnabled.Should().BeTrue();
+        enabled.FailureDemoEnabled.Should().BeFalse();
 
         using var disabledFactory = CreateFactory(enabled: false);
         using var disabledClient = disabledFactory.CreateClient();
@@ -297,7 +299,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
 
         disabled.Enabled.Should().BeFalse();
         disabled.BrregLiveEnabled.Should().BeFalse();
-        disabled.SharePointEnabled.Should().BeFalse();
+        disabled.SharePointSimulatorEnabled.Should().BeFalse();
         disabled.ErpReceiverEnabled.Should().BeFalse();
         disabled.FailureDemoEnabled.Should().BeFalse();
     }
@@ -410,7 +412,9 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
             TestContext.Current.CancellationToken)).CaseId.Should().NotBeNull();
     }
 
-    private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateFactory(bool enabled)
+    private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateFactory(
+        bool enabled,
+        bool erpEnabled = false)
     {
         return _factory.WithWebHostBuilder(builder =>
         {
@@ -421,7 +425,9 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
                 {
                     ["LiveDemo:Enabled"] = enabled.ToString(),
                     ["LiveDemo:OrganizationNumber"] = "999888777",
-                    ["LiveDemo:MaxRunsPerSession"] = "3"
+                    ["LiveDemo:MaxRunsPerSession"] = "3",
+                    ["ErpDemo:Enabled"] = erpEnabled.ToString(),
+                    ["SharePoint:Mode"] = "Simulated"
                 });
             });
         });

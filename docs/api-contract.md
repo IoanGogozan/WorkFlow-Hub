@@ -1,11 +1,11 @@
-# API Contract
+﻿# API Contract
 
 Status markers:
 
 - `Implemented` means the endpoint exists in the current backend.
 - `Planned` means the endpoint belongs to the general product backlog and is
   not implemented yet. These entries are not the active demo delivery plan;
-  see [Real Live Integration Demo V2](live-integration-demo-v2.md).
+  see [Verifiable Integration Demo](verifiable-integration-demo.md).
 
 ## API Principles
 

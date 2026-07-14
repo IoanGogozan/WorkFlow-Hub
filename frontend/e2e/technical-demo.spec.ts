@@ -79,7 +79,7 @@ test("technical reviewer can complete the detailed demo workflow", async ({ page
   await expect(page).toHaveURL(/\/#resultat$/);
   await expect(
     page.getByRole("heading", {
-      name: "Fra e-post til opprettet sak – uten dobbeltregistrering",
+      name: "Fra henvendelse til sak, dokument og systemsynkronisering",
     }),
   ).toBeVisible();
 });

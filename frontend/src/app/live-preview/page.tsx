@@ -1,5 +1,5 @@
-import { LiveDemoPreviewPage } from "@/components/live-demo/live-demo-preview-page";
+import { redirect } from "next/navigation";
 
-export default function LivePreviewPage() {
-  return <LiveDemoPreviewPage />;
+export default function LivePreviewRedirectPage() {
+  redirect("/");
 }

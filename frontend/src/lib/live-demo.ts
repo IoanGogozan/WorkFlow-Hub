@@ -17,11 +17,19 @@ export type LiveDemoRunStep = {
 
 export type LiveDemoRunResult = {
   caseNumber: string | null;
+  documentFileName: string | null;
   brregMode: string | null;
   sharePointFolderReference: string | null;
   sharePointFileReference: string | null;
   erpReceiptId: string | null;
   auditEventCount: number | null;
+  evidenceHref: string;
+  caseHref: string | null;
+  documentHref: string | null;
+  documentDownloadHref: string | null;
+  deliveryPackageHref: string | null;
+  sharePointEvidenceHref: string | null;
+  auditHref: string;
 };
 
 export type LiveDemoRun = {
@@ -43,7 +51,7 @@ export type LiveDemoRun = {
 export type LiveDemoCapabilities = {
   enabled: boolean;
   brregLiveEnabled: boolean;
-  sharePointEnabled: boolean;
+  sharePointSimulatorEnabled: boolean;
   erpReceiverEnabled: boolean;
   failureDemoEnabled: boolean;
 };

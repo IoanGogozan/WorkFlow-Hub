@@ -21,7 +21,8 @@ public sealed class LiveDemoRunProcessor(
     IDemoPdfGenerator demoPdfGenerator,
     IFileStorage fileStorage,
     ILiveDemoOrganizationResolver organizationResolver,
-    ISharePointDocumentAdapterResolver sharePointAdapterResolver) : ILiveDemoRunProcessor
+    ISharePointDocumentAdapterResolver sharePointAdapterResolver,
+    IErpDemoClient erpDemoClient) : ILiveDemoRunProcessor
 {
     public async Task ProcessAsync(Guid runId, CancellationToken cancellationToken)
     {
@@ -43,7 +44,6 @@ public sealed class LiveDemoRunProcessor(
 
     private async Task ProcessBrregCheckedAsync(Guid runId, CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var run = await dbContext.LiveDemoRuns.SingleOrDefaultAsync(candidate => candidate.Id == runId, cancellationToken)
             ?? throw new InvalidOperationException("Live demo run was not found.");
         if (run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
@@ -62,28 +62,44 @@ public sealed class LiveDemoRunProcessor(
         var now = DateTimeOffset.UtcNow;
         try
         {
-            StartRunAndStep(run, step, now);
+            await using (var startTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
+            {
+                StartRunAndStep(run, step, now);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await startTransaction.CommitAsync(cancellationToken);
+            }
+
             var resolution = await organizationResolver.ResolveAsync(run.OrganizationNumber, cancellationToken);
-            var customer = await GetOrCreateBrregCustomerAsync(run, resolution, now, cancellationToken);
-            run.SetInternalArtifacts(null, customer.Id, null, null, null, now);
-            run.SetBrregEvidence(resolution.Mode, resolution.Organization.SourceUpdatedAt, now);
-            var summary = resolution.Mode == "live"
-                ? $"Firmadata kontrollert mot Brreg for {resolution.Organization.Name}."
-                : "Brreg var utilgjengelig; et tydelig merket fallback-snapshot ble brukt.";
-            step.MarkCompleted(summary, resolution.Mode, now);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await WriteAuditAsync(run, "LiveDemoStepCompleted", "brreg-checked", cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await using (var resultTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
+            {
+                var completedAt = DateTimeOffset.UtcNow;
+                var customer = await GetOrCreateBrregCustomerAsync(
+                    run,
+                    resolution,
+                    completedAt,
+                    cancellationToken);
+                run.SetInternalArtifacts(null, customer.Id, null, null, null, completedAt);
+                run.SetBrregEvidence(resolution.Mode, resolution.Organization.SourceUpdatedAt, completedAt);
+                var summary = resolution.Mode == "live"
+                    ? $"Firmadata kontrollert mot Brreg for {resolution.Organization.Name}."
+                    : "Brreg var utilgjengelig; et tydelig merket fallback-snapshot ble brukt.";
+                step.MarkCompleted(summary, resolution.Mode, completedAt);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await WriteAuditAsync(run, "LiveDemoStepCompleted", "brreg-checked", cancellationToken);
+                await resultTransaction.CommitAsync(cancellationToken);
+            }
         }
         catch (LiveDemoOrganizationResolutionException exception)
         {
+            await using var failureTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             await MarkFailedAsync(run, step, "brreg-checked", exception, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await failureTransaction.CommitAsync(cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            await using var failureTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             await MarkFailedAsync(run, step, "brreg-checked", exception, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await failureTransaction.CommitAsync(cancellationToken);
         }
     }
 
@@ -124,7 +140,10 @@ public sealed class LiveDemoRunProcessor(
                 CreateSafeReference(result.Item.ParentPath),
                 CreateSafeReference(result.Item.ExternalItemId),
                 now);
-            step.MarkCompleted("Simulated SharePoint adapter — no Microsoft 365 tenant connected.", result.Item.ExternalItemId, now);
+            step.MarkCompleted(
+                "Lokal SharePoint-simulator — ingen Microsoft 365-konto er tilkoblet.",
+                result.Item.ExternalItemId,
+                now);
             await dbContext.SaveChangesAsync(cancellationToken);
             await WriteAuditAsync(run, "LiveDemoStepCompleted", "sharepoint-synced", cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -153,6 +172,17 @@ public sealed class LiveDemoRunProcessor(
         try
         {
             StartRunAndStep(run, step, now);
+            var hasUnfinishedActiveSteps = await dbContext.LiveDemoRunSteps.AnyAsync(
+                candidate => candidate.RunId == runId &&
+                    candidate.Key != "run-completed" &&
+                    candidate.Status != LiveDemoRunStepStatus.Completed &&
+                    candidate.Status != LiveDemoRunStepStatus.Skipped,
+                cancellationToken);
+            if (hasUnfinishedActiveSteps)
+            {
+                throw new InvalidOperationException(
+                    "A live demo run cannot complete while an active step is unfinished.");
+            }
             step.MarkCompleted("Interne steg er registrert for denne kjøringen.", "RUN-COMPLETED", now);
             run.MarkCompleted(now);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -162,6 +192,63 @@ public sealed class LiveDemoRunProcessor(
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             await MarkFailedAsync(run, step, "run-completed", exception, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
+
+    private async Task ProcessErpReceivedAsync(Guid runId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
+        var step = await dbContext.LiveDemoRunSteps.SingleAsync(
+            candidate => candidate.RunId == runId && candidate.Key == "erp-received",
+            cancellationToken);
+        if (step.Status == LiveDemoRunStepStatus.Completed ||
+            run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        try
+        {
+            StartRunAndStep(run, step, now);
+            var caseNumber = await dbContext.Cases
+                .Where(candidate => candidate.Id == run.CaseId && candidate.TenantId == run.TenantId)
+                .Select(candidate => candidate.CaseNumber)
+                .SingleAsync(cancellationToken);
+            var documentReference = await dbContext.DocumentVersions
+                .Where(candidate => candidate.DocumentId == run.DocumentId && candidate.TenantId == run.TenantId)
+                .OrderByDescending(candidate => candidate.VersionNumber)
+                .Select(candidate => candidate.OriginalFilename)
+                .FirstAsync(cancellationToken);
+            var result = await erpDemoClient.SendAsync(
+                new ErpDemoRequest(
+                    run.Id,
+                    $"FICTIONAL-{run.CustomerReference}",
+                    caseNumber,
+                    documentReference,
+                    run.SimulateErpFailureOnce),
+                cancellationToken);
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.ReceiptId))
+            {
+                throw new ErpDemoProcessingException(result.Status);
+            }
+
+            run.SetErpReceipt(result.ReceiptId, DateTimeOffset.UtcNow);
+            step.MarkCompleted(
+                result.Duplicate
+                    ? "ERP-meldingen var allerede mottatt; samme kvittering ble brukt."
+                    : "ERP-meldingen ble mottatt av Norvix ERP demo receiver.",
+                result.ReceiptId,
+                DateTimeOffset.UtcNow);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await WriteAuditAsync(run, "LiveDemoStepCompleted", "erp-received", cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await MarkFailedAsync(run, step, "erp-received", exception, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
     }
@@ -491,4 +578,7 @@ public sealed class LiveDemoRunProcessor(
                 null,
                 run.CorrelationId),
             cancellationToken);
+
+    private sealed class ErpDemoProcessingException(ErpDemoResultStatus status)
+        : Exception($"ERP demo receiver returned {status}.");
 }

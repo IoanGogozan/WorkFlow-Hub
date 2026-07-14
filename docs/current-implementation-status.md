@@ -1,4 +1,4 @@
-# Current Implementation Status
+﻿# Current Implementation Status
 
 This file records the current technical status. It is not a final acceptance statement for public deployment.
 
@@ -57,10 +57,9 @@ This file records the current technical status. It is not a final acceptance sta
 ## Current Public Direction
 
 The active direction is the staged
-[Real Live Integration Demo V2](live-integration-demo-v2.md), amended by the
-implemented [SharePoint Simulator](sharepoint-simulator-amendment.md). The
-earlier [Client-Facing Integration Demo](client-facing-integration-demo.md) is
-implemented historical context, not the active plan.
+[Verifiable Integration Demo](verifiable-integration-demo.md). The implemented
+[SharePoint Simulator](sharepoint-simulator-amendment.md) remains a detailed
+reference. See the [Plan Registry](plans.md) for authoritative status.
 
 The current `/live-preview` path creates a fresh worker-backed fictional run.
 The existing `/` replay presentation and detailed application remain available
@@ -119,6 +118,57 @@ The public demo is not the same as a real customer SaaS deployment. Before proce
 ## Validated Locally
 
 Record exact date and command output summaries here only after validation commands have been run in the current environment.
+
+2026-07-13 — Phase 2 detailed evidence page completion:
+
+- added `/technical/live-runs/{runId}` with authenticated loading, session
+  expiry handling, public-safe errors, and run-specific overview;
+- added request, Brreg live/fallback, exact case/document/PDF, local SharePoint
+  simulator, operation history, and chronological audit evidence;
+- protected PDF opening uses the demo bearer token; the E2E runner now gives
+  API and worker processes the same isolated document-storage root;
+- frontend lint and production build passed; the dynamic evidence route is
+  present in the production route manifest;
+- full Playwright public/technical suite passed: 8 tests, including the new
+  exact-run evidence journey, 0 failed;
+- full backend Release suite passed: 164 tests total (6 contract, 20 unit,
+  138 integration), 0 failed and 0 skipped;
+- `git diff --check` passed; no database migration is required.
+
+2026-07-13 — Phase 1 run-specific evidence API completion:
+
+- added public-safe evidence contracts and the tenant-scoped
+  `GET /api/live-demo-runs/{runId}/evidence` endpoint;
+- completed-run results now provide server-created links to exact evidence,
+  case, document, download, SharePoint, and audit views;
+- focused evidence integration coverage passed: 5 tests, 0 failed;
+- full backend Release suite passed: 164 tests total (6 contract, 20 unit,
+  138 integration), 0 failed and 0 skipped;
+- `git diff --check` passed; no database migration is required.
+
+2026-07-13 — verifiable integration demo continuation baseline:
+
+- Environment: Node.js `v26.2.0`, npm `11.11.0`, .NET SDK `10.0.300`,
+  Docker `29.5.3`, and Docker Compose `v5.1.4`.
+- `npm --prefix frontend ci` — passed; 361 packages installed and 362 audited.
+  The complete dependency tree reported 1 low and 1 moderate vulnerability.
+  No dependency fix or upgrade was performed.
+- `npm --prefix frontend run lint` — passed with no ESLint errors.
+- `npm --prefix frontend run build` — passed with Next.js 16.2.6; compilation,
+  TypeScript, and generation of 17 static pages completed. Node emitted a
+  non-blocking `DEP0205` deprecation warning for `module.register()`.
+- `npm --prefix frontend audit --omit=dev --audit-level=high` — passed and
+  reported 0 production vulnerabilities.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` —
+  passed 157 tests: 4 contract, 20 unit, and 133 integration; 0 failed and
+  0 skipped.
+- `dotnet tool restore --tool-manifest dotnet-tools.json` — passed; restored
+  `dotnet-ef` 10.0.0.
+- `dotnet tool run dotnet-ef -- migrations has-pending-model-changes ...` —
+  passed; build succeeded and no model changes exist since the last migration.
+- `docker compose config --quiet` — passed with no output.
+- `docker compose --env-file .env.home-server.example -f compose.home-server.yml config --quiet`
+  — passed with no output.
 
 2026-07-12 — live Brreg and SharePoint simulator completion:
 
