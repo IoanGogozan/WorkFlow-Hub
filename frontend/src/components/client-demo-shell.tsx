@@ -26,7 +26,7 @@ export function ClientDemoShell({ children }: ClientDemoShellProps) {
     : "automatisk etter 24 timer";
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#f7f8fa]">
+    <main className="flex min-h-screen flex-col overflow-x-clip bg-[#f7f8fa]">
       <header className="border-b border-[#dce1e8] bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-5">
           <div>

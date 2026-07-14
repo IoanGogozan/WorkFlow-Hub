@@ -21,7 +21,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen overflow-x-clip">
       <DemoExpiryBanner />
       <header className="border-b border-[#d8deea] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
