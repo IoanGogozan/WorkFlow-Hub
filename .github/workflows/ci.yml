@@ -69,6 +69,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate compose
+        env:
+          ERP_DEMO_SIGNING_SECRET: ci-compose-validation-only-secret-32-bytes
         run: docker compose config --quiet
 
   verifiable-demo-e2e:
