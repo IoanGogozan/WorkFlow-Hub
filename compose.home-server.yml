@@ -50,6 +50,8 @@ services:
       Deployment__ForwardedHeadersEnabled: "true"
       Deployment__EnforceHttps: "true"
       Deployment__AllowUnknownProxies: "true"
+      LiveDemo__Enabled: "true"
+      LiveDemo__OrganizationNumber: "974760673"
       ErpDemo__Enabled: "true"
       AllowedHosts: ${WORKFLOW_HUB_HOST};localhost;127.0.0.1
     expose:
@@ -93,6 +95,8 @@ services:
       SharePoint__MicrosoftClientSecret: ${MICROSOFT_CLIENT_SECRET:-}
       SharePoint__MicrosoftSiteId: ${SHAREPOINT_SITE_ID:-}
       SharePoint__MicrosoftDriveId: ${SHAREPOINT_DRIVE_ID:-}
+      LiveDemo__Enabled: "true"
+      LiveDemo__OrganizationNumber: "974760673"
       ErpDemo__Enabled: "true"
       ErpDemo__BaseUrl: http://erp-receiver:8080/
       ErpDemo__SigningSecret: ${ERP_DEMO_SIGNING_SECRET}
