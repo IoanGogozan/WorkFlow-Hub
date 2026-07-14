@@ -22,7 +22,7 @@ export function SharePointOperationTable({ operations }: SharePointOperationTabl
       <div
         aria-describedby="sharepoint-table-scroll-hint"
         aria-label="SharePoint simulatoroperasjoner"
-        className="mt-2 overflow-x-auto rounded-lg border border-[#e2e8f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8] sm:mt-4"
+        className="mt-2 w-full min-w-0 max-w-full overflow-x-auto rounded-lg border border-[#e2e8f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8] sm:mt-4"
         role="region"
         tabIndex={0}
       >

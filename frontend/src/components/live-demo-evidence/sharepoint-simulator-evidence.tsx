@@ -8,7 +8,7 @@ type SharePointSimulatorEvidenceProps = {
 
 export function SharePointSimulatorEvidence({ evidence }: SharePointSimulatorEvidenceProps) {
   return (
-    <section className="rounded-xl border border-[#f5c96b] bg-white p-6" id="sharepoint">
+    <section className="min-w-0 rounded-xl border border-[#f5c96b] bg-white p-6" id="sharepoint">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -59,7 +59,7 @@ export function SharePointSimulatorEvidence({ evidence }: SharePointSimulatorEvi
             </div>
           ) : null}
 
-          <div className="mt-7 border-t border-[#e2e8f0] pt-6">
+          <div className="min-w-0 mt-7 border-t border-[#e2e8f0] pt-6">
             <h4 className="text-lg font-semibold text-[#162033]">Operasjoner for denne kjøringen</h4>
             <SharePointOperationTable operations={evidence.operations} />
           </div>
@@ -81,9 +81,9 @@ function EvidenceField({
   mono?: boolean;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">{label}</dt>
-      <dd className={`mt-1 break-words text-sm text-[#162033] ${mono ? "font-mono" : "font-medium"}`}>
+      <dd className={`mt-1 text-sm text-[#162033] ${mono ? "break-all font-mono" : "break-words font-medium"}`}>
         {value}
       </dd>
     </div>

@@ -138,7 +138,7 @@ export function LiveDemoResultCard({
 
 function ResultItem({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <article className="rounded-lg border border-[#3b4961] bg-[#202c41] p-4">
+    <article className="min-w-0 rounded-lg border border-[#3b4961] bg-[#202c41] p-4">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-[#9fb0c8]">{title}</h3>
       <div className="mt-2">{children}</div>
     </article>
@@ -146,7 +146,7 @@ function ResultItem({ title, children }: { title: string; children: React.ReactN
 }
 
 function ResultValue({ value, mono = false }: { value: string; mono?: boolean }) {
-  return <p className={`break-words text-sm font-semibold text-white ${mono ? "font-mono" : ""}`}>{value}</p>;
+  return <p className={`text-sm font-semibold text-white ${mono ? "break-all font-mono" : "break-words"}`}>{value}</p>;
 }
 
 function ResultLink({ href, label }: { href: string; label: string }) {
