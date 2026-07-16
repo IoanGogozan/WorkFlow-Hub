@@ -82,8 +82,7 @@ try {
         $env:LiveDemo__WorkerPollMilliseconds = "100"
         $env:LiveDemo__RunRecoveryMinutes = "5"
         $env:ErpDemo__Enabled = "true"
-        $env:ErpDemo__BaseUrl = "http://localhost:5510/"
-        $env:ErpDemo__SigningSecret = $ErpSigningSecret
+        $env:ErpDemo__FailureDemoEnabled = "true"
         $env:Storage__Local__RootPath = Join-Path $Root "storage/e2e-documents"
         # Keep the public E2E deterministic: no external Brreg call is allowed in CI.
         $env:Brreg__BaseUrl = "http://127.0.0.1:1/"
@@ -113,8 +112,10 @@ try {
         $env:LiveDemo__WorkerPollMilliseconds = "100"
         $env:LiveDemo__RunRecoveryMinutes = "5"
         $env:ErpDemo__Enabled = "true"
+        $env:ErpDemo__FailureDemoEnabled = "true"
         $env:ErpDemo__BaseUrl = "http://localhost:5510/"
         $env:ErpDemo__SigningSecret = $ErpSigningSecret
+        $env:ErpDemo__TimeoutSeconds = "10"
         $env:Storage__Local__RootPath = Join-Path $Root "storage/e2e-documents"
         # Match the API process so the worker uses the labelled local fallback.
         $env:Brreg__BaseUrl = "http://127.0.0.1:1/"

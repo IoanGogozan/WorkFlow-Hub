@@ -53,6 +53,7 @@ services:
       LiveDemo__Enabled: "true"
       LiveDemo__OrganizationNumber: "974760673"
       ErpDemo__Enabled: "true"
+      ErpDemo__FailureDemoEnabled: "true"
       AllowedHosts: ${WORKFLOW_HUB_HOST};localhost;127.0.0.1
     expose:
       - "8080"
@@ -98,8 +99,10 @@ services:
       LiveDemo__Enabled: "true"
       LiveDemo__OrganizationNumber: "974760673"
       ErpDemo__Enabled: "true"
+      ErpDemo__FailureDemoEnabled: "true"
       ErpDemo__BaseUrl: http://erp-receiver:8080/
       ErpDemo__SigningSecret: ${ERP_DEMO_SIGNING_SECRET}
+      ErpDemo__TimeoutSeconds: "10"
     depends_on:
       api:
         condition: service_healthy
