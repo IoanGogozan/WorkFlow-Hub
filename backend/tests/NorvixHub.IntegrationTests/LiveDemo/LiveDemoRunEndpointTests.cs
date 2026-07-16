@@ -27,7 +27,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
     [Fact]
     public async Task Create_run_queues_preset_tenant_scoped_steps()
     {
-        using var factory = CreateFactory(enabled: true);
+        using var factory = CreateFactory(enabled: true, erpEnabled: true);
         using var client = factory.CreateClient();
         var session = await CreateDemoSessionAsync(client);
 
@@ -59,7 +59,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         steps.Where(step => step.Key != "erp-received")
             .Should().OnlyContain(step => step.Status == LiveDemoRunStepStatus.Pending);
         steps.Single(step => step.Key == "erp-received").Status
-            .Should().Be(LiveDemoRunStepStatus.Skipped);
+            .Should().Be(LiveDemoRunStepStatus.Pending);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
     [Fact]
     public async Task Create_run_ignores_arbitrary_scenario_fields_from_browser()
     {
-        using var factory = CreateFactory(enabled: true);
+        using var factory = CreateFactory(enabled: true, erpEnabled: true, failureDemoEnabled: true);
         using var client = factory.CreateClient();
         var session = await CreateDemoSessionAsync(client);
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/live-demo-runs")
@@ -168,6 +168,45 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         body.Should().Contain("Live demo is not available.");
         body.Should().NotContain("OrganizationNumber");
+    }
+
+    [Fact]
+    public async Task Create_run_marks_erp_step_skipped_when_receiver_is_disabled()
+    {
+        using var factory = CreateFactory(enabled: true, erpEnabled: false);
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+
+        using var response = await SendCreateAsync(client, session.Token, new CreateLiveDemoRunRequest());
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var created = (await response.Content.ReadFromJsonAsync<CreateLiveDemoRunResponse>(
+            TestContext.Current.CancellationToken))!;
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var erpStep = await dbContext.LiveDemoRunSteps.SingleAsync(
+            step => step.RunId == created.RunId && step.Key == "erp-received",
+            TestContext.Current.CancellationToken);
+        erpStep.Status.Should().Be(LiveDemoRunStepStatus.Skipped);
+        erpStep.PublicSummary.Should().Be("ERP demo receiver er ikke aktivert for denne kjøringen.");
+    }
+
+    [Fact]
+    public async Task Create_run_rejects_failure_simulation_when_failure_demo_is_disabled()
+    {
+        using var factory = CreateFactory(enabled: true, erpEnabled: true, failureDemoEnabled: false);
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+
+        using var response = await SendCreateAsync(
+            client,
+            session.Token,
+            new CreateLiveDemoRunRequest(SimulateErpFailureOnce: true));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.Should().Contain("Kontrollert ERP-feilsimulering er ikke aktivert.");
+        body.Should().NotContain("SigningSecret");
     }
 
     [Fact]
@@ -270,7 +309,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
     [Fact]
     public async Task Capabilities_map_only_safe_boolean_values()
     {
-        using var enabledFactory = CreateFactory(enabled: true, erpEnabled: true);
+        using var enabledFactory = CreateFactory(enabled: true, erpEnabled: true, failureDemoEnabled: true);
         using var enabledClient = enabledFactory.CreateClient();
         var enabledSession = await CreateDemoSessionAsync(enabledClient);
         using var enabledResponse = await SendGetAsync(
@@ -284,8 +323,20 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
         enabled.Enabled.Should().BeTrue();
         enabled.BrregLiveEnabled.Should().BeTrue();
         enabled.SharePointSimulatorEnabled.Should().BeTrue();
-        enabled.ErpReceiverEnabled.Should().BeFalse();
-        enabled.FailureDemoEnabled.Should().BeFalse();
+        enabled.ErpReceiverEnabled.Should().BeTrue();
+        enabled.FailureDemoEnabled.Should().BeTrue();
+
+        using var erpDisabledFactory = CreateFactory(enabled: true, erpEnabled: false, failureDemoEnabled: true);
+        using var erpDisabledClient = erpDisabledFactory.CreateClient();
+        var erpDisabledSession = await CreateDemoSessionAsync(erpDisabledClient);
+        using var erpDisabledResponse = await SendGetAsync(
+            erpDisabledClient,
+            erpDisabledSession.Token,
+            "/api/live-demo-capabilities");
+        var erpDisabled = (await erpDisabledResponse.Content.ReadFromJsonAsync<LiveDemoCapabilitiesResponse>(
+            TestContext.Current.CancellationToken))!;
+        erpDisabled.ErpReceiverEnabled.Should().BeFalse();
+        erpDisabled.FailureDemoEnabled.Should().BeFalse();
 
         using var disabledFactory = CreateFactory(enabled: false);
         using var disabledClient = disabledFactory.CreateClient();
@@ -414,7 +465,8 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
 
     private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateFactory(
         bool enabled,
-        bool erpEnabled = false)
+        bool erpEnabled = false,
+        bool failureDemoEnabled = false)
     {
         return _factory.WithWebHostBuilder(builder =>
         {
@@ -427,6 +479,7 @@ public sealed class LiveDemoRunEndpointTests : IClassFixture<NorvixHubApiFactory
                     ["LiveDemo:OrganizationNumber"] = "999888777",
                     ["LiveDemo:MaxRunsPerSession"] = "3",
                     ["ErpDemo:Enabled"] = erpEnabled.ToString(),
+                    ["ErpDemo:FailureDemoEnabled"] = failureDemoEnabled.ToString(),
                     ["SharePoint:Mode"] = "Simulated"
                 });
             });
