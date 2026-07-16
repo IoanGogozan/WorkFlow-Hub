@@ -64,7 +64,7 @@ public sealed class LiveDemoRunWorkerTests : IClassFixture<NorvixHubApiFactory>
             TestContext.Current.CancellationToken)).Status.Should().Be(LiveDemoRunStatus.Completed);
     }
 
-    [Fact(Skip = "ERP retry is disabled until the receiver capability is active.")]
+    [Fact]
     public async Task New_worker_instance_resumes_ERP_retry_after_controlled_failure()
     {
         var erpClient = new RestartErpDemoClient();
@@ -79,7 +79,8 @@ public sealed class LiveDemoRunWorkerTests : IClassFixture<NorvixHubApiFactory>
                     ["LiveDemo:OrganizationNumber"] = "999888777",
                     ["LiveDemo:WorkerPollMilliseconds"] = "100",
                     ["LiveDemo:RunRecoveryMinutes"] = "5",
-                    ["ErpDemo:Enabled"] = "true"
+                    ["ErpDemo:Enabled"] = "true",
+                    ["ErpDemo:FailureDemoEnabled"] = "true"
                 });
             });
             builder.ConfigureServices(services =>

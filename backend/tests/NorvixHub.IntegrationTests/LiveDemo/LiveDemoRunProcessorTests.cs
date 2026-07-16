@@ -383,7 +383,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         auditPayloads.Should().OnlyContain(payload => !payload.Contains("X-Norvix", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact(Skip = "ERP failure/retry is disabled until the receiver becomes an active capability.")]
+    [Fact]
     public async Task ERP_failure_and_retry_resume_without_duplicate_artifacts_or_client_calls()
     {
         var erpClient = new FakeErpDemoClient(
@@ -425,6 +425,27 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         completedRun.RetryCount.Should().Be(1);
         erpStep.Status.Should().Be(LiveDemoRunStepStatus.Completed);
         erpStep.AttemptCount.Should().Be(2);
+        (await completedDb.IntakeItems.CountAsync(
+            candidate => candidate.Id == afterRetry.IntakeId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
+        (await completedDb.Customers.CountAsync(
+            candidate => candidate.Id == afterRetry.CustomerId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
+        (await completedDb.Cases.CountAsync(
+            candidate => candidate.Id == afterRetry.CaseId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
+        (await completedDb.Documents.CountAsync(
+            candidate => candidate.Id == afterRetry.DocumentId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
+        (await completedDb.DocumentVersions.CountAsync(
+            candidate => candidate.DocumentId == afterRetry.DocumentId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
+        (await completedDb.DeliveryPackages.CountAsync(
+            candidate => candidate.Id == afterRetry.DeliveryPackageId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
+        (await completedDb.SimulatedSharePointDocumentItems.CountAsync(
+            candidate => candidate.DocumentId == afterRetry.DocumentId,
+            TestContext.Current.CancellationToken)).Should().Be(1);
     }
 
     [Fact]
@@ -478,7 +499,8 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
                 {
                     ["LiveDemo:Enabled"] = "true",
                     ["LiveDemo:OrganizationNumber"] = "999888777",
-                    ["ErpDemo:Enabled"] = erpEnabled.ToString()
+                    ["ErpDemo:Enabled"] = erpEnabled.ToString(),
+                    ["ErpDemo:FailureDemoEnabled"] = "true"
                 });
             });
             builder.ConfigureServices(services =>

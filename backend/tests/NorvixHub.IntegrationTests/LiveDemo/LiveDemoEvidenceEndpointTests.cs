@@ -163,7 +163,7 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
         body.Should().NotContain("responseSummaryJson");
     }
 
-    [Fact(Skip = "ERP evidence and retry history are disabled until the receiver is active.")]
+    [Fact]
     public async Task LiveDemoEvidence_returns_self_hosted_ERP_receipt_attempts_and_retry_history()
     {
         var erpClient = new EvidenceErpDemoClient();
@@ -216,7 +216,8 @@ public sealed class LiveDemoEvidenceEndpointTests : IClassFixture<NorvixHubApiFa
                 {
                     ["LiveDemo:Enabled"] = "true",
                     ["LiveDemo:OrganizationNumber"] = "999888777",
-                    ["ErpDemo:Enabled"] = "true"
+                    ["ErpDemo:Enabled"] = "true",
+                    ["ErpDemo:FailureDemoEnabled"] = "true"
                 }));
             builder.ConfigureServices(services =>
             {
