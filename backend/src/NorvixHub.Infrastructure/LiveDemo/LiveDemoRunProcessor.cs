@@ -31,6 +31,7 @@ public sealed class LiveDemoRunProcessor(
         await ProcessCaseCreatedAsync(runId, cancellationToken);
         await ProcessDocumentCreatedAsync(runId, cancellationToken);
         await ProcessSharePointSyncedAsync(runId, cancellationToken);
+        await ProcessErpReceivedAsync(runId, cancellationToken);
         await ProcessRunCompletedAsync(runId, cancellationToken);
     }
 
@@ -203,7 +204,7 @@ public sealed class LiveDemoRunProcessor(
         var step = await dbContext.LiveDemoRunSteps.SingleAsync(
             candidate => candidate.RunId == runId && candidate.Key == "erp-received",
             cancellationToken);
-        if (step.Status == LiveDemoRunStepStatus.Completed ||
+        if (step.Status is LiveDemoRunStepStatus.Completed or LiveDemoRunStepStatus.Skipped ||
             run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
         {
             return;

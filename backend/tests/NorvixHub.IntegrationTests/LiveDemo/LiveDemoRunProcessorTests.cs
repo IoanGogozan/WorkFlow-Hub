@@ -295,7 +295,36 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
             TestContext.Current.CancellationToken)).TenantId.Should().Be(secondSession.DemoTenantId);
     }
 
-    [Fact(Skip = "ERP receiver is not an active live-demo capability yet.")]
+    [Fact]
+    public async Task Processor_does_not_call_ERP_receiver_when_capability_is_disabled()
+    {
+        var erpClient = new FakeErpDemoClient(new ErpDemoResult(
+            ErpDemoResultStatus.Received,
+            "ERP-DEMO-UNEXPECTED",
+            false,
+            DateTime.UtcNow));
+        using var factory = CreateErpDemoFactory(erpClient, erpEnabled: false);
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var run = await CreateRunAsync(client, session.Token);
+
+        await ProcessAsync(factory, run.RunId);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NorvixHubDbContext>();
+        var persistedRun = await dbContext.LiveDemoRuns.SingleAsync(
+            candidate => candidate.Id == run.RunId,
+            TestContext.Current.CancellationToken);
+        var erpStep = await dbContext.LiveDemoRunSteps.SingleAsync(
+            candidate => candidate.RunId == run.RunId && candidate.Key == "erp-received",
+            TestContext.Current.CancellationToken);
+        persistedRun.Status.Should().Be(LiveDemoRunStatus.Completed);
+        persistedRun.ErpReceiptId.Should().BeNull();
+        erpStep.Status.Should().Be(LiveDemoRunStepStatus.Skipped);
+        erpClient.Requests.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Processor_sends_fictional_ERP_payload_and_persists_receipt_evidence()
     {
         var erpClient = new FakeErpDemoClient(new ErpDemoResult(
@@ -422,7 +451,8 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
     }
 
     private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateErpDemoFactory(
-        FakeErpDemoClient erpClient)
+        FakeErpDemoClient erpClient,
+        bool erpEnabled = true)
     {
         return _factory.WithWebHostBuilder(builder =>
         {
@@ -433,7 +463,7 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
                 {
                     ["LiveDemo:Enabled"] = "true",
                     ["LiveDemo:OrganizationNumber"] = "999888777",
-                    ["ErpDemo:Enabled"] = "true"
+                    ["ErpDemo:Enabled"] = erpEnabled.ToString()
                 });
             });
             builder.ConfigureServices(services =>
