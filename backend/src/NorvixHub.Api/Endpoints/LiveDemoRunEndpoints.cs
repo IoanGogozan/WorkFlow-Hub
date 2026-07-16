@@ -37,6 +37,7 @@ public static class LiveDemoRunEndpoints
         HttpContext httpContext,
         ITenantContext tenantContext,
         IOptions<LiveDemoOptions> liveDemoOptions,
+        IOptions<ErpDemoOptions> erpDemoOptions,
         NorvixHubDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -50,6 +51,13 @@ public static class LiveDemoRunEndpoints
         if (!options.Enabled || string.IsNullOrWhiteSpace(options.OrganizationNumber))
         {
             return Results.Json(new { error = UnavailableError }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        var erpReceiverEnabled = erpDemoOptions.Value.Enabled;
+        var failureDemoEnabled = erpReceiverEnabled && erpDemoOptions.Value.FailureDemoEnabled;
+        if (request.SimulateErpFailureOnce && !failureDemoEnabled)
+        {
+            return Results.BadRequest(new { error = "Kontrollert ERP-feilsimulering er ikke aktivert." });
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -85,7 +93,7 @@ public static class LiveDemoRunEndpoints
 
         var run = CreatePresetRun(tenantId, userId, session.Id, options.OrganizationNumber, request, now);
         dbContext.LiveDemoRuns.Add(run);
-        dbContext.LiveDemoRunSteps.AddRange(CreateInitialSteps(tenantId, userId, run.Id, now));
+        dbContext.LiveDemoRunSteps.AddRange(CreateInitialSteps(tenantId, userId, run.Id, erpReceiverEnabled, now));
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Results.Accepted(
@@ -184,6 +192,7 @@ public static class LiveDemoRunEndpoints
     private static IResult GetLiveDemoCapabilities(
         ITenantContext tenantContext,
         IOptions<LiveDemoOptions> liveDemoOptions,
+        IOptions<ErpDemoOptions> erpDemoOptions,
         IOptions<SharePointOptions> sharePointOptions)
     {
         if (tenantContext.TenantId is not { })
@@ -197,12 +206,14 @@ public static class LiveDemoRunEndpoints
             sharePointOptions.Value.Mode,
             "Simulated",
             StringComparison.OrdinalIgnoreCase);
+        var erpReceiverEnabled = enabled && erpDemoOptions.Value.Enabled;
+        var failureDemoEnabled = erpReceiverEnabled && erpDemoOptions.Value.FailureDemoEnabled;
         return Results.Ok(new LiveDemoCapabilitiesResponse(
             enabled,
             enabled,
             sharePointSimulatorEnabled,
-            false,
-            false));
+            erpReceiverEnabled,
+            failureDemoEnabled));
     }
 
     private static async Task<IResult> RetryLiveDemoRun(
@@ -335,6 +346,7 @@ public static class LiveDemoRunEndpoints
         Guid tenantId,
         Guid userId,
         Guid runId,
+        bool erpReceiverEnabled,
         DateTimeOffset now)
     {
         var steps = new List<LiveDemoRunStep>
@@ -347,9 +359,12 @@ public static class LiveDemoRunEndpoints
             CreateStep("erp-received", 6, "Synkronisert", "ERP demo receiver", "demo-receiver"),
             CreateStep("run-completed", 7, "Synkronisert", "Norvix WorkFlow Hub", "implemented")
         };
-        steps.Single(step => step.Key == "erp-received").MarkSkipped(
-            "ERP demo receiver er ikke aktivert for denne kjøringen.",
-            now);
+        if (!erpReceiverEnabled)
+        {
+            steps.Single(step => step.Key == "erp-received").MarkSkipped(
+                "ERP demo receiver er ikke aktivert for denne kjøringen.",
+                now);
+        }
         return steps;
 
         LiveDemoRunStep CreateStep(

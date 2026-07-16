@@ -53,6 +53,9 @@ This file records the current technical status. It is not a final acceptance sta
   tenant-scoped evidence, deterministic folders, document metadata,
   version/eTag handling, idempotency, 403/412/429 demonstrations, cleanup, and
   the protected `/technical/sharepoint` evidence page.
+- The ERP demo backend is active with a self-hosted signed receiver, durable
+  receipt persistence, idempotency, controlled fail-once behavior, retry, and
+  tenant-scoped evidence. Normal and fail/retry backend tests are active.
 
 ## Current Public Direction
 
@@ -67,8 +70,8 @@ until the later capability-driven public-route promotion is explicitly approved.
 
 ## Current Gaps Before Public Deployment
 
-- The signed ERP demo receiver, persistence, HMAC/idempotency, fail-once path,
-  main-app client, Compose service, and retry integration are not implemented.
+- Public controls for the ERP failure demonstration remain a later UI task.
+- The ERP backend activation described above has not been deployed.
 - The final capability-driven public page, route promotion, accessibility/E2E
   replacement, dedicated CI job, deployed live smoke script, and final release
   gate remain in V2 Phases 8–10.
@@ -83,6 +86,8 @@ until the later capability-driven public-route promotion is explicitly approved.
 - SharePoint/Microsoft Graph behavior uses the functional local simulator. It
   is not a live Microsoft 365 connection; the `MicrosoftGraph` provider seam
   validates configuration but makes no live calls.
+- The ERP receiver is self-hosted and isolated on the internal application
+  network; it is not a commercial or customer ERP connection.
 - Tripletex/accounting integration is mocked.
 - Power BI/Fabric export status is mocked while CSV/JSON export is functional.
 - AI provider is mocked and suggestion-only.

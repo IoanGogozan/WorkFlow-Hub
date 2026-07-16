@@ -31,6 +31,7 @@ public sealed class LiveDemoRunProcessor(
         await ProcessCaseCreatedAsync(runId, cancellationToken);
         await ProcessDocumentCreatedAsync(runId, cancellationToken);
         await ProcessSharePointSyncedAsync(runId, cancellationToken);
+        await ProcessErpReceivedAsync(runId, cancellationToken);
         await ProcessRunCompletedAsync(runId, cancellationToken);
     }
 
@@ -198,58 +199,90 @@ public sealed class LiveDemoRunProcessor(
 
     private async Task ProcessErpReceivedAsync(Guid runId, CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
-        var step = await dbContext.LiveDemoRunSteps.SingleAsync(
-            candidate => candidate.RunId == runId && candidate.Key == "erp-received",
-            cancellationToken);
-        if (step.Status == LiveDemoRunStepStatus.Completed ||
-            run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
+        await using (var startTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
         {
-            return;
+            var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
+            var step = await dbContext.LiveDemoRunSteps.SingleAsync(
+                candidate => candidate.RunId == runId && candidate.Key == "erp-received",
+                cancellationToken);
+            if (step.Status is LiveDemoRunStepStatus.Completed or LiveDemoRunStepStatus.Skipped ||
+                run.Status is LiveDemoRunStatus.Completed or LiveDemoRunStatus.Failed)
+            {
+                return;
+            }
+
+            StartRunAndStep(run, step, DateTimeOffset.UtcNow);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await startTransaction.CommitAsync(cancellationToken);
         }
 
-        var now = DateTimeOffset.UtcNow;
+        dbContext.ChangeTracker.Clear();
         try
         {
-            StartRunAndStep(run, step, now);
+            var payloadSource = await dbContext.LiveDemoRuns
+                .AsNoTracking()
+                .Where(candidate => candidate.Id == runId)
+                .Select(candidate => new
+                {
+                    candidate.Id,
+                    candidate.TenantId,
+                    candidate.CustomerReference,
+                    candidate.CaseId,
+                    candidate.DocumentId,
+                    candidate.SimulateErpFailureOnce
+                })
+                .SingleAsync(cancellationToken);
             var caseNumber = await dbContext.Cases
-                .Where(candidate => candidate.Id == run.CaseId && candidate.TenantId == run.TenantId)
+                .AsNoTracking()
+                .Where(candidate => candidate.Id == payloadSource.CaseId && candidate.TenantId == payloadSource.TenantId)
                 .Select(candidate => candidate.CaseNumber)
                 .SingleAsync(cancellationToken);
             var documentReference = await dbContext.DocumentVersions
-                .Where(candidate => candidate.DocumentId == run.DocumentId && candidate.TenantId == run.TenantId)
+                .AsNoTracking()
+                .Where(candidate => candidate.DocumentId == payloadSource.DocumentId && candidate.TenantId == payloadSource.TenantId)
                 .OrderByDescending(candidate => candidate.VersionNumber)
                 .Select(candidate => candidate.OriginalFilename)
                 .FirstAsync(cancellationToken);
             var result = await erpDemoClient.SendAsync(
                 new ErpDemoRequest(
-                    run.Id,
-                    $"FICTIONAL-{run.CustomerReference}",
+                    payloadSource.Id,
+                    $"FICTIONAL-{payloadSource.CustomerReference}",
                     caseNumber,
                     documentReference,
-                    run.SimulateErpFailureOnce),
+                    payloadSource.SimulateErpFailureOnce),
                 cancellationToken);
             if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.ReceiptId))
             {
                 throw new ErpDemoProcessingException(result.Status);
             }
 
-            run.SetErpReceipt(result.ReceiptId, DateTimeOffset.UtcNow);
+            await using var successTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
+            var step = await dbContext.LiveDemoRunSteps.SingleAsync(
+                candidate => candidate.RunId == runId && candidate.Key == "erp-received",
+                cancellationToken);
+            var completedAt = DateTimeOffset.UtcNow;
+            run.SetErpReceipt(result.ReceiptId, completedAt);
             step.MarkCompleted(
                 result.Duplicate
                     ? "ERP-meldingen var allerede mottatt; samme kvittering ble brukt."
                     : "ERP-meldingen ble mottatt av Norvix ERP demo receiver.",
                 result.ReceiptId,
-                DateTimeOffset.UtcNow);
+                completedAt);
             await dbContext.SaveChangesAsync(cancellationToken);
             await WriteAuditAsync(run, "LiveDemoStepCompleted", "erp-received", cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await successTransaction.CommitAsync(cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            dbContext.ChangeTracker.Clear();
+            await using var failureTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var run = await dbContext.LiveDemoRuns.SingleAsync(candidate => candidate.Id == runId, cancellationToken);
+            var step = await dbContext.LiveDemoRunSteps.SingleAsync(
+                candidate => candidate.RunId == runId && candidate.Key == "erp-received",
+                cancellationToken);
             await MarkFailedAsync(run, step, "erp-received", exception, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await failureTransaction.CommitAsync(cancellationToken);
         }
     }
 

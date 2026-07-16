@@ -76,8 +76,13 @@ test("visitor can verify the exact artifacts created by a live run", async ({ pa
   await expect(operationRegion).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 
-  await expect(page.locator("#erp")).toHaveCount(0);
-  await expect(page.getByText(/ERP-mottakeren|failure demo/i)).toHaveCount(0);
+  const erp = page.locator("#erp");
+  await expect(erp.getByRole("heading", { name: "Norvix ERP demo receiver" })).toBeVisible();
+  await expect(erp.getByText("Selvhostet", { exact: true })).toBeVisible();
+  await expect(erp.getByText("Melding mottatt", { exact: true })).toBeVisible();
+  await expect(erp.getByText(/^ERP-DEMO-/)).toBeVisible();
+  await expect(erp.getByText("1", { exact: true })).toBeVisible();
+  await expect(page.getByText(/failure demo/i)).toHaveCount(0);
 
   const audit = page.locator("#audit");
   await expect(audit.getByRole("heading", { name: "Hendelseslogg" })).toBeVisible();
