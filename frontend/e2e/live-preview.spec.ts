@@ -173,7 +173,10 @@ async function startAndCompleteRun(page: import("@playwright/test").Page) {
 
   await expect(page.getByText("Fullført", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Venter", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" })).toHaveCount(0);
+  const erpCard = page.getByRole("article").filter({ hasText: "Norvix ERP demo receiver" });
+  await expect(erpCard.getByText("Melding mottatt", { exact: true })).toBeVisible();
+  await expect(erpCard.getByText(/Kvittering: ERP-DEMO-/)).toBeVisible();
+  await expect(erpCard.getByText(/Forsøk: 1/)).toBeVisible();
 
   const manualProcess = page
     .locator("details")
