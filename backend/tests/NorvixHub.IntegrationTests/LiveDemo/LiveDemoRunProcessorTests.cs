@@ -325,6 +325,21 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
     }
 
     [Fact]
+    public async Task Processor_calls_ERP_receiver_without_an_active_database_transaction()
+    {
+        var probe = new ErpTransactionProbe();
+        using var factory = CreateTransactionObservingErpDemoFactory(probe);
+        using var client = factory.CreateClient();
+        var session = await CreateDemoSessionAsync(client);
+        var run = await CreateRunAsync(client, session.Token);
+
+        await ProcessAsync(factory, run.RunId);
+
+        probe.WasCalled.Should().BeTrue();
+        probe.HadActiveTransaction.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Processor_sends_fictional_ERP_payload_and_persists_receipt_evidence()
     {
         var erpClient = new FakeErpDemoClient(new ErpDemoResult(
@@ -474,6 +489,31 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
         });
     }
 
+    private Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> CreateTransactionObservingErpDemoFactory(
+        ErpTransactionProbe probe)
+    {
+        return _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Demo");
+            builder.ConfigureAppConfiguration(config =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["LiveDemo:Enabled"] = "true",
+                    ["LiveDemo:OrganizationNumber"] = "999888777",
+                    ["ErpDemo:Enabled"] = "true"
+                });
+            });
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IErpDemoClient>();
+                services.AddScoped<IErpDemoClient>(provider => new TransactionObservingErpDemoClient(
+                    provider.GetRequiredService<NorvixHubDbContext>(),
+                    probe));
+            });
+        });
+    }
+
     private static async Task ProcessAsync(
         Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory,
         Guid runId)
@@ -609,5 +649,27 @@ public sealed class LiveDemoRunProcessorTests : IClassFixture<NorvixHubApiFactor
                 ? results.Dequeue()
                 : new ErpDemoResult(ErpDemoResultStatus.InvalidResponse));
         }
+    }
+
+    private sealed class TransactionObservingErpDemoClient(
+        NorvixHubDbContext dbContext,
+        ErpTransactionProbe probe) : IErpDemoClient
+    {
+        public Task<ErpDemoResult> SendAsync(ErpDemoRequest request, CancellationToken cancellationToken)
+        {
+            probe.WasCalled = true;
+            probe.HadActiveTransaction = dbContext.Database.CurrentTransaction is not null;
+            return Task.FromResult(new ErpDemoResult(
+                ErpDemoResultStatus.Received,
+                "ERP-DEMO-NOTRANSACTION",
+                false,
+                DateTime.UtcNow));
+        }
+    }
+
+    private sealed class ErpTransactionProbe
+    {
+        public bool WasCalled { get; set; }
+        public bool HadActiveTransaction { get; set; }
     }
 }
