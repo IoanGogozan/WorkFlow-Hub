@@ -124,6 +124,54 @@ The public demo is not the same as a real customer SaaS deployment. Before proce
 
 Record exact date and command output summaries here only after validation commands have been run in the current environment.
 
+2026-07-14 — Phase 0 / Task 0.2 implementation baseline:
+
+- `git status -sb` — passed; branch was
+  `agent/verifiable-demo...origin/agent/verifiable-demo` and the worktree was
+  clean.
+- `npm --prefix frontend ci` — failed. The first invocation ended without
+  useful output and left the dependency installation incomplete. A diagnostic
+  retry of the same command reported npm `ENOTEMPTY` (`errno -4051`) while
+  removing `frontend/node_modules/es-abstract/2018`. No dependency was
+  installed or upgraded intentionally, and no forced cleanup was performed.
+- `npm --prefix frontend run lint` — failed because `eslint` was not available
+  in the incomplete `node_modules` installation.
+- `npm --prefix frontend run build` — failed because `next` was not available
+  in the incomplete `node_modules` installation.
+- `npm --prefix frontend audit --omit=dev --audit-level=high` — passed;
+  reported 0 production vulnerabilities.
+- `dotnet test backend/NorvixHub.sln --configuration Release -nr:false` —
+  passed 188 tests: 6 contract, 26 unit, 11 ERP receiver, and 145 integration;
+  0 failed and 0 skipped.
+- `dotnet tool restore --tool-manifest dotnet-tools.json` — passed; restored
+  `dotnet-ef` 10.0.0.
+- `dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project backend/src/NorvixHub.Infrastructure/NorvixHub.Infrastructure.csproj --startup-project backend/src/NorvixHub.Api/NorvixHub.Api.csproj --configuration Release`
+  — passed; build succeeded and there are no model changes since the latest
+  migration.
+- `docker compose config --quiet` — failed because the required
+  `ERP_DEMO_SIGNING_SECRET` variable was not set in the local environment.
+- `docker compose --env-file .env.home-server.example -f compose.home-server.yml config --quiet`
+  — passed with no output.
+- Required baseline commands not run: none.
+
+Important baseline warnings:
+
+- the local frontend dependency tree is incomplete after the npm `ENOTEMPTY`
+  failure, so the lint and build failures do not establish a source-code
+  regression;
+- default Compose validation requires a private ERP signing secret and does not
+  pass in a shell where that variable is absent;
+- no gap below was fixed as part of this documentation-only task.
+
+Plan-required known gaps recorded for this baseline:
+
+- a completed run may still contain a pending ERP step;
+- capabilities may incorrectly report the failure demo as enabled;
+- the run-specific evidence endpoint/page is missing;
+- the ERP receiver is missing;
+- `/` still uses the legacy replay experience;
+- CI does not yet run the complete live-demo E2E path.
+
 2026-07-13 — Phase 2 detailed evidence page completion:
 
 - added `/technical/live-runs/{runId}` with authenticated loading, session

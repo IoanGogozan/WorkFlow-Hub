@@ -1,15 +1,34 @@
 ﻿# Norvix WorkFlow Hub
 
-Norvix WorkFlow Hub presents **Automatisert serviceflyt**, a client-facing
-integration example for Norwegian technical service companies. Start at
-`/demo`; the primary experience at `/` follows one fictional service request
-from email to a traceable case without repeated manual entry. The broader
-workflow application remains available at `/technical` as implementation
-evidence.
+**A verifiable service-workflow demo that turns an incoming request into a traceable case, document package, and integration audit trail—without repeated manual entry.**
 
-Norwegian subtitle:
+[Live Demo](https://workflow.norvix.no/demo) · [Case Study](docs/product-overview.md) · [Documentation](#documentation-index)
 
-> Fra e-post og skjema til sak, dokumentasjon, fakturagrunnlag og rapportering - uten dobbeltregistrering.
+![Norvix WorkFlow Hub technical dashboard](docs/screenshots/dashboard-desktop.png)
+
+> The screenshot shows the technical dashboard. The live demo provides the current client-facing journey.
+
+## Portfolio Overview
+
+Norvix WorkFlow Hub addresses the manual handoffs between email, customer records, documents, project/accounting tools, and reporting in Norwegian technical service companies.
+
+I designed and implemented the end-to-end product: the Next.js experience, ASP.NET Core APIs and worker flows, tenant-scoped PostgreSQL model, document and delivery workflows, integration simulators, auditability, automated tests, CI/CD, and deployment infrastructure.
+
+Key capabilities:
+
+- Converts fictional email/form requests into structured, reviewable cases.
+- Enriches organization data through Brreg with a deterministic labelled fallback.
+- Versions, classifies, approves, and packages documents behind expiring links.
+- Runs worker-backed integration flows with retries, idempotency, and inspectable evidence.
+- Isolates every public visitor in a temporary tenant-scoped demo workspace.
+
+**What it demonstrates:** full-stack product engineering, multi-tenant and security boundaries, human-in-the-loop automation, resilient integration design, observability, and honest separation between implemented behavior and demo adapters.
+
+**Status:** Deployed portfolio demo with fictional data. The core workflow, self-hosted ERP receiver, and SharePoint/Graph simulator are implemented; production identity and real customer integrations remain intentionally out of scope. See [Current Implementation Status](docs/current-implementation-status.md).
+
+**Stack:** Next.js · TypeScript · Tailwind CSS · ASP.NET Core / .NET 10 · C# · Entity Framework Core · PostgreSQL · Docker · Terraform · GitHub Actions · xUnit · Playwright
+
+> **Automatisert serviceflyt:** Fra e-post og skjema til sak, dokumentasjon, fakturagrunnlag og rapportering — uten dobbeltregistrering.
 
 ## Product Scenario
 
