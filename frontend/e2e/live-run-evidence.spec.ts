@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("visitor can verify the exact artifacts created by a live run", async ({ page }) => {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/demo\/run$/);
 
   await page.getByRole("button", { name: "Kjør live demo" }).click();
   await expect(page.getByRole("heading", { name: /Fullført på/ })).toBeVisible({ timeout: 30_000 });

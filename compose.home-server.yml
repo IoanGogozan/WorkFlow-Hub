@@ -112,6 +112,7 @@ services:
       - document_data:/data/documents
     networks:
       - internal
+      - egress
 
   erp-receiver:
     build:
@@ -157,6 +158,7 @@ networks:
     external: true
   internal:
     internal: true
+  egress:
 
 volumes:
   postgres_data:

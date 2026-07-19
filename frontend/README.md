@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WorkFlow Hub Frontend
 
-## Getting Started
+Next.js frontend for the WorkFlow Hub portfolio landing page, interactive demo, technical application, and run-specific evidence views.
 
-First, run the development server:
+## Public Routes
 
-```bash
+| Route | Purpose |
+| --- | --- |
+| `/` | Portfolio landing page |
+| `/demo` | Sandbox boundaries and session creation |
+| `/demo/run` | Interactive worker-backed workflow |
+| `/technical` | Technical application entry |
+| `/technical/live-runs/[runId]` | Evidence for one exact run |
+
+Compatibility routes such as `/automation`, `/summary`, and `/live-preview` redirect into the current demo journey.
+
+## Development
+
+From the repository root, prefer the complete local stack:
+
+```powershell
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To work on the frontend only:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The frontend uses `NEXT_PUBLIC_API_BASE_URL` when the API is not available through the same origin.
 
-## Learn More
+## Verification
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+npm --prefix frontend run lint
+npm --prefix frontend run build
+npm --prefix frontend run test:e2e
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The full E2E suite expects the API, worker, PostgreSQL, and ERP demo receiver. Use `npm run test:e2e:public-demo` from the repository root to start the supported test environment.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Presentation Rules
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Keep `/` understandable without technical context.
+- Keep the public scenario fictional and bounded.
+- Derive environment-dependent claims from capability flags.
+- Label Brreg fallback, SharePoint simulation, and the ERP demo receiver explicitly.
+- Keep detailed implementation evidence available without forcing it into the primary visitor journey.

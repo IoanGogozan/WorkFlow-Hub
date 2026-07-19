@@ -14,11 +14,11 @@ client-facing path is the primary product presentation.
 
 Target length: 2–3 minutes.
 
-Current route: `/demo` → `/`.
+Current route: `/demo` → `/demo/run`.
 
-`/automation` is retained only as a compatibility redirect to `/`. The old
+`/automation` is retained only as a compatibility redirect to `/demo/run`. The
 technical overview is available at `/technical`, and `/summary` redirects to
-the single result presentation at `/#resultat`.
+the single result presentation at `/demo/run#resultat`.
 
 ### 1. Introduce the Manual Problem
 
