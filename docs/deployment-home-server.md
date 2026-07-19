@@ -22,6 +22,10 @@ not from an unverified connection during deployment. Limit the deploy key on
 the server to the deployment account and repository. The account needs Docker
 access and write permission for the project and backup directories.
 
+Restrict the `home-demo` environment deployment branches to `main`. The
+workflow also enforces `refs/heads/main` itself, so both GitHub configuration
+and repository code protect the release boundary.
+
 ## Boundaries
 
 - Only Caddy publishes host ports 80 and 443.
@@ -63,6 +67,10 @@ Target: current home public IPv4 address
 Only router ports 80 and 443 should forward to `192.168.50.23`.
 
 ## Deployment prerequisites
+
+The server must provide `git`, Docker with the Compose plugin, `curl`, `jq`, and
+`flock`. The deployment script verifies these commands before it changes the
+checkout or running containers.
 
 Before updating an existing deployment:
 
