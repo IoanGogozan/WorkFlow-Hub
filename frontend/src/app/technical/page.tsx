@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { DeploymentStatusCard } from "@/components/deployment-status-card";
 
 const benefits = [
   "Mindre manuelt arbeid",
@@ -46,6 +47,7 @@ export default function TechnicalOverviewPage() {
             </div>
           ))}
         </section>
+        <DeploymentStatusCard />
         <section className="py-8">
           <h3 className="text-lg font-semibold text-[#162033]">Slik demonstreres verdien</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-4">

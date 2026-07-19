@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLockup } from "@/components/brand-lockup";
 import { DemoExpiryBanner } from "@/components/demo-expiry-banner";
 
 const navItems = [
@@ -23,16 +24,9 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <main className="min-h-screen overflow-x-clip">
       <DemoExpiryBanner />
-      <header className="border-b border-[#d8deea] bg-white">
+      <header className="border-b border-t-4 border-b-[#d8deea] border-t-[#d8613c] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-medium text-[#4f46e5]">
-              Norvix WorkFlow Hub
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-[#162033]">
-              Agder Drift & Service AS
-            </h1>
-          </div>
+          <BrandLockup subtitle="Teknisk demo · Agder Drift & Service AS" />
           <nav aria-label="Hovednavigasjon" className="flex flex-wrap gap-1.5">
             <Link
               className="rounded-md px-3 py-2 text-sm font-semibold text-[#1d4ed8] hover:bg-[#eff6ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563eb]"

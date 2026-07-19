@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandLockup } from "@/components/brand-lockup";
 
 export const metadata: Metadata = {
   title: { absolute: "Norvix WorkFlow Hub | Verifiable workflow automation demo" },
@@ -44,10 +45,7 @@ export default function HomePage() {
           aria-label="Primary navigation"
           className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-12"
         >
-          <Link className="flex items-center gap-3 font-semibold tracking-tight" href="/">
-            <span className="grid size-9 place-items-center rounded-full bg-[#173d32] text-sm text-white">N</span>
-            <span>Norvix WorkFlow Hub</span>
-          </Link>
+          <BrandLockup />
           <div className="flex items-center gap-3 sm:gap-6">
             <a
               className="hidden text-sm font-semibold text-[#40554d] transition hover:text-[#14251f] sm:block"
