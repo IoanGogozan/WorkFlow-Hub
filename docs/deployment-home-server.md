@@ -3,14 +3,16 @@
 This runbook deploys the fictional WorkFlow Hub demo to
 `https://workflow.norvix.no` behind the existing Caddy reverse proxy.
 
-The normal release path is the manual GitHub Actions workflow
-`.github/workflows/deploy-home-server.yml`. It runs CI, waits for approval in
-the protected `home-demo` environment, connects to the server using a dedicated
-SSH key, backs up persistent data, deploys the exact workflow commit, runs both
-smoke suites, and rolls the application containers back if verification fails.
-Azure is a separate, optional reference target and is not used for this site.
+The normal release path is a manual deployment from a trusted workstation on
+the home LAN after GitHub CI passes. The server intentionally does not expose
+SSH to the internet. See the [deployment quickstart](home-server-deploy-quickstart.md)
+for the exact repeatable procedure. Azure is a separate, optional reference
+target and is not used for this site.
 
-Configure these GitHub environment values for `home-demo`:
+The optional `.github/workflows/deploy-home-server.yml` SSH job can be used only
+if a secure route from its runner to the home LAN has been deliberately
+configured. It is not the current deployment path. If that route is introduced,
+configure these GitHub environment values for `home-demo`:
 
 - secrets: `HOME_SERVER_SSH_PRIVATE_KEY`, `HOME_SERVER_SSH_KNOWN_HOSTS`;
 - variables: `HOME_SERVER_HOST`, `HOME_SERVER_SSH_USER`;
@@ -64,7 +66,9 @@ Name: workflow
 Target: current home public IPv4 address
 ```
 
-Only router ports 80 and 443 should forward to `192.168.50.23`.
+Only router ports 80 and 443 should forward to `HOME_SERVER_LAN_IP`. Keep the
+actual private address in the private server operations inventory, not in this
+public repository.
 
 ## Deployment prerequisites
 
