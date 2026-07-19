@@ -14,10 +14,19 @@ public static class HealthEndpoints
             .WithName("Readiness")
             .AllowAnonymous();
 
+        app.MapGet("/health/version", (IConfiguration configuration, IHostEnvironment environment) => new
+            {
+                Commit = configuration["Build:GitSha"] ?? "unknown",
+                BuiltAt = configuration["Build:Date"] ?? "unknown",
+                Environment = environment.EnvironmentName,
+                DeploymentTarget = configuration["Build:DeploymentTarget"] ?? "unknown"
+            })
+            .WithName("Version")
+            .AllowAnonymous();
+
         return app;
     }
 
     private static HealthResponse CreateResponse() =>
         new("ok", "NorvixHub.Api", DateTimeOffset.UtcNow);
 }
-

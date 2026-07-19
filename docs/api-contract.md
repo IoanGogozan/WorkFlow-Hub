@@ -22,6 +22,7 @@ Status markers:
 ```http
 GET /health
 GET /health/ready
+GET /health/version
 ```
 
 ## Auth and Session

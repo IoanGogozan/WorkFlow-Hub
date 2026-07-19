@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [main]
   pull_request:
@@ -153,4 +154,4 @@ jobs:
       - name: Gate summary
         run: |
           echo "Backend, frontend, Compose, and verifiable demo E2E checks passed."
-          echo "Demo deployment is allowed only through the Deploy Demo workflow with the demo environment gate."
+          echo "Home-server deployment is allowed only through the Deploy Home Server workflow and home-demo environment gate."
