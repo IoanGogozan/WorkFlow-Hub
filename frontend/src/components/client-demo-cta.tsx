@@ -4,9 +4,9 @@ import { CLIENT_DEMO_CONTACT_URL } from "@/lib/site-config";
 export function ClientDemoCta() {
   return (
     <section aria-labelledby="client-demo-cta-heading" className="pb-10 pt-6 sm:pb-16 sm:pt-10">
-      <div className="rounded-xl bg-[#172033] px-5 py-9 text-white sm:px-8 sm:py-12 lg:px-12">
+      <div className="rounded-xl bg-[#173d32] px-5 py-9 text-white sm:px-8 sm:py-12 lg:px-12">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold text-[#9fc2ff]">Neste steg</p>
+          <p className="text-sm font-semibold text-[#f2a184]">Neste steg</p>
           <h2
             className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl"
             id="client-demo-cta-heading"

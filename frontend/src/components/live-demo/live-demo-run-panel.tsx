@@ -24,7 +24,7 @@ export function LiveDemoRunPanel({ capabilities, error, headingRef, isActive, is
   return (
     <section aria-labelledby="live-preview-run-heading" id="live-preview-run">
       <div className="rounded-xl border border-[#dce1e8] bg-[#fdfefe] p-5 sm:p-8">
-          <p className="text-sm font-semibold text-[#315ea8]">Live-kjøring</p>
+          <p className="text-sm font-semibold text-[#d8613c]">Live-kjøring</p>
         <h2
           className="mt-2 text-2xl font-semibold tracking-tight text-[#172033] sm:text-3xl"
           id="live-preview-run-heading"

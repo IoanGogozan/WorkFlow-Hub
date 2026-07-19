@@ -32,7 +32,7 @@ export function ClientDemoShell({ children }: ClientDemoShellProps) {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-5">
           <BrandLockup subtitle="Integrasjonseksempel" />
           <Link
-            className="text-sm font-semibold text-[#315ea8] hover:text-[#244a86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+            className="text-sm font-semibold text-[#173d32] hover:text-[#245747] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#173d32]"
             href="/technical"
           >
             Tekniske detaljer
@@ -46,10 +46,10 @@ export function ClientDemoShell({ children }: ClientDemoShellProps) {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-5 text-xs text-[#64748b] sm:flex-row sm:items-center sm:justify-between">
           <p>Fiktive data · Demoen utløper {expiryText}</p>
           <nav aria-label="Juridiske lenker" className="flex gap-4 font-semibold">
-            <Link className="hover:text-[#315ea8]" href="/privacy">
+            <Link className="hover:text-[#173d32]" href="/privacy">
               Personvern
             </Link>
-            <Link className="hover:text-[#315ea8]" href="/terms">
+            <Link className="hover:text-[#173d32]" href="/terms">
               Vilkår
             </Link>
           </nav>

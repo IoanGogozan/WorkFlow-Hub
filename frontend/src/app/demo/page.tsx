@@ -91,7 +91,7 @@ function DemoPageShell({
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
           <BrandLockup subtitle="Integrasjonseksempel" />
           <Link
-            className="text-sm font-semibold text-[#315ea8] hover:text-[#244a86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+            className="text-sm font-semibold text-[#173d32] hover:text-[#245747] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#173d32]"
             href="/technical"
           >
             Tekniske detaljer
@@ -102,7 +102,7 @@ function DemoPageShell({
       <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-12">
         <div className="grid gap-8 rounded-xl border border-[#d8dee8] bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-12 lg:p-12">
           <div>
-            <p className="text-sm font-semibold text-[#315ea8]">
+            <p className="text-sm font-semibold text-[#d8613c]">
               Praktisk integrasjonseksempel
             </p>
             <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-[#172033] sm:text-5xl">
@@ -135,7 +135,7 @@ function DemoPageShell({
 
             <div className="mt-8">
               <button
-                className="inline-flex rounded-md bg-[#315ea8] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#274d8b] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+                className="inline-flex rounded-md bg-[#173d32] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#245747] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#173d32]"
                 disabled={!isReady || isStarting || !onStartDemo}
                 onClick={onStartDemo}
                 type="button"
@@ -179,8 +179,8 @@ function DemoPageShell({
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-5 text-xs text-[#64748b] sm:flex-row sm:items-center sm:justify-between">
           <p>Fiktive data · Ingen innlogging · Midlertidig arbeidsområde</p>
           <nav aria-label="Juridiske lenker" className="flex gap-4 font-semibold">
-            <Link className="hover:text-[#315ea8]" href="/privacy">Personvern</Link>
-            <Link className="hover:text-[#315ea8]" href="/terms">Vilkår</Link>
+            <Link className="hover:text-[#173d32]" href="/privacy">Personvern</Link>
+            <Link className="hover:text-[#173d32]" href="/terms">Vilkår</Link>
           </nav>
         </div>
       </footer>
