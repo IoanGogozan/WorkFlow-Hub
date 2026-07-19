@@ -1,304 +1,175 @@
-﻿# Norvix WorkFlow Hub
+# Norvix WorkFlow Hub
 
-**A verifiable service-workflow demo that turns an incoming request into a traceable case, document package, and integration audit trail—without repeated manual entry.**
+Norvix WorkFlow Hub is a portfolio demo for workflow automation and verifiable system integration in technical service companies.
 
-[Live Demo](https://workflow.norvix.no/demo) · [Case Study](docs/product-overview.md) · [Documentation](#documentation-index)
+It turns a fictional service request into a structured case, a generated document, simulated SharePoint evidence, a signed ERP receipt, and a tenant-scoped audit trail. The project demonstrates how manual handoffs can be automated without hiding human review points or presenting demo adapters as customer integrations.
 
-![Norvix WorkFlow Hub technical dashboard](docs/screenshots/dashboard-desktop.png)
+[Portfolio landing page](https://workflow.norvix.no) · [Interactive demo](https://workflow.norvix.no/demo) · [Product brief](docs/product/product-brief.md) · [Three-minute demo script](docs/product/demo-script.md)
 
-> The screenshot shows the technical dashboard. The live demo provides the current client-facing journey.
+![Norvix WorkFlow Hub portfolio landing page](docs/screenshots/landing-desktop.png)
 
-## Portfolio Overview
+## Positioning
 
-Norvix WorkFlow Hub addresses the manual handoffs between email, customer records, documents, project/accounting tools, and reporting in Norwegian technical service companies.
+**A verifiable integration demo that connects one incoming request to case creation, documents, downstream system updates, and inspectable evidence.**
 
-I designed and implemented the end-to-end product: the Next.js experience, ASP.NET Core APIs and worker flows, tenant-scoped PostgreSQL model, document and delivery workflows, integration simulators, auditability, automated tests, CI/CD, and deployment infrastructure.
+The reference scenario is a Norwegian technical service company that already uses email, Microsoft 365, a document archive, an accounting or project system, and reporting tools. The product addresses the work between those systems: repeated data entry, manual status updates, attachment handling, and fragmented traceability.
 
-Key capabilities:
+## Demonstrated Workflow
 
-- Converts fictional email/form requests into structured, reviewable cases.
-- Enriches organization data through Brreg with a deterministic labelled fallback.
-- Versions, classifies, approves, and packages documents behind expiring links.
-- Runs worker-backed integration flows with retries, idempotency, and inspectable evidence.
-- Isolates every public visitor in a temporary tenant-scoped demo workspace.
+1. A visitor starts an isolated workspace containing fictional data.
+2. A service request is structured and validated.
+3. Organization data is checked through Brreg, with an explicitly labelled deterministic fallback when the public service is unavailable.
+4. The application creates a tenant-scoped case and a generated demo PDF.
+5. A functional local SharePoint simulator stores document and operation evidence.
+6. A separately hosted ERP demo receiver validates a signed request and returns a persisted receipt.
+7. The worker records step duration, attempts, failures, retries, and audit events.
+8. The visitor can inspect evidence tied to that exact run.
 
-**What it demonstrates:** full-stack product engineering, multi-tenant and security boundaries, human-in-the-loop automation, resilient integration design, observability, and honest separation between implemented behavior and demo adapters.
+## What the Project Demonstrates
 
-**Status:** Deployed portfolio demo with fictional data. The core workflow, self-hosted ERP receiver, and SharePoint/Graph simulator are implemented; production identity and real customer integrations remain intentionally out of scope. See [Current Implementation Status](docs/current-implementation-status.md).
+- End-to-end product engineering with Next.js, ASP.NET Core, PostgreSQL, Docker, and Terraform.
+- Tenant-scoped data access and temporary public demo sessions.
+- Worker-backed orchestration with explicit step state, retry handling, and idempotent downstream operations.
+- Human-controlled intake, AI suggestion review, case, document, delivery, and audit workflows.
+- Honest integration boundaries: public service, internal implementation, functional simulator, and separate demo receiver.
+- Automated backend, contract, integration, receiver, and browser coverage.
 
-**Stack:** Next.js · TypeScript · Tailwind CSS · ASP.NET Core / .NET 10 · C# · Entity Framework Core · PostgreSQL · Docker · Terraform · GitHub Actions · xUnit · Playwright
+## Integration Boundaries
 
-> **Automatisert serviceflyt:** Fra e-post og skjema til sak, dokumentasjon, fakturagrunnlag og rapportering — uten dobbeltregistrering.
+| System or capability | Demo behavior | Classification |
+| --- | --- | --- |
+| Brreg / Enhetsregisteret | Performs a public lookup when available and records a labelled fallback otherwise | Live public service with fallback |
+| Case, document, PDF, and audit operations | Persisted in the WorkFlow Hub PostgreSQL model | Implemented internally |
+| SharePoint | Persists folders, document items, idempotency keys, and operation history locally | Functional simulator; no Microsoft tenant |
+| ERP/project system | Sends a signed request to a separate self-hosted receiver and stores its receipt | Functional demo receiver; no customer ERP |
+| Email/Outlook | Uses a fictional service request as the scenario source | Seeded demo input; no mailbox connection |
+| AI analysis | Stores reviewable suggestions and requires human approval in the broader technical application | Controlled demo workflow; no autonomous decision |
 
-## Product Scenario
+See [Integration Boundaries](docs/product/integration-boundaries.md) for the detailed claim rules.
 
-The reference customer profile is a Norwegian technical services company that already uses Microsoft 365, SharePoint, Outlook, Excel, an accounting/project system in the Tripletex/PowerOffice/Fiken category, and Power BI.
+## Architecture
 
-The problem is not lack of digital tools. The problem is manual work between systems: copying customer data, moving attachments, tracking case status in spreadsheets, preparing delivery packages manually, and producing reports after the fact.
-
-## Product Goal
-
-The application is intended to support one complete operational flow:
-
-1. A request is received from manual entry, email/form adapters, or API.
-2. The request appears in the Intake Inbox.
-3. AI proposes customer, organization number, category, urgency, tasks, summary, missing information, and document metadata.
-4. A user approves, edits, or rejects AI suggestions.
-5. The system creates a case/project workspace.
-6. Customer data is enriched from Bronnoysundregistrene / Enhetsregisteret.
-7. Documents are uploaded, versioned, classified, and approved.
-8. Missing information is shown before delivery.
-9. A delivery summary is generated.
-10. A secure expiring delivery link is created.
-11. Audit events are recorded.
-12. The dashboard shows operational status, bottlenecks, and exportable metrics.
-
-## Current Product Status
-
-Norvix WorkFlow Hub currently has a working local product flow backed by ASP.NET Core APIs, PostgreSQL persistence, tenant-scoped data access, audit events, a Next.js frontend, document workflow, delivery links, analytics, and automated backend coverage.
-
-The active target is the staged
-[Verifiable Integration Demo](docs/verifiable-integration-demo.md). Each visitor
-receives an isolated temporary workspace with fictional data and can start a
-new worker-backed run. Brreg is live-or-labelled-fallback, internal artifacts
-are persisted, and SharePoint behavior uses the explicitly local simulator.
-The signed ERP demo receiver and final public-route promotion remain planned.
-
-Implemented capabilities:
-
-- Tenant-scoped local development auth, RBAC, audit events, and tenant isolation tests.
-- Intake inbox with manual/source-based creation and validation.
-- AI review workflow with stored analysis runs, review tasks, human approval, and rejection.
-- Case workspace with conversion from intake, tasks, notes, linked documents, and aggregated workflow activity.
-- Brreg organization lookup and customer enrichment APIs.
-- A provider-based local SharePoint/Microsoft Graph simulator is documented in
-  [docs/sharepoint-simulator-amendment.md](docs/sharepoint-simulator-amendment.md).
-  It supports deterministic folders, document metadata, version/eTag evidence,
-  idempotency, restricted-site and throttling demonstrations, and is explicitly
-  not a live Microsoft 365 connection.
-- Document upload, centralized size/type validation, versioning, classification, human approval, and case linking.
-- Integration dashboard with connection state, sync history, failure, and retry flows.
-- Delivery packages with selected documents, generated simple PDF summary, secure expiring public link, revoke, public page, and access log.
-- Analytics endpoints with overview metrics, status groupings, CSV export, and JSON export.
-- Frontend pages for dashboard, intakes, cases, documents, delivery packages, public delivery links, and integrations.
-- Frontend demo labels clearly identify Mock AI, simulated SharePoint/Graph,
-  mock accounting/Fabric integrations, and Brreg live-or-fallback evidence.
-
-Public integration demo components now implemented:
-
-- Demo session creation endpoint with bearer-token auth.
-- Tenant-scoped read-only demo-story endpoint that supplies the simplified
-  request, evidence timeline, outcome, integration modes, and technical links.
-- Isolated demo tenant/user/membership creation.
-- Rich fictional per-session seed data with intakes, a customer, case workspace, approved document, delivery package, generated summary document, integrations, and audit trail.
-- Frontend evidence labels distinguish implemented behavior, public-data-capable
-  behavior using a deterministic demo snapshot, and demo adapters. No real
-  Microsoft, accounting, reporting, or AI customer integration is claimed.
-- Responsive client presentation, editable savings calculator, reduced-motion
-  behavior, keyboard-accessible controls, and separate client/technical E2E paths.
-- Expired demo session cleanup for database records and stored local files.
-- Public privacy and terms pages linked from the demo entry, app shell, and public delivery page.
-- Rate limiting for demo session creation and public delivery endpoints.
-- Global request body size limits and upload file size/type limits.
-- Correlation ID propagation through response headers, logs, clean error responses, and audit events.
-- Security headers and clean non-Development error responses without stack traces.
-- Reverse-proxy readiness with forwarded headers, optional HTTPS enforcement, and HSTS.
-- GitHub Actions CI checks backend tests, EF migration drift, frontend dependency audit/lint/build, and Docker Compose configuration.
-- Demo deployment workflow has a main/tag gate, fictional-data confirmation, validation jobs, a `demo` environment gate, ACR image publishing, and Azure Container Apps update steps.
-
-Local/development-only components still to replace before real customer production deployment:
-
-- Header-based local dev auth must be replaced with Microsoft Entra ID / OIDC.
-- AI provider is currently a mock adapter and must be replaced with a governed real provider before processing real customer data.
-- Microsoft Graph/SharePoint, Tripletex/accounting, and Power BI/Fabric adapters are currently mock adapters.
-- File storage is local-development oriented and must move to Azure Blob Storage or equivalent durable object storage.
-- Delivery summary currently creates a simple generated PDF document; production PDF rendering still needs implementation.
-- Seed/reference data is fictional and must not be mixed with real customer data.
-
-## Deployment Direction
-
-The target deployment architecture is:
-
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS.
-- Backend: ASP.NET Core / .NET 10, C#, Entity Framework Core, PostgreSQL, OpenAPI, xUnit.
-- Storage: Azure Blob Storage compatible storage, Azurite locally.
-- Local dependencies: Docker Compose with PostgreSQL, Azurite, Mailpit, optional Seq.
-- Cloud: Azure App Service or Azure Container Apps, Azure Database for PostgreSQL Flexible Server, Blob Storage, Key Vault, Application Insights, Service Bus or Storage Queue.
-- Infrastructure: Terraform and GitHub Actions.
-
-The GitHub `demo` environment should be configured with the required reviewers and deployment secrets before a real deploy step is added.
-
-Bootstrap scripts for the first Azure demo environment are available:
-
-```powershell
-.\scripts\provision-demo-azure.ps1 -SubscriptionId "<subscription-id>" -TenantId "<tenant-id>"
-.\scripts\configure-github-demo-environment.ps1
+```text
+Browser
+  |
+  v
+Next.js portfolio + demo UI
+  |
+  v
+ASP.NET Core API -----> PostgreSQL
+  |                         |
+  v                         +--> tenant data + audit evidence
+.NET worker
+  |----> Brreg public API (labelled fallback available)
+  |----> local SharePoint simulator
+  +----> signed self-hosted ERP demo receiver
 ```
 
-## Verification
+The public demo creates a temporary tenant and user for each visitor. The API applies the tenant context, the worker processes the run, and the evidence endpoint returns only resources belonging to that demo session.
 
-Verification targets:
+More detail is available in [Architecture](docs/architecture.md) and [Data Model](docs/data-model.md).
 
-- Backend integration, unit, and contract tests.
-- EF migration drift check.
-- Frontend lint and production build.
-- `npm audit`.
-- Docker Compose config validation.
-- Manual review for file size and architecture boundaries.
+## Technology
 
-Record a command under "Validated locally" only after it has been run in the current environment.
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS.
+- Backend: ASP.NET Core and .NET 10, C#, Entity Framework Core.
+- Data: PostgreSQL and local document storage abstractions.
+- Processing: hosted .NET worker with persisted run steps.
+- Delivery: Docker Compose, Caddy-compatible home-server deployment, Terraform demo environment.
+- Quality: xUnit, ASP.NET integration tests, contract tests, Playwright, ESLint, GitHub Actions.
 
-## Local Setup
+## Repository Structure
 
-Prerequisites:
-
-- Node.js 24 or newer;
-- npm 11 or newer;
-- Docker Desktop with Docker Compose;
-- .NET 10 SDK, or Docker for backend validation.
-
-Start local dependencies:
-
-```bash
-cp .env.example .env
-# Set ERP_DEMO_SIGNING_SECRET in .env to a generated random value.
-docker compose up -d
+```text
+workflow-hub/
+  backend/
+    src/
+      NorvixHub.Api/
+      NorvixHub.Application/
+      NorvixHub.Domain/
+      NorvixHub.Infrastructure/
+      NorvixHub.Worker/
+      NorvixHub.ErpDemoReceiver/
+    tests/
+  frontend/
+  connectors/
+  infra/
+  docs/
+  scripts/
 ```
 
-PostgreSQL is exposed on host port `55432` to avoid collisions with other local projects.
-The fictional ERP receiver is exposed only on `127.0.0.1:5510` so the API and
-worker processes running on the host can call it. Its SQLite database is stored
-in the named `erp-receiver-data` volume; the receiver is attached to the
-internal service network plus a dedicated bridge required for the
-loopback-only host port.
+## Local Development
 
-Start the full local app with one command from the repository root:
+Requirements:
+
+- Docker Desktop or Docker Engine with Compose.
+- .NET SDK version defined in `global.json`.
+- Node.js and npm.
+
+Copy `.env.example` to `.env`, set `ERP_DEMO_SIGNING_SECRET` to a generated local value, then run:
 
 ```powershell
 npm run dev
 ```
 
-This starts Docker Compose dependencies, the ASP.NET Core API on `http://localhost:5000`, and the Next.js frontend on `http://localhost:3000`.
+Open `http://localhost:3000`. The frontend, API, worker, PostgreSQL database, and ERP demo receiver are defined by the local development workflow.
 
-Run frontend checks:
-
-```bash
-cd frontend
-npm ci
-npm run lint
-npm run build
-```
-
-Run backend tests with local .NET SDK:
-
-```bash
-dotnet test backend/NorvixHub.sln --configuration Release -nr:false
-```
-
-The `-nr:false` flag disables MSBuild node reuse. This avoids intermittent `Child node exited prematurely` failures on Windows when IDE build hosts or stale MSBuild nodes are active, while still allowing normal project-level parallelism.
-
-Restore local .NET tools before creating EF migrations:
-
-```bash
-dotnet tool restore
-dotnet tool run dotnet-ef migrations add MigrationName --project backend/src/NorvixHub.Infrastructure --startup-project backend/src/NorvixHub.Api --output-dir Persistence/Migrations
-```
-
-Check whether the EF model has pending migration changes:
-
-```bash
-dotnet tool restore --tool-manifest dotnet-tools.json
-dotnet tool run dotnet-ef -- migrations has-pending-model-changes --project backend/src/NorvixHub.Infrastructure/NorvixHub.Infrastructure.csproj --startup-project backend/src/NorvixHub.Api/NorvixHub.Api.csproj --configuration Release
-```
-
-Run backend tests through Docker when .NET is not installed locally:
-
-```bash
-docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test backend/NorvixHub.sln --configuration Release
-```
-
-On Windows, when running integration tests through the .NET SDK container, use the compose network and the already running Postgres container:
+## Verification
 
 ```powershell
-$env:NORVIXHUB_TEST_POSTGRES="Host=norvixhub-postgres;Port=5432;Database=norvixhub_tests;Username=norvixhub;Password=norvixhub_dev_password"
-docker run --rm --network workflow-hub_default -e NORVIXHUB_TEST_POSTGRES=$env:NORVIXHUB_TEST_POSTGRES -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test backend/NorvixHub.sln --configuration Release
+npm run test:backend
+npm run test:frontend
+npm run test:e2e:public-demo
 ```
 
-API health endpoint:
+Additional migration and Compose checks are documented in [Testing Strategy](docs/testing-strategy.md).
 
-```http
-GET /health
-GET /health/ready
-```
+## Deliberate Limitations
 
-Local dev auth for `/api/*` endpoints uses headers:
+- This is a portfolio demo, not a production workflow platform.
+- Only fictional data may be used.
+- Public workspaces expire and are cleaned automatically.
+- The demo does not connect to Outlook, Microsoft 365, a customer ERP, or a customer reporting environment.
+- SharePoint behavior is provided by an explicitly labelled local simulator.
+- The ERP endpoint is a separate demonstrator owned by this project, not a third-party accounting system.
+- Brreg availability and response time are outside the application's control, so fallback use remains visible.
+- Production identity, customer-specific authorization, secrets governance, contracts, operational monitoring, backup policy, and legal assessments require deployment-specific work.
 
-```http
-X-Norvix-Tenant-Id: 11111111-1111-4111-8111-111111111111
-X-Norvix-User-Id: 22222222-2222-4222-8222-222222222222
-```
+See [Demo Boundaries](docs/product/demo-boundaries.md) and [Current Implementation Status](docs/current-implementation-status.md).
 
-## Documentation Index
+## Documentation
 
-- [Plan Registry — start here for plan status](docs/plans.md)
-- [Verifiable Integration Demo — Active Implementation Plan](docs/verifiable-integration-demo.md)
-- [SharePoint Simulator — Implemented Reference](docs/sharepoint-simulator-amendment.md)
-- [Product Overview](docs/product-overview.md)
-- [Current Implementation Status](docs/current-implementation-status.md)
-- [Requirements](docs/requirements.md)
+### Product
+
+- [Product brief](docs/product/product-brief.md)
+- [Demo script](docs/product/demo-script.md)
+- [Demo boundaries](docs/product/demo-boundaries.md)
+- [Integration boundaries](docs/product/integration-boundaries.md)
+- [Product walkthrough](docs/product-walkthrough.md)
+- [Current implementation status](docs/current-implementation-status.md)
+
+### Engineering
+
 - [Architecture](docs/architecture.md)
-- [Data Model](docs/data-model.md)
-- [API Contract Draft](docs/api-contract.md)
-- [Security and Privacy](docs/security-and-privacy.md)
-- [Demo Azure Deployment](docs/deployment-demo-azure.md)
-- [Norway Legal Checklist](docs/legal-checklist-norway.md)
-- [DPIA Screening](docs/dpia-screening.md)
-- [Testing Strategy](docs/testing-strategy.md)
-- [Coding Standards](docs/coding-standards.md)
-- [Product Walkthrough](docs/product-walkthrough.md)
-- [Screenshots](docs/screenshots.md)
-- [References](docs/references.md)
+- [API contract](docs/api-contract.md)
+- [Data model](docs/data-model.md)
+- [Security and privacy](docs/security-and-privacy.md)
+- [Testing strategy](docs/testing-strategy.md)
+- [Technology decision](docs/decisions/0001-technology-stack.md)
 
-## Non-Goals for First Production Release
+### Operations
 
-- Full CRM or ERP replacement.
-- Real invoice issuing.
-- Full SharePoint migration.
-- Autonomous AI decisions.
-- Public SaaS billing.
-- Unreviewed AI writes to external systems.
-- Multi-region enterprise deployment.
+- [Home-server deployment](docs/deployment-home-server.md)
+- [Azure demo deployment](docs/deployment-demo-azure.md)
+- [ERP demo receiver](backend/src/NorvixHub.ErpDemoReceiver/README.md)
+- [Restore procedure](scripts/restore-home-server.md)
 
-## Implementation Rule
+### Implementation History
 
-Build the system as a deployable product for Norwegian customers:
+- [Verifiable integration demo plan](docs/verifiable-integration-demo.md)
+- [SharePoint simulator amendment](docs/sharepoint-simulator-amendment.md)
+- [Plan registry](docs/plans.md)
 
-- Keep all business records tenant-scoped.
-- For public demo mode, derive tenant context from the demo session token, not from client-provided tenant headers.
-- Replace local-only adapters before real customer production use.
-- Use fictional seed data only in development and staging.
-- Treat AI output as suggestions only.
-- Require human approval before final case, document, delivery, or external action changes.
-- Keep audit logs for important actions.
-- Add automated tests for every module, including negative tests for invalid input, forbidden actions, cross-tenant access, expired/revoked links, integration failures, AI failures, and unsafe uploads.
-- Keep code files small and modular. Follow the file size limits in [Coding Standards](docs/coding-standards.md).
+## Portfolio Message
 
-## GitHub Repository
-
-Target repository:
-
-https://github.com/IoanGogozan/WorkFlow-Hub
-
-## Product Walkthrough
-
-Recommended 5-minute product walkthrough path:
-
-1. Start a demo workspace from `/demo`.
-2. Use **Se automatiseringen** to open the primary story at `/`.
-3. Recognize the fictional incoming email and its business fields.
-4. Compare the manual process with the seven-step evidence timeline.
-5. Show the demo case result and remaining human control point.
-6. Adjust the transparent time-savings assumptions; do not present them as a
-   measured customer result.
-7. Review the honestly labeled integration modes and optional technical evidence.
-8. Open `/technical` only when a deeper product walkthrough is useful.
+WorkFlow Hub does not claim a finished customer integration or measured savings. It demonstrates a credible implementation pattern: automate one bounded process, keep human control visible, make failures recoverable, and provide evidence for every completed step.

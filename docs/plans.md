@@ -1,16 +1,21 @@
 ﻿# Plan Registry
 
-This page is the single index for implementation-plan status. There is one
-active plan; replaced implementation plans are removed to prevent ambiguity.
+This page is the single index for implementation-plan status. Product truth is
+maintained in the product brief, integration boundaries, and current status;
+historical plans do not override those documents.
 
 ## Active
 
-- [Verifiable Integration Demo](verifiable-integration-demo.md) — adopted
-  2026-07-12. This is the only active implementation plan and the source for
-  future staged work.
+- Portfolio presentation alignment — README, product documentation, public
+  landing page, demo route separation, responsive review, and release
+  validation. The user-approved implementation direction started 2026-07-19.
 
 ## Implemented reference
 
+- [Verifiable Integration Demo](verifiable-integration-demo.md) — the main
+  worker-backed run, evidence page, SharePoint simulator, and ERP receiver are
+  implemented. Remaining items must be evaluated against current status rather
+  than treated as an authoritative backlog.
 - [SharePoint Simulator Amendment](sharepoint-simulator-amendment.md) — its
   direction is implemented and incorporated into the active plan. Consult it
   for detail, not for a separate backlog.

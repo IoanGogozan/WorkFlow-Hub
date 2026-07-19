@@ -107,7 +107,7 @@ test("moves focus and announces status after start and retry", async ({ page }) 
     });
   });
 
-  await page.goto("/");
+  await page.goto("/demo/run");
   const runHeading = page.getByRole("heading", { name: "Én ny henvendelse, fire tydelige steg" });
   await page.getByRole("button", { name: "Kjør live demo" }).click();
   await expect(runHeading).toBeFocused();
@@ -131,7 +131,7 @@ test("redirects an expired demo session to a new demo start", async ({ page }) =
     });
   });
 
-  await page.goto("/");
+  await page.goto("/demo/run");
 
   await expect(page).toHaveURL(/\/demo\?reason=expired$/);
   await expect(page.getByText("Demoen er utløpt. Start en ny for å fortsette.")).toBeVisible();
@@ -140,7 +140,7 @@ test("redirects an expired demo session to a new demo start", async ({ page }) =
 async function startAndCompleteRun(page: import("@playwright/test").Page) {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/demo\/run$/);
 
   await expect(
     page.getByRole("heading", {

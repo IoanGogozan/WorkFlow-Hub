@@ -20,11 +20,12 @@ This file records the current technical status. It is not a final acceptance sta
 - Read-only, tenant-scoped `/api/demo-story` projection for the simplified
   client experience, with cross-tenant, missing-story, authentication, and
   response-header coverage.
-- Client-facing `/` experience with incoming request, manual-process comparison,
+- Client-facing `/demo/run` experience with incoming request, manual-process comparison,
   replayable evidence timeline, real demo outcome, editable calculator,
   integration boundaries, technical evidence, and CTA.
-- `/automation` compatibility redirect, `/technical` technical overview, and
-  `/summary` consolidation redirect to `/#resultat`.
+- `/automation` and `/live-preview` compatibility redirects, `/technical`
+  technical overview, and `/summary` consolidation redirect to
+  `/demo/run#resultat`.
 - Separate client-facing and technical Playwright paths, responsive checks at
   375/768/1280 px, keyboard focus checks, and reduced-motion support.
 - Worker-backed expired demo session cleanup for demo tenants, tenant-scoped records, and stored local files.
@@ -59,22 +60,29 @@ This file records the current technical status. It is not a final acceptance sta
 
 ## Current Public Direction
 
-The active direction is the staged
-[Verifiable Integration Demo](verifiable-integration-demo.md). The implemented
-[SharePoint Simulator](sharepoint-simulator-amendment.md) remains a detailed
-reference. See the [Plan Registry](plans.md) for authoritative status.
+The public presentation follows the product position in the
+[Product Brief](product/product-brief.md) and the claim rules in
+[Integration Boundaries](product/integration-boundaries.md).
 
-The current `/live-preview` path creates a fresh worker-backed fictional run.
-The existing `/` replay presentation and detailed application remain available
-until the later capability-driven public-route promotion is explicitly approved.
+- `/` is the portfolio landing page.
+- `/demo` explains the sandbox boundaries and creates a temporary workspace.
+- `/demo/run` runs the worker-backed fictional integration scenario.
+- `/technical` and `/technical/live-runs/{runId}` expose broader technical and
+  run-specific evidence.
+- `/live-preview` remains a compatibility route for the interactive run.
+
+The earlier [Verifiable Integration Demo](verifiable-integration-demo.md) and
+[SharePoint Simulator](sharepoint-simulator-amendment.md) documents are retained
+as implementation history and detailed engineering references.
 
 ## Current Gaps Before Public Deployment
 
-- Public controls for the ERP failure demonstration remain a later UI task.
-- The ERP backend activation described above has not been deployed.
-- The final capability-driven public page, route promotion, accessibility/E2E
-  replacement, dedicated CI job, deployed live smoke script, and final release
-  gate remain in V2 Phases 8–10.
+- Public controls for the controlled ERP failure demonstration require a final
+  environment and UX review.
+- Deployment must confirm that the ERP receiver capability is enabled before
+  public copy presents a completed ERP receipt.
+- The new landing-to-demo route split requires final responsive, accessibility,
+  E2E, and deployed smoke validation.
 - Production-grade PDF rendering is not yet implemented; the current demo generates a simple PDF summary.
 - Azure resources and Terraform are optional/deferred; the approved demo
   deployment target is currently the home server.

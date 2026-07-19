@@ -47,7 +47,7 @@ function DemoStartContent() {
         method: "POST",
       });
       saveDemoSession(session);
-      window.location.assign("/");
+      window.location.assign("/demo/run");
     } catch (startError) {
       setError(
         startError instanceof Error

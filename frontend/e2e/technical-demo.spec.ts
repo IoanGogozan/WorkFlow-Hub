@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("technical reviewer can complete the detailed demo workflow", async ({ page }) => {
   await page.goto("/demo");
   await page.getByRole("button", { name: "Se automatiseringen" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/demo\/run$/);
 
   await page.goto("/technical");
   await expect(
@@ -76,7 +76,7 @@ test("technical reviewer can complete the detailed demo workflow", async ({ page
   await expect(page.getByText(documentTitle)).toBeVisible();
 
   await page.goto("/summary");
-  await expect(page).toHaveURL(/\/#resultat$/);
+  await expect(page).toHaveURL(/\/demo\/run#resultat$/);
   await expect(
     page.getByRole("heading", {
       name: "Fra henvendelse til sak, dokument og systemsynkronisering",

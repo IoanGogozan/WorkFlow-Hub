@@ -114,6 +114,7 @@ jobs:
           E2E_BASE_URL: http://127.0.0.1:3000
         run: >-
           npx playwright test
+          e2e/landing-page.spec.ts
           e2e/live-preview.spec.ts
           e2e/live-run-evidence.spec.ts
           e2e/sharepoint-technical.spec.ts
