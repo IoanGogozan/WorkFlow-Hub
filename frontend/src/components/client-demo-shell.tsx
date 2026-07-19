@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BrandLockup } from "@/components/brand-lockup";
 import { getDemoSessionExpiresAt } from "@/lib/demo-session";
 
 type ClientDemoShellProps = {
@@ -27,19 +28,9 @@ export function ClientDemoShell({ children }: ClientDemoShellProps) {
 
   return (
     <main className="flex min-h-screen flex-col overflow-x-clip bg-[#f7f8fa]">
-      <header className="border-b border-[#dce1e8] bg-white">
+      <header className="border-b border-t-4 border-b-[#dce1e8] border-t-[#d8613c] bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-5">
-          <div>
-            <Link
-              className="text-lg font-semibold tracking-tight text-[#172033]"
-              href="/"
-            >
-              Norvix
-            </Link>
-            <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#64748b]">
-              Integrasjonseksempel
-            </p>
-          </div>
+          <BrandLockup subtitle="Integrasjonseksempel" />
           <Link
             className="text-sm font-semibold text-[#315ea8] hover:text-[#244a86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
             href="/technical"

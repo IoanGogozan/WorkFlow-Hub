@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { BrandLockup } from "@/components/brand-lockup";
 import { api } from "@/lib/api";
 import { saveDemoSession, type DemoSession } from "@/lib/demo-session";
 
@@ -85,16 +86,21 @@ function DemoPageShell({
   onStartDemo,
 }: DemoPageShellProps) {
   return (
-    <main className="min-h-screen bg-[#f7f8fa]">
-      <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-12">
-        <Link
-          className="w-fit text-lg font-semibold tracking-tight text-[#172033] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
-          href="/"
-        >
-          Norvix
-        </Link>
+    <main className="flex min-h-screen flex-col bg-[#f7f8fa]">
+      <header className="border-b border-t-4 border-b-[#dce1e8] border-t-[#d8613c] bg-white">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
+          <BrandLockup subtitle="Integrasjonseksempel" />
+          <Link
+            className="text-sm font-semibold text-[#315ea8] hover:text-[#244a86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+            href="/technical"
+          >
+            Tekniske detaljer
+          </Link>
+        </div>
+      </header>
 
-        <div className="mt-8 grid gap-8 rounded-xl border border-[#d8dee8] bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-12 lg:p-12">
+      <section className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-12">
+        <div className="grid gap-8 rounded-xl border border-[#d8dee8] bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:gap-12 lg:p-12">
           <div>
             <p className="text-sm font-semibold text-[#315ea8]">
               Praktisk integrasjonseksempel
@@ -168,18 +174,16 @@ function DemoPageShell({
           </aside>
         </div>
 
-        <nav
-          aria-label="Juridiske lenker"
-          className="mt-6 flex flex-wrap gap-4 text-sm font-semibold"
-        >
-          <Link className="text-[#315ea8] hover:text-[#274d8b]" href="/privacy">
-            Personvern
-          </Link>
-          <Link className="text-[#315ea8] hover:text-[#274d8b]" href="/terms">
-            Vilkår
-          </Link>
-        </nav>
       </section>
+      <footer className="border-t border-[#dce1e8] bg-white">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-5 text-xs text-[#64748b] sm:flex-row sm:items-center sm:justify-between">
+          <p>Fiktive data · Ingen innlogging · Midlertidig arbeidsområde</p>
+          <nav aria-label="Juridiske lenker" className="flex gap-4 font-semibold">
+            <Link className="hover:text-[#315ea8]" href="/privacy">Personvern</Link>
+            <Link className="hover:text-[#315ea8]" href="/terms">Vilkår</Link>
+          </nav>
+        </div>
+      </footer>
     </main>
   );
 }

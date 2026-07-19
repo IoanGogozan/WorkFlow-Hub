@@ -1,5 +1,7 @@
 # Norvix WorkFlow Hub
 
+[![CI](https://github.com/IoanGogozan/WorkFlow-Hub/actions/workflows/ci.yml/badge.svg)](https://github.com/IoanGogozan/WorkFlow-Hub/actions/workflows/ci.yml)
+
 Norvix WorkFlow Hub is a portfolio demo for workflow automation and verifiable system integration in technical service companies.
 
 It turns a fictional service request into a structured case, a generated document, simulated SharePoint evidence, a signed ERP receipt, and a tenant-scoped audit trail. The project demonstrates how manual handoffs can be automated without hiding human review points or presenting demo adapters as customer integrations.
