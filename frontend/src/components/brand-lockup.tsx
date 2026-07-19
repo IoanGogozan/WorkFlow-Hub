@@ -7,7 +7,7 @@ type BrandLockupProps = {
 export function BrandLockup({ subtitle }: BrandLockupProps) {
   return (
     <Link
-      className="group flex w-fit items-center gap-3 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#315ea8]"
+      className="group flex w-fit items-center gap-3 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#173d32]"
       href="/"
     >
       <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#173d32] text-sm font-semibold text-white transition group-hover:bg-[#245747]">

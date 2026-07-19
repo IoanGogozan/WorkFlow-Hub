@@ -34,7 +34,7 @@ export default function TechnicalOverviewPage() {
             viderelevering og valgfri AI-støtte.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link className="inline-flex w-fit rounded-md bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1d4ed8]" href="/intakes">
+            <Link className="inline-flex w-fit rounded-md bg-[#173d32] px-5 py-3 text-sm font-semibold text-white hover:bg-[#245747]" href="/intakes">
               Start teknisk gjennomgang
             </Link>
             <p className="text-sm text-[#64748b]">Demoen bruker kun fiktive data.</p>

@@ -14,7 +14,7 @@ export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: Li
   const trustLines = capabilities ? createTrustLines(capabilities) : [];
   return (
     <section className="max-w-4xl pb-10 pt-4 sm:pb-14 sm:pt-10">
-      <p className="text-sm font-semibold text-[#315ea8]">
+      <p className="text-sm font-semibold text-[#d8613c]">
         Live integrasjon med fiktive data
       </p>
       <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-[#172033] sm:text-5xl">
@@ -27,7 +27,7 @@ export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: Li
 
       <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         <button
-          className="inline-flex justify-center rounded-md bg-[#315ea8] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#244a86] disabled:cursor-not-allowed disabled:bg-[#8295b2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+          className="inline-flex justify-center rounded-md bg-[#173d32] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#245747] disabled:cursor-not-allowed disabled:bg-[#82958d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#173d32]"
           disabled={disabled}
           onClick={onStart}
           type="button"
@@ -35,7 +35,7 @@ export function LiveDemoHero({ capabilities, disabled, isStarting, onStart }: Li
           {isStarting ? "Starter live demo …" : "Kjør live demo"}
         </button>
         <a
-          className="inline-flex justify-center rounded-md border border-[#9aa8bb] px-5 py-3 text-sm font-semibold text-[#172033] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#315ea8]"
+          className="inline-flex justify-center rounded-md border border-[#9aa8bb] px-5 py-3 text-sm font-semibold text-[#172033] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#173d32]"
           href={CLIENT_DEMO_CONTACT_URL}
         >
           Beskriv prosessen deres
