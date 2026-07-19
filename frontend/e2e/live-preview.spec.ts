@@ -251,7 +251,7 @@ async function showCapabilityCopy(
   await page.route("**/api/live-demo-capabilities", async (route) => {
     await route.fulfill({ json: capabilities });
   });
-  await page.goto("/");
+  await page.goto("/demo/run");
 }
 
 function createCompletedRun(
