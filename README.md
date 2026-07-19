@@ -159,10 +159,12 @@ See [Demo Boundaries](docs/product/demo-boundaries.md) and [Current Implementati
 
 ### Operations
 
-- [Home-server deployment](docs/deployment-home-server.md)
-- [Azure demo deployment](docs/deployment-demo-azure.md)
+- [Home-server deployment](docs/deployment-home-server.md) — permanent public demo, released through the protected `Deploy Home Server` workflow without paid cloud infrastructure.
+- [Azure demo deployment](docs/deployment-demo-azure.md) — optional reference target that requires separately provisioned, potentially billable Azure resources.
 - [ERP demo receiver](backend/src/NorvixHub.ErpDemoReceiver/README.md)
 - [Restore procedure](scripts/restore-home-server.md)
+
+The running home-server revision is available from `GET /health/version`, including the commit SHA, build date, environment, and deployment target.
 
 ### Implementation History
 

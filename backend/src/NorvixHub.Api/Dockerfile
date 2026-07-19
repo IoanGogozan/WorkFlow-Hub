@@ -18,7 +18,11 @@ RUN dotnet publish backend/src/NorvixHub.Api/NorvixHub.Api.csproj \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+ARG GIT_SHA=unknown
+ARG BUILD_DATE=unknown
 ENV ASPNETCORE_HTTP_PORTS=8080
+ENV Build__GitSha=$GIT_SHA
+ENV Build__Date=$BUILD_DATE
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
     && rm -rf /var/lib/apt/lists/*

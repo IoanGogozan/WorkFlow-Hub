@@ -1,0 +1,24 @@
+name: Deploy Azure Demo (Optional, Paid Infrastructure)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_infrastructure_costs:
+        description: "Confirm that provisioned Azure resources and their costs are accepted."
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  explain:
+    name: Azure deployment status
+    if: ${{ inputs.confirm_infrastructure_costs == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain
+        run: |
+          echo "Azure is an optional reference target and does not publish workflow.norvix.no."
+          echo "The current Azure infrastructure and four-service deployment are not implemented."
+          echo "Use Deploy Home Server for the permanent zero-additional-cost demo."

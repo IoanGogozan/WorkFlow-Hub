@@ -3,6 +3,25 @@
 This runbook deploys the fictional WorkFlow Hub demo to
 `https://workflow.norvix.no` behind the existing Caddy reverse proxy.
 
+The normal release path is the manual GitHub Actions workflow
+`.github/workflows/deploy-home-server.yml`. It runs CI, waits for approval in
+the protected `home-demo` environment, connects to the server using a dedicated
+SSH key, backs up persistent data, deploys the exact workflow commit, runs both
+smoke suites, and rolls the application containers back if verification fails.
+Azure is a separate, optional reference target and is not used for this site.
+
+Configure these GitHub environment values for `home-demo`:
+
+- secrets: `HOME_SERVER_SSH_PRIVATE_KEY`, `HOME_SERVER_SSH_KNOWN_HOSTS`;
+- variables: `HOME_SERVER_HOST`, `HOME_SERVER_SSH_USER`;
+- optional variables: `HOME_SERVER_SSH_PORT`, `HOME_SERVER_PROJECT_DIR`,
+  `HOME_SERVER_BASE_URL`.
+
+Generate `HOME_SERVER_SSH_KNOWN_HOSTS` from a trusted host-key fingerprint,
+not from an unverified connection during deployment. Limit the deploy key on
+the server to the deployment account and repository. The account needs Docker
+access and write permission for the project and backup directories.
+
 ## Boundaries
 
 - Only Caddy publishes host ports 80 and 443.
@@ -124,6 +143,18 @@ deployment or rollback.
 
 ## Pull, validate, build, migrate, and start
 
+For an approved manual deployment outside GitHub Actions, use the same
+idempotent release script as CI:
+
+```bash
+cd /srv/projects/workflow-hub
+bash scripts/deploy-home-server.sh REPLACE_WITH_APPROVED_COMMIT_SHA \
+  https://workflow.norvix.no
+```
+
+The lower-level commands below document what the script performs and remain
+useful for diagnosis.
+
 Set the approved immutable commit, fetch it, and verify the clean checkout:
 
 ```bash
@@ -202,6 +233,7 @@ docker compose -f /srv/proxy/compose.yml exec -T caddy \
 ```bash
 curl --fail --silent --show-error https://workflow.norvix.no/health >/dev/null
 curl --fail --silent --show-error https://workflow.norvix.no/health/ready >/dev/null
+curl --fail --silent --show-error https://workflow.norvix.no/health/version | jq .
 bash scripts/smoke-home-server.sh https://workflow.norvix.no
 bash scripts/smoke-verifiable-demo.sh https://workflow.norvix.no
 docker compose --env-file .env -f compose.home-server.yml ps

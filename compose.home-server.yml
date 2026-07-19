@@ -38,6 +38,9 @@ services:
     build:
       context: .
       dockerfile: backend/src/NorvixHub.Api/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Demo
@@ -54,6 +57,7 @@ services:
       LiveDemo__OrganizationNumber: "974760673"
       ErpDemo__Enabled: "true"
       ErpDemo__FailureDemoEnabled: "true"
+      Build__DeploymentTarget: HomeServer
       AllowedHosts: ${WORKFLOW_HUB_HOST};localhost;127.0.0.1
     expose:
       - "8080"

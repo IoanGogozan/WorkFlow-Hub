@@ -14,6 +14,7 @@ check() {
 check "demo entry" "$BASE_URL/demo"
 check "health" "$BASE_URL/health"
 check "readiness" "$BASE_URL/health/ready"
+check "version" "$BASE_URL/health/version"
 check "privacy" "$BASE_URL/privacy"
 check "terms" "$BASE_URL/terms"
 

@@ -1,0 +1,60 @@
+name: Deploy Home Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_no_real_customer_data:
+        description: "Confirm that the deployment contains fictional/demo-safe data only."
+        required: true
+        type: boolean
+      deploy_note:
+        description: "Optional deployment note."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-home-server
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release
+    if: ${{ inputs.confirm_no_real_customer_data == true }}
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy approved commit
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: home-demo
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOME_SERVER_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.HOME_SERVER_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Deploy and verify
+        env:
+          SERVER_HOST: ${{ vars.HOME_SERVER_HOST }}
+          SERVER_PORT: ${{ vars.HOME_SERVER_SSH_PORT || '22' }}
+          SERVER_USER: ${{ vars.HOME_SERVER_SSH_USER }}
+          PROJECT_DIR: ${{ vars.HOME_SERVER_PROJECT_DIR || '/srv/projects/workflow-hub' }}
+          BASE_URL: ${{ vars.HOME_SERVER_BASE_URL || 'https://workflow.norvix.no' }}
+        run: |
+          test -n "$SERVER_HOST"
+          test -n "$SERVER_USER"
+          # Stream the deployment script from the approved commit so this also
+          # works when the currently deployed revision predates the script.
+          printf -v remote_command 'cd %q && git fetch --prune origin %q && git show %q:scripts/deploy-home-server.sh | PROJECT_DIR=%q bash -s -- %q %q' \
+            "$PROJECT_DIR" "$GITHUB_SHA" "$GITHUB_SHA" "$PROJECT_DIR" "$GITHUB_SHA" "$BASE_URL"
+          ssh -p "$SERVER_PORT" -o BatchMode=yes "$SERVER_USER@$SERVER_HOST" "$remote_command"
+      - name: Summary
+        run: echo "Deployed $GITHUB_SHA to the approved home-demo environment."
