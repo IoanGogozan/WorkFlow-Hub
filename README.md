@@ -159,7 +159,8 @@ See [Demo Boundaries](docs/product/demo-boundaries.md) and [Current Implementati
 
 ### Operations
 
-- [Home-server deployment](docs/deployment-home-server.md) — permanent public demo, released through the protected `Deploy Home Server` workflow without paid cloud infrastructure.
+- [Home-server deployment quickstart](docs/home-server-deploy-quickstart.md) — the repeatable release checklist for the live demo.
+- [Home-server deployment](docs/deployment-home-server.md) — architecture and detailed operations for the permanent, zero-additional-cost public demo.
 - [Azure demo deployment](docs/deployment-demo-azure.md) — optional reference target that requires separately provisioned, potentially billable Azure resources.
 - [ERP demo receiver](backend/src/NorvixHub.ErpDemoReceiver/README.md)
 - [Restore procedure](scripts/restore-home-server.md)

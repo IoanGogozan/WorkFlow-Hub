@@ -60,7 +60,8 @@ trap rollback ERR
 BACKUP_ROOT="$BACKUP_ROOT" PROJECT_DIR="$PROJECT_DIR" ENV_FILE="$ENV_FILE" \
   bash "$PROJECT_DIR/scripts/backup-home-server.sh"
 
-git fetch --prune origin "$DEPLOY_REVISION"
+git fetch --prune origin main
+git cat-file -e "$DEPLOY_REVISION^{commit}"
 git checkout --detach "$DEPLOY_REVISION"
 test "$(git rev-parse HEAD)" = "$(git rev-parse "$DEPLOY_REVISION")"
 test -z "$(git status --porcelain)"
