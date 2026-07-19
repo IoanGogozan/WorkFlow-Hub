@@ -10,6 +10,18 @@ BASE_URL="${2:-https://workflow.norvix.no}"
 previous_revision=""
 deployment_started=0
 
+for command in git docker curl jq flock; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    echo "Required command is missing: $command" >&2
+    exit 1
+  fi
+done
+
+if ! docker compose version >/dev/null 2>&1; then
+  echo "The Docker Compose plugin is required." >&2
+  exit 1
+fi
+
 cd "$PROJECT_DIR"
 
 if [[ -n "$(git status --porcelain)" ]]; then
@@ -39,7 +51,7 @@ rollback() {
     export GIT_SHA="$previous_revision"
     export BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build
-    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --wait --wait-timeout 240
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans --wait --wait-timeout 240
   fi
   exit "$exit_code"
 }
@@ -59,7 +71,7 @@ export BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config --quiet
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build --pull
 deployment_started=1
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --wait --wait-timeout 240
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans --wait --wait-timeout 240
 bash "$PROJECT_DIR/scripts/smoke-home-server.sh" "$BASE_URL"
 bash "$PROJECT_DIR/scripts/smoke-verifiable-demo.sh" "$BASE_URL"
 

@@ -20,9 +20,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    name: Deployment gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main branch
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Home-server deployment is allowed only from main."
+            exit 1
+          fi
+      - name: Require fictional data confirmation
+        if: ${{ inputs.confirm_no_real_customer_data != true }}
+        run: |
+          echo "Fictional/demo-safe data confirmation is required."
+          exit 1
+
   validate:
     name: Validate release
-    if: ${{ inputs.confirm_no_real_customer_data == true }}
+    needs: gate
     uses: ./.github/workflows/ci.yml
 
   deploy:
